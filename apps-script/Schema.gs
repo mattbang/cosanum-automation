@@ -1,6 +1,6 @@
-/** Version 7 adds per-person trainer Forms and append-only assessment attempts. */
+/** Version 8 adds per-person participant Forms and append-only acknowledgement attempts. */
 var DEMO_SCHEMA = Object.freeze({
-  version: 7,
+  version: 8,
   folderName: 'Cosanum Training Prototype',
   spreadsheetName: 'catalogue-and-skill-matrix',
   sheets: Object.freeze({
@@ -13,7 +13,9 @@ var DEMO_SCHEMA = Object.freeze({
     SessionCases: ['session_id', 'case_id', 'request_id', 'person_key', 'demo_marker'],
     SessionRsvps: ['session_id', 'case_id', 'person_key', 'calendar_event_id', 'response_status', 'checked_at', 'flag', 'flagged_at', 'demo_marker'],
     TrainerForms: ['session_id', 'case_id', 'person_key', 'trainer_key', 'trainer_email', 'form_id', 'form_url', 'created_at', 'demo_marker', 'verified_at', 'verified_by'],
-    TrainerAssessments: ['response_id', 'form_id', 'session_id', 'case_id', 'person_key', 'reporter_email', 'submitted_at', 'attendance', 'assessment', 'note', 'attestation', 'disposition', 'reason', 'demo_marker']
+    TrainerAssessments: ['response_id', 'form_id', 'session_id', 'case_id', 'person_key', 'reporter_email', 'submitted_at', 'attendance', 'assessment', 'note', 'attestation', 'disposition', 'reason', 'demo_marker'],
+    ParticipantForms: ['session_id', 'case_id', 'request_id', 'person_key', 'participant_email', 'form_id', 'form_url', 'created_at', 'demo_marker', 'verified_at', 'verified_by'],
+    ParticipantAcknowledgements: ['response_id', 'form_id', 'request_id', 'session_id', 'case_id', 'person_key', 'respondent_email', 'submitted_at', 'typed_name', 'affirmative', 'disposition', 'reason', 'demo_marker']
   })
 });
 

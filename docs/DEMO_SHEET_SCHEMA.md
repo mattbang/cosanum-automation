@@ -2,6 +2,12 @@
 
 The Google Sheet used by the prototype is synthetic and marked `[DEMO]`. Local source files define the contract; live asset IDs and account configuration stay in the ignored private handoff.
 
+## Version 8 (individual participation acknowledgement)
+
+`setupDemo()` adds empty `ParticipantForms` and `ParticipantAcknowledgements` tabs without changing existing bookings, trainer reports, or skill values. `ParticipantForms` maps one invited session and person case to one German Google Form, the assigned account, a stored responder URL, and the time and owner account that reviewed Google's **Verified** email collection setting. Preparing the same case again reuses its Form. The responder URL stays out of the admin queue until Daniel records that review; the queue exposes the editor link and review action. FormApp's email toggle alone is insufficient on the owner's personal Gmail account, and the script cannot detect a later change to the Verified setting.
+
+The participant Form requires the affirmative participation checkbox and a typed name. `ParticipantAcknowledgements` stores each processed response ID, Form/request/session/case/person IDs, respondent email, UTC timestamp, typed name, affirmative value, disposition, reason, and `[DEMO]`. The assigned account, stored Form context, post-session time, trainer pass, and review timestamp determine acceptance; typed name is captured as an assertion, not used to identify the account. A practice acknowledgement additionally requires that person's linked theory trainer pass. A Form submit trigger processes responses, and the admin refresh replays retained responses after interruptions. Replay of the same response ID does not append a row; a later response after one accepted confirmation is rejected. Wrong accounts, responses before review or trainer release, missing affirmative answers, and unanswered cases remain open. No proof, archive, or skill value is created in this increment.
+
 ## Version 7 (trainer assessment)
 
 `setupDemo()` adds empty `TrainerForms` and `TrainerAssessments` tabs without changing existing rows. `TrainerForms` maps one `session_id` and `case_id` to one Google Form, its assigned trainer key and email, a responder URL, `verified_at`, and `verified_by`. A group session gets a separate form for each participant. Repeating preparation returns the same Form. The Form asks in German for attendance, result, a note or next step, and an attestation; the assignment and identifiers come from the Sheet rather than editable answers.
