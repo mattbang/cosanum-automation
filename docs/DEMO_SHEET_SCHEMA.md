@@ -2,6 +2,14 @@
 
 The Google Sheet used by the prototype is synthetic and marked `[DEMO]`. Local source files define the contract; live asset IDs and account configuration stay in the ignored private handoff.
 
+## Version 9 (individual Google Doc and PDF proof)
+
+`setupDemo()` adds an empty `Proofs` tab. Each row stores a deterministic proof ID, version 1, request/case/person/topic IDs, a SHA-256 fingerprint of the validated source model, creation time, Drive topic-folder ID, Google Doc ID, PDF ID, status, and `[DEMO]`. `pending_creation` marks an interrupted write; `pending_local_archive` means the Doc and PDF exist in Drive, while the local duplicate has not yet been checked. The later archive handshake changes that status; proof creation itself never marks archive verification or updates a skill.
+
+The proof action validates every phase required by the topic before writing: booked Calendar event and its Sheet receipt, assigned trainer's accepted attended/pass Form response, and assigned participant's accepted affirmative response after the trainer report. It rereads each original Google Form response by ID and compares the account, timestamp, and answer with the Sheet. A missing practice phase, wrong account, changed matrix entry, or mismatched event blocks creation. The Form's manually reviewed **Verified** setting cannot be rechecked by this Apps Script project; the owner must keep that setting unchanged.
+
+Drive stores `evidence-archive/<topic-id>/<request-id>/<person-key>/PRF-...-v1 [DEMO]` as a native Google Doc and matching PDF. The proof records the synthetic persona, assigned Google test account, and typed name as separate fields. The source catalogue contains a material filename but no separate version field, so the proof prints `Nicht dokumentiert` for the material version. Rerunning the action checks the same source fingerprint and reuses its Doc/PDF IDs. A changed source requires an explicit corrected proof version; version 1 is never silently overwritten. Admin source links point to the Forms response views and Calendar event, not respondent edit links.
+
 ## Version 8 (individual participation acknowledgement)
 
 `setupDemo()` adds empty `ParticipantForms` and `ParticipantAcknowledgements` tabs without changing existing bookings, trainer reports, or skill values. `ParticipantForms` maps one invited session and person case to one German Google Form, the assigned account, a stored responder URL, and the time and owner account that reviewed Google's **Verified** email collection setting. Preparing the same case again reuses its Form. The responder URL stays out of the admin queue until Daniel records that review; the queue exposes the editor link and review action. FormApp's email toggle alone is insufficient on the owner's personal Gmail account, and the script cannot detect a later change to the Verified setting.
