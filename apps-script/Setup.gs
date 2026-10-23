@@ -17,6 +17,7 @@ function setupDemo() {
     migrateDemoSchemaV2ToV3_(spreadsheet, fixture);
     migrateDemoSchemaV3ToV4_(spreadsheet);
     migrateDemoSchemaV4ToV5_(spreadsheet);
+    migrateDemoSchemaV5ToV6_(spreadsheet);
   } else {
     spreadsheet = SpreadsheetApp.create(DEMO_SCHEMA.spreadsheetName);
     DriveApp.getFileById(spreadsheet.getId()).moveTo(folder);
@@ -36,6 +37,14 @@ function setupDemo() {
     spreadsheet.deleteSheet(defaultSheet);
   }
   return { folderId: folder.getId(), spreadsheetId: spreadsheet.getId(), schemaVersion: DEMO_SCHEMA.version };
+}
+
+/** An empty RSVP tab is created by setupDemo; existing case and booking rows stay intact. */
+function migrateDemoSchemaV5ToV6_(spreadsheet) {
+  var rsvps = spreadsheet.getSheetByName('SessionRsvps');
+  if (!rsvps || rsvps.getLastRow() === 0) return;
+  var headers = DEMO_SCHEMA.sheets.SessionRsvps;
+  assertHeaders_(rsvps.getRange(1, 1, 1, headers.length).getValues()[0], headers, 'SessionRsvps');
 }
 
 /** Add Calendar receipt columns without replacing or changing existing sessions. */

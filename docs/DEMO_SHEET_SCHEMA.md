@@ -2,6 +2,12 @@
 
 The Google Sheet used by the prototype is synthetic and marked `[DEMO]`. Local source files define the contract; live asset IDs and account configuration stay in the ignored private handoff.
 
+## Version 6 (Calendar RSVP monitoring)
+
+`setupDemo()` adds an empty `SessionRsvps` tab. Each row is keyed by `session_id` and `case_id` and stores `person_key`, `calendar_event_id`, the Calendar guest `response_status`, `checked_at` in UTC, the current `flag`, `flagged_at` in UTC, and `[DEMO]`. The monitor writes one row per invited person and session phase, including each member of a group. Repeated checks update the same row. A declined guest gets a `declined` flag; an unanswered (`needsAction`) guest gets an `unanswered` flag starting on the business day before the Zurich session date. Other RSVP values keep no flag. A changed response updates or clears the current flag.
+
+The owner event is read without changing its guests or booking. The monitor verifies the event ID, demo session metadata, times, and exact guest email before recording any response. Missing or inconsistent Calendar data is shown as an error and never interpreted as acceptance or attendance. Daniel's RSVP queue links each flag to its person case; replacement scheduling remains a later explicit action. A daily 09:00 Europe/Zurich Apps Script trigger can maintain the queue automatically after the owner grants `script.scriptapp` and installs the trigger. Loading or refreshing the admin page also performs a check. RSVP does not change `ParticipantCases.status`, trainer assessment, or skill level.
+
 ## Version 5 (Calendar booking receipt)
 
 `Sessions!L:O` adds `calendar_event_id`, `start_utc`, `end_utc`, and `calendar_event_url`. `setupDemo()` appends these headers to an existing version 4 sheet without changing session rows. The booking action writes these fields and changes the session status from `planned` to `invited` after it verifies the Calendar event. UTC timestamps are stored as ISO strings; the event itself is created in `Europe/Zurich` with the date's actual offset.

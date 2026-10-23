@@ -1,6 +1,6 @@
-/** Version 5 records one Calendar invitation per phase session. */
+/** Version 6 records one Calendar RSVP snapshot per participant and phase. */
 var DEMO_SCHEMA = Object.freeze({
-  version: 5,
+  version: 6,
   folderName: 'Cosanum Training Prototype',
   spreadsheetName: 'catalogue-and-skill-matrix',
   sheets: Object.freeze({
@@ -10,7 +10,8 @@ var DEMO_SCHEMA = Object.freeze({
     Requests: ['request_id', 'action_id', 'topic_id', 'target_level', 'status', 'created_at', 'demo_marker', 'mode'],
     ParticipantCases: ['case_id', 'request_id', 'person_key', 'current_level', 'target_level', 'status', 'created_at', 'demo_marker'],
     Sessions: ['session_id', 'request_id', 'phase', 'phase_order', 'mode', 'trainer_key', 'duration_minutes', 'theory_session_id', 'status', 'created_at', 'demo_marker', 'calendar_event_id', 'start_utc', 'end_utc', 'calendar_event_url'],
-    SessionCases: ['session_id', 'case_id', 'request_id', 'person_key', 'demo_marker']
+    SessionCases: ['session_id', 'case_id', 'request_id', 'person_key', 'demo_marker'],
+    SessionRsvps: ['session_id', 'case_id', 'person_key', 'calendar_event_id', 'response_status', 'checked_at', 'flag', 'flagged_at', 'demo_marker']
   })
 });
 
