@@ -22,6 +22,7 @@ function setupDemo() {
     migrateDemoSchemaV7ToV8_(spreadsheet);
     migrateDemoSchemaV8ToV9_(spreadsheet);
     migrateDemoSchemaV9ToV10_(spreadsheet);
+    migrateDemoSchemaV10ToV11_(spreadsheet);
   } else {
     spreadsheet = SpreadsheetApp.create(DEMO_SCHEMA.spreadsheetName);
     DriveApp.getFileById(spreadsheet.getId()).moveTo(folder);
@@ -41,6 +42,14 @@ function setupDemo() {
     spreadsheet.deleteSheet(defaultSheet);
   }
   return { folderId: folder.getId(), spreadsheetId: spreadsheet.getId(), schemaVersion: DEMO_SCHEMA.version };
+}
+
+/** An empty skill-update ledger is added without changing the live matrix. */
+function migrateDemoSchemaV10ToV11_(spreadsheet) {
+  var sheet = spreadsheet.getSheetByName('SkillUpdates');
+  if (!sheet || sheet.getLastRow() === 0) return;
+  assertHeaders_(sheet.getRange(1, 1, 1, DEMO_SCHEMA.sheets.SkillUpdates.length).getValues()[0],
+    DEMO_SCHEMA.sheets.SkillUpdates, 'SkillUpdates');
 }
 
 /** An empty receipt tab is added without changing existing proof rows. */

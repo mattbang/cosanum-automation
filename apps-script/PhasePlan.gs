@@ -14,8 +14,8 @@ function phasePlanModel_(requestId, mode, tables) {
       throw new Error('Skillprüfung für ' + c.person_key + ' ist nicht mehr gültig. Demo-Sheet prüfen.');
     }
   });
-  var daniel = tables.People.filter(function (p) { return p.person_key === 'MATT'; })[0];
-  if (!daniel) throw new Error('Daniel fehlt in der Demo-Personenliste.');
+  var processQualityTrainer = tables.People.filter(function (p) { return p.person_key === 'MATT'; })[0];
+  if (!processQualityTrainer) throw new Error('Process & Quality fehlt in der Demo-Personenliste.');
   var requiresIndividualPractice = /Praxis einzeln/i.test(String(topic.group_suitability));
   var phases = [];
   var theory = demoFlag_(topic.theory_required);
@@ -25,22 +25,22 @@ function phasePlanModel_(requestId, mode, tables) {
     throw new Error('Planungsdauern im Demo-Katalog weichen von 60/180 Minuten ab.');
   }
   var caseGroups = mode === 'group' ? [cases] : cases.map(function (c) { return [c]; });
-  caseGroups.forEach(function (group) { phases.push(planSession_('theory', 1, mode, group, requestId, 60, '', tables, daniel)); });
+  caseGroups.forEach(function (group) { phases.push(planSession_('theory', 1, mode, group, requestId, 60, '', tables, processQualityTrainer)); });
   if (practice) {
     var practiceGroups = mode === 'group' && !requiresIndividualPractice ? [cases] : cases.map(function (c) { return [c]; });
     practiceGroups.forEach(function (group) {
       var theorySession = phases.filter(function (p) { return p.phase === 'theory' && group.every(function (c) { return p.caseIds.indexOf(c.case_id) >= 0; }); })[0];
-      phases.push(planSession_('practice', 2, practiceGroups.length === 1 && mode === 'group' && !requiresIndividualPractice ? 'group' : 'individual', group, requestId, 180, theorySession.sessionId, tables, daniel));
+      phases.push(planSession_('practice', 2, practiceGroups.length === 1 && mode === 'group' && !requiresIndividualPractice ? 'group' : 'individual', group, requestId, 180, theorySession.sessionId, tables, processQualityTrainer));
     });
   }
   return { requestId: requestId, topicId: request.topic_id, mode: mode, targetLevel: Number(request.target_level),
     phases: phases, rule: practice ? 'Zielstufe erst nach bestandener Theorie und Praxis.' : 'Zielstufe erst nach bestandener Theorie.' };
 }
 
-function planSession_(phase, order, mode, cases, requestId, minutes, theorySessionId, tables, daniel) {
+function planSession_(phase, order, mode, cases, requestId, minutes, theorySessionId, tables, processQualityTrainer) {
   var suffix = cases.length === 1 ? '-' + cases[0].person_key : '-GROUP';
   var sessionId = 'SES-' + requestId.slice(4) + '-' + phase.toUpperCase() + suffix;
-  var choices = mode === 'group' ? [{ key: 'MATT', label: String(daniel.display_alias) + ' (Daniel)' }] :
+  var choices = mode === 'group' ? [{ key: 'MATT', label: String(processQualityTrainer.display_alias) + ' (Process & Quality)' }] :
     tables.People.filter(function (p) {
       if (!/Einzeltraining|Coach|Supervisor|HCM/i.test(String(p.demo_role))) return false;
       if (cases.some(function (c) { return c.person_key === p.person_key; })) return false;

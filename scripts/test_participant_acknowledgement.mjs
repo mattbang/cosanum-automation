@@ -120,6 +120,6 @@ assert.equal(reviewedPreparation.reused,true);
 assert.equal(reviewedPreparation.formUrl,formRow.form_url);
 assert.equal(ctx.participantAcknowledgementDecision_(context,{...formRow,verified_at:'',verified_by:''},response('R-PENDING'),[],gate).disposition,'rejected');
 ctx.Session={getEffectiveUser:()=>({getEmail:()=> 'other@example.com'})};
-assert.throws(()=>ctx.confirmParticipantVerifiedEmail({sessionId:'SES-THEORY',caseId:'CASE-ONE',confirmation:true}),/Nur Daniel/);
+assert.throws(()=>ctx.confirmParticipantVerifiedEmail({sessionId:'SES-THEORY',caseId:'CASE-ONE',confirmation:true}),/Nur Process & Quality/);
 
 console.log('Pass: phase gates, assigned account, owner review, trainer timing, affirmative answer, typed name, duplicate replay, and open/accepted queue.');

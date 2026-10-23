@@ -18,7 +18,7 @@ const base={
   ParticipantCases:['SUMNER','WOHNUNG'].map(person_key=>({case_id:'CASE-'+person_key,request_id:'REQ-GROUP',person_key,current_level:0,target_level:1,demo_marker:'[DEMO]'})),
   Sessions:[{session_id:'SES-GROUP',request_id:'REQ-GROUP',phase:'theory',mode:'group',trainer_key:'MATT',status:'invited',start_utc:start,end_utc:end,calendar_event_id:'evt-group',calendar_event_url:'https://calendar.example/evt-group',demo_marker:'[DEMO]'}],
   SessionCases:['SUMNER','WOHNUNG'].map(person_key=>({session_id:'SES-GROUP',case_id:'CASE-'+person_key,request_id:'REQ-GROUP',person_key,demo_marker:'[DEMO]'})),
-  TrainerForms:[],TrainerAssessments:[],ParticipantForms:[],ParticipantAcknowledgements:[],Proofs:[]
+  TrainerForms:[],TrainerAssessments:[],ParticipantForms:[],ParticipantAcknowledgements:[],Proofs:[],SkillUpdates:[]
 };
 const responses=new Map();
 for(const personKey of ['SUMNER','WOHNUNG']){

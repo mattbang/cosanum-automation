@@ -115,7 +115,7 @@ function prepareParticipantForm(input) {
   } finally { lock.releaseLock(); }
 }
 
-/** Daniel manually inspects Google's Verified setting; FormApp cannot inspect that mode. */
+/** Process & Quality manually inspects Google's Verified setting; FormApp cannot inspect that mode. */
 function confirmParticipantVerifiedEmail(input) {
   if (!input || input.confirmation !== true || typeof input.sessionId !== 'string' || typeof input.caseId !== 'string') {
     throw new Error('Bitte die Einstellung „Verifiziert“ im Google-Formular prüfen und bestätigen.');
@@ -126,7 +126,7 @@ function confirmParticipantVerifiedEmail(input) {
     var tables = readDemoTables_();
     var context = trainerCaseContext_(tables, input.sessionId, input.caseId);
     var actor = String(Session.getEffectiveUser().getEmail() || '').trim().toLowerCase();
-    if (!actor || actor !== String(context.owner.email).trim().toLowerCase()) throw new Error('Nur Daniel darf die Formulareinstellung bestätigen.');
+    if (!actor || actor !== String(context.owner.email).trim().toLowerCase()) throw new Error('Nur Process & Quality darf die Formulareinstellung bestätigen.');
     var gate = participantAcknowledgementGate_(tables, context);
     if (!gate.allowed) throw new Error(gate.reason);
     verifyTrainerCalendar_(context, calendarBookingGet_);

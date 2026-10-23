@@ -115,5 +115,5 @@ assert.equal(confirmed.verifiedBy,'trainer@example.com');
 assert.equal(formRows[1][10],'trainer@example.com');
 assert.equal(ctx.trainerAssessmentDecision_(context,{...formRow,verified_at:'',verified_by:''},response('R-20'),[],()=>event).disposition,'rejected');
 ctx.Session={getEffectiveUser:()=>({getEmail:()=> 'wrong@example.com'})};
-assert.throws(()=>ctx.confirmTrainerVerifiedEmail({sessionId:session.session_id,caseId:cases[0].case_id,confirmation:true}),/Nur Daniel/);
+assert.throws(()=>ctx.confirmTrainerVerifiedEmail({sessionId:session.session_id,caseId:cases[0].case_id,confirmation:true}),/Nur Process & Quality/);
 console.log('Pass: assigned-trainer identity, post-session gate, per-person attendance/result, open cases, wrong-account and duplicate rejection, and RSVP separation.');

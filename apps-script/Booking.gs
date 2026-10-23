@@ -67,7 +67,7 @@ function bookingEvent_(required, tables, slot) {
       'Material: nicht bereitgestellt',
       '',
       'Bitte beantworten Sie die Kalendereinladung. Wenn Sie nicht teilnehmen können,',
-      'lehnen Sie ab; Daniel klärt einen Ersatztermin.',
+      'lehnen Sie ab; Process & Quality klärt einen Ersatztermin.',
       '',
       'Auftrag: ' + session.request_id + ' · Termin: ' + session.session_id + ' [DEMO]'
     ].join('\n'),

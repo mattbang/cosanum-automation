@@ -1,6 +1,6 @@
-/** Version 10 adds a local archive verification receipt per proof version. */
+/** Version 11 adds an audited, idempotent synthetic skill transition. */
 var DEMO_SCHEMA = Object.freeze({
-  version: 10,
+  version: 11,
   folderName: 'Cosanum Training Prototype',
   spreadsheetName: 'catalogue-and-skill-matrix',
   sheets: Object.freeze({
@@ -17,7 +17,8 @@ var DEMO_SCHEMA = Object.freeze({
     ParticipantForms: ['session_id', 'case_id', 'request_id', 'person_key', 'participant_email', 'form_id', 'form_url', 'created_at', 'demo_marker', 'verified_at', 'verified_by'],
     ParticipantAcknowledgements: ['response_id', 'form_id', 'request_id', 'session_id', 'case_id', 'person_key', 'respondent_email', 'submitted_at', 'typed_name', 'affirmative', 'disposition', 'reason', 'demo_marker'],
     Proofs: ['proof_id', 'proof_version', 'request_id', 'case_id', 'person_key', 'topic_id', 'source_hash', 'created_at', 'folder_id', 'doc_id', 'pdf_id', 'status', 'demo_marker'],
-    ArchiveReceipts: ['proof_id', 'proof_version', 'case_id', 'request_id', 'person_key', 'topic_id', 'source_hash', 'doc_id', 'pdf_id', 'drive_pdf_sha256', 'local_pdf_sha256', 'local_docx_sha256', 'local_pdf_path', 'local_docx_path', 'manifest_path', 'verified_at', 'status', 'demo_marker']
+    ArchiveReceipts: ['proof_id', 'proof_version', 'case_id', 'request_id', 'person_key', 'topic_id', 'source_hash', 'doc_id', 'pdf_id', 'drive_pdf_sha256', 'local_pdf_sha256', 'local_docx_sha256', 'local_pdf_path', 'local_docx_path', 'manifest_path', 'verified_at', 'status', 'demo_marker'],
+    SkillUpdates: ['idempotency_key', 'case_id', 'request_id', 'person_key', 'topic_id', 'previous_level', 'target_level', 'proof_id', 'proof_version', 'source_hash', 'archive_verified_at', 'applied_at', 'status', 'reason', 'demo_marker']
   })
 });
 

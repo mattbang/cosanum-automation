@@ -309,7 +309,7 @@ function createIndividualProof(input) {
     var tables = readDemoTables_(), model = proofSourceModel_(tables, input.caseId);
     var actor = proofEmail_(Session.getEffectiveUser().getEmail());
     var owner = proofUnique_(tables.People, function (row) { return row.person_key === 'MATT' && row.demo_marker === '[DEMO]'; }, 'Demo-Administration');
-    if (!actor || actor !== proofEmail_(owner.email)) throw new Error('Nur Daniel darf Nachweise erstellen.');
+    if (!actor || actor !== proofEmail_(owner.email)) throw new Error('Nur Process & Quality darf Nachweise erstellen.');
     var sourceHash = proofHash_(model);
     var sheet = findDemoSpreadsheet_().getSheetByName('Proofs');
     if (!sheet) throw new Error('Nachweisregister fehlt. setupDemo() ausführen.');
@@ -339,12 +339,18 @@ function getIndividualProofQueue() {
     var person = proofUnique_(tables.People, function (item) { return item.person_key === row.person_key && item.demo_marker === '[DEMO]'; }, 'Testperson');
     var proof = tables.Proofs.filter(function (item) { return item.case_id === row.case_id; });
     if (proof.length > 1) throw new Error('Mehrere Nachweise für einen Personenfall.');
+    var applied = tables.SkillUpdates.filter(function (item) { return item.case_id === row.case_id && item.status === 'applied'; });
+    if (applied.length > 1) throw new Error('Mehrere Skillübernahmen für einen Personenfall.');
     var state = 'ready', reason = '';
-    try { proofSourceModel_(tables, row.case_id); }
+    try {
+      if (applied.length) skillUpdateExisting_(tables, skillArchiveGate_(tables, row.case_id));
+      else proofSourceModel_(tables, row.case_id);
+    }
     catch (error) { state = 'blocked'; reason = String(error.message || error); }
     var item = proof[0];
     return { caseId: row.case_id, personKey: row.person_key, personAlias: String(person.display_alias), requestId: row.request_id,
-      state: state === 'blocked' ? 'blocked' : item && item.status === 'archived_verified' ? 'archived' :
+      state: state !== 'blocked' && applied.length && item && item.status === 'archived_verified' ? 'completed' :
+        state === 'blocked' ? 'blocked' : item && item.status === 'archived_verified' ? 'archived' :
         item && item.status === 'archive_error' ? 'archive_error' :
         item && item.status === 'pending_local_archive' ? 'created' : state,
       reason: reason, proofId: item ? item.proof_id : '',

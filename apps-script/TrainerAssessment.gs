@@ -55,7 +55,7 @@ function trainerCaseContext_(tables, sessionId, caseId) {
   var person = uniqueTrainerRow_(tables.People, function (row) {
     return row.person_key === personCase.person_key && row.demo_marker === '[DEMO]';
   }, 'Teilnehmende Person');
-  if (session.mode === 'group' && session.trainer_key !== 'MATT') throw new Error('Gruppentrainer muss Daniel sein.');
+  if (session.mode === 'group' && session.trainer_key !== 'MATT') throw new Error('Gruppentrainer muss Process & Quality sein.');
   if (session.phase !== 'theory' && session.phase !== 'practice') throw new Error('Unbekannter Schulungsteil.');
   if (!String(trainer.email).trim() || !String(person.email).trim()) throw new Error('Konto für den Schulungsteil fehlt.');
   return { session: session, link: link, personCase: personCase, request: request,
@@ -93,7 +93,7 @@ function buildTrainerForm_(context, createForm, folder) {
   ].join('\n'));
   form.setCollectEmail(true);
   form.setAllowResponseEdits(false);
-  form.setConfirmationMessage('Ihre Beurteilung wurde für diesen DEMO-Fall erfasst. Korrekturen melden Sie bitte an Daniel unter Angabe der Auftrags- und Termin-ID.');
+  form.setConfirmationMessage('Ihre Beurteilung wurde für diesen DEMO-Fall erfasst. Korrekturen melden Sie bitte an Process & Quality unter Angabe der Auftrags- und Termin-ID.');
   form.addMultipleChoiceItem().setTitle(TRAINER_QUESTIONS.attendance).setChoiceValues(['Ja, anwesend', 'Nein, abwesend']).setRequired(true);
   form.addMultipleChoiceItem().setTitle(TRAINER_QUESTIONS.assessment).setChoiceValues(['Bestanden', 'Nachschulung nötig', 'Nicht beurteilt']).setRequired(true);
   form.addParagraphTextItem().setTitle(TRAINER_QUESTIONS.note).setHelpText('Bei Abwesenheit, Nachschulung oder fehlender Beurteilung ist ein nächster Schritt erforderlich.');
@@ -109,7 +109,7 @@ function trainerFormRow_(tables, sessionId, caseId) {
   return matches.length ? matches[0] : null;
 }
 
-/** Preparing a link does not report attendance. Daniel can share it after training. */
+/** Preparing a link does not report attendance. Process & Quality can share it after training. */
 function prepareTrainerForm(input) {
   if (!input || typeof input.sessionId !== 'string' || typeof input.caseId !== 'string') throw new Error('Session und Personenfall fehlen.');
   var lock = LockService.getScriptLock();
@@ -155,7 +155,7 @@ function confirmTrainerVerifiedEmail(input) {
     var tables = readDemoTables_();
     var context = trainerCaseContext_(tables, input.sessionId, input.caseId);
     var actor = String(Session.getEffectiveUser().getEmail() || '').trim().toLowerCase();
-    if (!actor || actor !== String(context.owner.email).trim().toLowerCase()) throw new Error('Nur Daniel darf die Formulareinstellung bestätigen.');
+    if (!actor || actor !== String(context.owner.email).trim().toLowerCase()) throw new Error('Nur Process & Quality darf die Formulareinstellung bestätigen.');
     verifyTrainerCalendar_(context, calendarBookingGet_);
     var formRow = trainerFormRow_(tables, input.sessionId, input.caseId);
     if (!formRow || formRow.demo_marker !== '[DEMO]' || formRow.person_key !== context.person.person_key ||
@@ -218,7 +218,7 @@ function trainerAssessmentDecision_(context, formRow, response, existing, getEve
       Date.parse(submittedAt) < Date.parse(formRow.verified_at)) result.reason = 'Antwort entstand vor der manuellen Prüfung der verifizierten E-Mail-Erfassung.';
   else if (Date.parse(submittedAt) < Date.parse(context.session.end_utc)) result.reason = 'Bericht wurde vor dem Ende des Termins eingereicht.';
   else if (existing.some(function (row) { return row.response_id === responseId; })) { result.disposition = 'duplicate'; result.reason = 'Antwort wurde bereits verarbeitet.'; }
-  else if (existing.some(function (row) { return row.disposition === 'accepted'; })) result.reason = 'Für diesen Fall liegt bereits eine gültige Beurteilung vor; Korrektur über Daniel.';
+  else if (existing.some(function (row) { return row.disposition === 'accepted'; })) result.reason = 'Für diesen Fall liegt bereits eine gültige Beurteilung vor; Korrektur über Process & Quality.';
   else if (answers.attendance !== 'attended' && answers.attendance !== 'absent' ||
       ['passed', 'needs_follow_up', 'not_assessed'].indexOf(answers.assessment) < 0 || !answers.attestation) {
     result.reason = 'Anwesenheit, Ergebnis oder Bestätigung fehlt.';

@@ -84,4 +84,4 @@ const groupTrainers = Object.fromEntries(groupPlan.phases.filter(p => p.mode ===
 context.savePhasePlan({ requestId: group.requestId, mode: 'group', trainers: groupTrainers });
 assert.equal(rows.SessionCases.filter(row => row[2] === group.requestId).length, 4);
 assert.equal(rows.Sessions.filter(row => row[1] === group.requestId).length, 3);
-console.log('Pass: qualified trainer filtering, fixed Daniel group trainer, per-person practice links, 60/180 minutes, theory gate, and idempotent saves.');
+console.log('Pass: qualified trainer filtering, fixed Process & Quality group trainer, per-person practice links, 60/180 minutes, theory gate, and idempotent saves.');
