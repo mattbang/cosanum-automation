@@ -21,6 +21,7 @@ secrets/
 !.env.example
 .clasp.json
 .clasprc.json
+apps-script/PrivateFixture.gs
 credentials*.json
 client_secret*.json
 token*.json
@@ -29,6 +30,7 @@ token*.json
 
 # Generated files
 node_modules/
+node_modules
 dist/
 build/
 coverage/

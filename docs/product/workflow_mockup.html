@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cosanum Schulungsworkflow · Interface-Entwurf [DEMO]</title>
+  <style>
+    :root { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #38263b; background: #f8f5f8; }
+    * { box-sizing: border-box; }
+    body { margin: 0; line-height: 1.45; }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    .shell { max-width: 1440px; margin: 0 auto; padding: 22px; }
+    .mast { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; padding: 24px 28px; background: #4a244b; color: white; border-radius: 18px; }
+    .mast h1 { margin: 5px 0 4px; font-size: clamp(1.5rem, 3vw, 2.25rem); letter-spacing: -.03em; }
+    .mast p { margin: 0; color: #eadce9; }
+    .mark { display: inline-block; padding: 3px 8px; border-radius: 5px; background: #ffdb8e; color: #483000; font-size: .78rem; font-weight: 800; letter-spacing: .06em; }
+    .notice { max-width: 280px; background: #673b66; padding: 13px 15px; border-radius: 11px; font-size: .9rem; }
+    .tabs { display: flex; gap: 7px; margin: 18px 0; padding: 7px; overflow-x: auto; background: white; border: 1px solid #eadfea; border-radius: 13px; }
+    .tabs button { flex: 1 0 auto; border: 0; border-radius: 8px; padding: 11px 13px; color: #68556a; background: transparent; text-align: left; white-space: nowrap; font-weight: 650; }
+    .tabs button[aria-selected="true"] { background: #efe2f1; color: #5f2b61; }
+    .panel { background: white; border: 1px solid #eadfea; border-radius: 16px; padding: clamp(18px, 3vw, 32px); box-shadow: 0 12px 35px #4a244b0a; }
+    .panel[hidden] { display: none; }
+    .section-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 22px; margin-bottom: 22px; }
+    .eyebrow { margin: 0 0 3px; font-size: .76rem; text-transform: uppercase; letter-spacing: .13em; color: #8a658b; font-weight: 800; }
+    h2 { margin: 0 0 6px; font-size: clamp(1.4rem, 2vw, 1.9rem); }
+    h3 { margin: 0 0 12px; font-size: 1rem; }
+    p { margin: 0 0 12px; }
+    .muted { color: #756778; }
+    .small { font-size: .84rem; }
+    .grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 18px; }
+    .span-4 { grid-column: span 4; }.span-5 { grid-column: span 5; }.span-6 { grid-column: span 6; }.span-7 { grid-column: span 7; }.span-8 { grid-column: span 8; }.span-12 { grid-column: span 12; }
+    .card { border: 1px solid #eadfea; border-radius: 13px; padding: 18px; background: #fff; }
+    .soft { background: #f7f0f8; }.mint { background: #eef8f4; border-color: #b8dcd0; }.amber { background: #fff8e9; border-color: #edd39d; }.rose { background: #fff4f1; border-color: #eac8c1; }
+    .kpi { font-size: 2rem; font-weight: 800; line-height: 1; margin: 4px 0; }
+    .badge { display: inline-block; padding: 4px 8px; border-radius: 20px; background: #f1e8f2; color: #68446a; font-size: .75rem; font-weight: 750; white-space: nowrap; }
+    .badge.good { background: #d9f1e6; color: #176344; }.badge.warn { background: #ffedc6; color: #795114; }.badge.bad { background: #ffe0d8; color: #8b3d30; }
+    .pill-row { display: flex; flex-wrap: wrap; gap: 7px; }
+    .action { display: inline-block; padding: 10px 14px; border-radius: 9px; background: #c34e58; color: white; border: 0; font-weight: 700; }
+    .action.secondary { background: #f3e7f3; color: #663468; }.action.ghost { background: #f2eef2; color: #6a596c; }
+    .action:disabled { opacity: .72; cursor: not-allowed; }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 15px; }
+    .table-wrap { overflow-x: auto; border: 1px solid #eadfea; border-radius: 12px; }
+    table { width: 100%; border-collapse: collapse; min-width: 690px; }
+    th, td { text-align: left; vertical-align: top; padding: 12px 14px; border-bottom: 1px solid #eee5ee; }
+    tr:last-child td { border-bottom: 0; }
+    th { color: #7b687d; font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; background: #fbf8fb; }
+    .field { display: block; margin-bottom: 13px; font-weight: 700; font-size: .9rem; }
+    .field input, .field select, .field textarea { display: block; width: 100%; margin-top: 6px; padding: 10px 11px; border: 1px solid #d8c8d9; border-radius: 8px; background: #fff; color: #38263b; }
+    .field input:disabled, .field select:disabled, .field textarea:disabled { opacity: 1; -webkit-text-fill-color: #38263b; background: #fbf8fb; }
+    .choice { display: block; margin: 9px 0; color: #38263b; }
+    .choice input { margin-right: 9px; accent-color: #8c4b89; }
+    .callout { border-left: 4px solid #956194; background: #f6eff7; padding: 11px 14px; border-radius: 0 8px 8px 0; margin: 15px 0; }
+    .callout.warn { border-color: #c08727; background: #fff8e9; }
+    .callout.bad { border-color: #b15c47; background: #fff1ed; }
+    .steps { display: flex; flex-wrap: wrap; gap: 8px; padding: 0; margin: 14px 0 0; list-style: none; }
+    .steps li { border-radius: 20px; padding: 6px 10px; background: #f1e8f2; color: #68446a; font-size: .8rem; font-weight: 700; }
+    .steps li.done { background: #d9f1e6; color: #176344; }.steps li.current { background: #ffeac1; color: #73531c; }
+    .timeline { border-left: 2px solid #d6bdd7; margin-left: 7px; padding-left: 22px; }
+    .timeline li { margin: 0 0 13px; padding-left: 3px; }.timeline strong { display: block; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .88rem; }
+    .footer { margin: 18px 4px 4px; color: #756778; font-size: .8rem; }
+    @media (max-width: 960px) { .span-4, .span-5, .span-6, .span-7, .span-8 { grid-column: span 12; } .mast { flex-direction: column; }.notice { max-width: none; } }
+    @media print { .tabs, .footer { display: none; } .panel[hidden] { display: block; margin-top: 20px; } .panel { box-shadow: none; page-break-before: always; } }
+  </style>
+</head>
+<body>
+<div class="shell">
+  <header class="mast">
+    <div><span class="mark">[DEMO] · ENTWURF</span><h1>Schulungsworkflow</h1><p>Statische Produktmockups für die spätere Google-Workspace-Implementierung</p></div>
+    <div class="notice">Nur Navigation zwischen Entwurfsansichten. Alle Formulare und Aktionen sind deaktiviert; es werden keine Daten gespeichert oder gesendet.</div>
+  </header>
+  <nav class="tabs" role="tablist" aria-label="Workflowansichten">
+    <button type="button" role="tab" aria-selected="true" aria-controls="dashboard" data-panel="dashboard">A · Übersicht</button>
+    <button type="button" role="tab" aria-selected="false" aria-controls="intake" data-panel="intake">B · Auftrag</button>
+    <button type="button" role="tab" aria-selected="false" aria-controls="schedule" data-panel="schedule">C · Termin</button>
+    <button type="button" role="tab" aria-selected="false" aria-controls="trainer" data-panel="trainer">D · Trainerbericht</button>
+    <button type="button" role="tab" aria-selected="false" aria-controls="participant" data-panel="participant">E · Bestätigung</button>
+    <button type="button" role="tab" aria-selected="false" aria-controls="case" data-panel="case">F · Fall & Nachweise</button>
+  </nav>
+
+  <section class="panel" id="dashboard" role="tabpanel">
+    <div class="section-head"><div><p class="eyebrow">Daniel · Arbeitsliste</p><h2>Was braucht eine Entscheidung?</h2><p class="muted">Jeder ausgewählte Mensch bleibt als eigener Fall sichtbar, auch bei einem Gruppentermin.</p></div><span class="badge warn">Demo-Daten</span></div>
+    <div class="grid">
+      <div class="card mint span-4"><div class="muted">Abgeschlossen</div><div class="kpi">1</div><div class="small">Nachweis, beide Archive und Skill geprüft</div></div>
+      <div class="card amber span-4"><div class="muted">Klärung nötig</div><div class="kpi">2</div><div class="small">RSVP offen · Bestätigung fehlt</div></div>
+      <div class="card soft span-4"><div class="muted">Technisch ausstehend</div><div class="kpi">1</div><div class="small">Lokale Archivkopie noch nicht geprüft</div></div>
+      <div class="card span-12"><h3>Offene Fälle</h3><div class="table-wrap"><table><thead><tr><th>Auftrag / Person</th><th>Thema / Termin</th><th>Status</th><th>Grund</th><th>Nächste Aktion</th></tr></thead><tbody>
+        <tr><td><strong>REQ-DEMO-002</strong><br>Alex Beispiel</td><td>Wareneingang<br>23.10.2026</td><td><span class="badge warn">Bestätigung fehlt</span></td><td>Trainer: anwesend + bestanden<br>Tag +5 erreicht</td><td>Antwort prüfen · neuen Link anfordern</td></tr>
+        <tr><td><strong>REQ-DEMO-003</strong><br>Sam Beispiel</td><td>Kardex<br>28.10.2026</td><td><span class="badge bad">Einladung abgelehnt</span></td><td>Gruppentermin bleibt für andere bestehen</td><td>Ersatztermin planen</td></tr>
+        <tr><td><strong>REQ-DEMO-004</strong><br>Kim Beispiel</td><td>Hochregallager<br>21.10.2026</td><td><span class="badge warn">Archiv ausstehend</span></td><td>Drive-PDF vorhanden; lokale Kopie fehlt</td><td>Archivlauf erneut starten</td></tr>
+      </tbody></table></div></div>
+      <div class="card span-12"><h3>Filter im späteren Produkt</h3><div class="pill-row"><span class="badge">Thema</span><span class="badge">Person</span><span class="badge">Auftrag</span><span class="badge">Status</span><span class="badge">Zeitraum</span></div><p class="small muted" style="margin-top:12px">Jede Zeile öffnet den Fall mit Ereignis, Antworten, Archiv und Änderungsverlauf. Kein „als erledigt markieren“-Knopf umgeht Nachweise.</p></div>
+    </div>
+  </section>
+
+  <section class="panel" id="intake" role="tabpanel" hidden>
+    <div class="section-head"><div><p class="eyebrow">Daniel · Auftrag anlegen</p><h2>Bedarf, Eignung und Phasen</h2><p class="muted">Ein Entwurf erzeugt IDs und prüft die Demo-Matrix. Vor der Terminwahl wird nichts versendet.</p></div><span class="badge">Entwurf</span></div>
+    <div class="grid">
+      <div class="card span-6"><h3>1 · Bedarf</h3>
+        <label class="field">Thema / Materialversion<select disabled><option>Wareneingang · TC_R030 · Handout v1</option></select></label>
+        <label class="field">Modus<select disabled><option>Gruppe</option></select></label>
+        <label class="field">Teilnehmende Personen<select disabled><option>Alex Beispiel, Sam Beispiel</option></select></label>
+        <div class="callout">Quelle: synthetischer Katalog und Demo-Skillmatrix. Kein echter Qualifikationsstand.</div>
+      </div>
+      <div class="card span-6"><h3>2 · Skillprüfung je Person</h3><div class="table-wrap"><table><thead><tr><th>Person</th><th>Ist</th><th>Ziel</th><th>Prüfung</th></tr></thead><tbody>
+        <tr><td>Alex Beispiel</td><td>0</td><td>1</td><td><span class="badge good">zulässig</span></td></tr>
+        <tr><td>Sam Beispiel</td><td>–</td><td>1</td><td><span class="badge bad">gesperrt</span></td></tr>
+      </tbody></table></div><div class="callout bad">Sam: „–“ bedeutet Aufgabe nicht vorgesehen. Auswahl gesperrt. Daniel kann nur die Demo-Sheet-Quelle prüfen und anschließend neu laden.</div></div>
+      <div class="card span-7"><h3>3 · Phasenplan</h3><div class="table-wrap"><table><thead><tr><th>Phase</th><th>Dauer</th><th>Trainer</th><th>Abhängigkeit</th></tr></thead><tbody>
+        <tr><td>Theorie</td><td>60 Min.</td><td>Daniel · Gruppentrainer</td><td>Vor Praxis bestehen</td></tr>
+        <tr><td>Praxis · je Person einzeln</td><td>180 Min.</td><td>Qualifizierte Person mit Demo-Stufe 4</td><td>Verknüpfter Einzeltermin; Zielstufe erst nach Theorie-Pass</td></tr>
+      </tbody></table></div></div>
+      <div class="card amber span-5"><h3>Vor dem Speichern</h3><p>Eine gesperrte Person verhindert diesen Entwurf. Nach Korrektur der synthetischen Quelle wird die Matrix neu gelesen.</p><div class="actions"><button class="action" disabled>Entwurf speichern</button><button class="action secondary" disabled>Demo-Sheet öffnen</button></div><p class="small muted" style="margin-top:12px">Beispiel-IDs nach Speichern: REQ-DEMO-001, CASE-DEMO-001 je Person.</p></div>
+    </div>
+  </section>
+
+  <section class="panel" id="schedule" role="tabpanel" hidden>
+    <div class="section-head"><div><p class="eyebrow">Daniel · Kalender</p><h2>Freie Zeiten prüfen und buchen</h2><p class="muted">Alle erforderlichen Kalender werden geprüft. Zeiten und Einladungen verwenden Europe/Zurich.</p></div><span class="badge">REQ-DEMO-001 · Theorie</span></div>
+    <div class="grid">
+      <div class="card span-8"><h3>Vorschläge · 60 Minuten</h3><div class="table-wrap"><table><thead><tr><th>Auswahl</th><th>Start–Ende</th><th>Abdeckung</th><th>Bemerkung</th></tr></thead><tbody>
+        <tr><td>○</td><td>Mo, 26.10.2026 · 09:00–10:00</td><td>Trainer + 2 Personen frei</td><td>Vormittag</td></tr>
+        <tr><td>○</td><td>Di, 27.10.2026 · 14:00–15:00</td><td>Trainer + 2 Personen frei</td><td>Nachmittag</td></tr>
+        <tr><td>○</td><td>Do, 29.10.2026 · 10:00–11:00</td><td>Trainer + 2 Personen frei</td><td>Weiterer Tag</td></tr>
+      </tbody></table></div><p class="small muted" style="margin-top:12px">Vor „Buchen“ erfolgt eine erneute Kollisionsprüfung. Bei neuem Konflikt zurück zu den Vorschlägen.</p><div class="actions"><button class="action" disabled>Gewählten Termin buchen</button></div></div>
+      <div class="card span-4"><h3>Einladungsinhalt</h3><p><strong>[DEMO] Schulung: Wareneingang · Theorie</strong></p><p>Ort: Raum oder Online-Link<br>Trainer: Daniel<br>Material: freigegebener Link<br>Auftrag und Termin-ID</p><p class="small muted">Die Einladung kommt aus Google Calendar. Die <a href="CALENDAR_EVENT_TEMPLATE.md">Vorlage</a> legt alle Felder fest.</p></div>
+      <div class="card amber span-6"><h3>RSVP nach Buchung</h3><p>Alex: <span class="badge good">zugesagt</span> · Sam: <span class="badge bad">abgelehnt</span></p><p>Sam erhält einen offenen Fall für einen Ersatztermin. Alex und der Gruppentermin bleiben bestehen.</p></div>
+      <div class="card rose span-6"><h3>Fehlerzustand: Kalenderzugriff fehlt</h3><p>Freie Zeit für eine ausgewählte Person konnte nicht verifiziert werden. Es wird kein Slot angeboten und kein Ereignis erstellt.</p><p class="small muted">Nächster Schritt: Freigabe prüfen, dann Verfügbarkeit erneut laden.</p></div>
+    </div>
+  </section>
+
+  <section class="panel" id="trainer" role="tabpanel" hidden>
+    <div class="section-head"><div><p class="eyebrow">Zugewiesene schulende Person · Google Form</p><h2>Beurteilung pro Person</h2><p class="muted">Bei Gruppen wird für jede Person ein eigener Bericht mit Antwort-ID und Zeit erfasst.</p></div><span class="badge">Verifiziertes Google-Konto erforderlich</span></div>
+    <div class="grid"><div class="card span-7"><h3>Schulungsbeurteilung [DEMO]</h3><p><strong>Wareneingang · Theorie</strong><br>26.10.2026, 09:00–10:00 Europe/Zurich<br>Person: Alex Beispiel · REQ-DEMO-001 / SES-DEMO-001</p>
+      <fieldset disabled style="border:0;padding:0;margin:18px 0"><legend><strong>1. War die Person anwesend? *</strong></legend><label class="choice"><input type="radio" checked>Ja, anwesend</label><label class="choice"><input type="radio">Nein, abwesend</label></fieldset>
+      <fieldset disabled style="border:0;padding:0;margin:18px 0"><legend><strong>2. Ergebnis dieses Schulungsteils *</strong></legend><label class="choice"><input type="radio" checked>Bestanden</label><label class="choice"><input type="radio">Nachschulung nötig</label><label class="choice"><input type="radio">Nicht beurteilt</label></fieldset>
+      <label class="field">3. Bemerkung / nächster Schritt<textarea disabled rows="3" placeholder="Bei Nicht-Bestehen oder Abwesenheit erforderlich"></textarea></label>
+      <label class="choice"><input type="checkbox" checked disabled>Ich bestätige diese Angaben für diese Person und diesen Termin. *</label><div class="actions"><button class="action" disabled>Bericht absenden</button></div></div>
+      <div class="card mint span-5"><h3>Prüfung nach Absenden</h3><ol><li>Verifiziertes Konto = zugewiesener Trainer?</li><li>Termin, Phase und Person = registrierter Fall?</li><li>Abwesend + bestanden? Dann Antwort ablehnen.</li><li>Bei Nicht-Pass: Grund und nächster Schritt vorhanden?</li><li>Wiederholung = eindeutige Revision oder Ablehnung.</li></ol><div class="callout">Nur „anwesend + bestanden“ löst die persönliche Bestätigungsanfrage aus.</div></div>
+    </div>
+  </section>
+
+  <section class="panel" id="participant" role="tabpanel" hidden>
+    <div class="section-head"><div><p class="eyebrow">Zugewiesene Person · Google Form</p><h2>Eigene Teilnahme bestätigen</h2><p class="muted">Der Link kommt erst nach dem gültigen Trainerbericht. Die Identität stammt aus der verifizierten Google-E-Mail, nicht aus einem eingetippten Feld.</p></div><span class="badge">Ein Fall · ein Konto</span></div>
+    <div class="grid"><div class="card span-7"><h3>Teilnahmebestätigung [DEMO]</h3><p><strong>Wareneingang · Theorie</strong><br>26.10.2026, 09:00–10:00 Europe/Zurich<br>Trainer: Daniel · REQ-DEMO-001 / SES-DEMO-001</p>
+      <div class="callout warn">Wenn Sie nicht teilgenommen haben oder Angaben falsch sind, senden Sie das Formular nicht ab. Antworten Sie auf die E-Mail mit dem Link.</div>
+      <label class="choice"><input type="checkbox" checked disabled>Ich bestätige, dass ich an der oben genannten Schulung teilgenommen habe. *</label>
+      <label class="field">Vor- und Nachname *<input disabled value="Alex Beispiel"></label><div class="actions"><button class="action" disabled>Bestätigung absenden</button></div>
+    </div><div class="card mint span-5"><h3>Was der Fall speichert</h3><ul><li>Verifizierte Google-E-Mail</li><li>Affirmative Antwort und eingegebener Name</li><li>Formularantwort-ID und Einreichungszeit</li><li>Zuordnung zu Person, Auftrag und Termin</li></ul><p>Falsches Konto, falscher Termin oder doppelte Antwort bleiben als Audit-Ereignis sichtbar und schließen den Fall nicht.</p><div class="callout">Dies ist eine DEMO-Teilnahmebestätigung, keine qualifizierte elektronische Signatur.</div></div></div>
+  </section>
+
+  <section class="panel" id="case" role="tabpanel" hidden>
+    <div class="section-head"><div><p class="eyebrow">Daniel · Fall und Audit</p><h2>Einzelner Nachweis mit klaren Gates</h2><p class="muted">REQ-DEMO-001 / CASE-DEMO-001 · Alex Beispiel · Wareneingang · Zielstufe 1</p></div><span class="badge warn">Archiv ausstehend</span></div>
+    <ol class="steps" aria-label="Fallfortschritt"><li class="done">Eingeladen</li><li class="done">Anwesend</li><li class="done">Bestanden</li><li class="done">Bestätigt</li><li class="current">Archiv prüfen</li><li>Skill anwenden</li><li>Auftrag melden</li></ol>
+    <div class="grid" style="margin-top:22px">
+      <div class="card span-7"><h3>Nachweiskette</h3><ol class="timeline"><li><strong>Kalender · SES-DEMO-001</strong>26.10.2026, 09:00–10:00 Europe/Zurich · Ereignis-ID gespeichert</li><li><strong>Trainerbericht</strong>Anwesend + bestanden · verifizierter Trainer · Antwort-ID und Zeit</li><li><strong>Teilnahmebestätigung</strong>Ja · verifiziertes Konto · Name · Antwort-ID und Zeit</li><li><strong>Individueller Nachweis</strong>Google Doc und PDF · PROOF-DEMO-001 v1 · Quellen verlinkt</li><li><strong>Archive</strong>Drive-PDF vorhanden · lokale Kopie fehlt · Prüfsumme noch nicht verglichen</li><li><strong>Skilländerung</strong>Ausstehend bis beide Archivkopien verifiziert sind</li></ol></div>
+      <div class="card rose span-5"><h3>Nächste zulässige Aktion</h3><p>Lokalen Archivlauf erneut starten. Danach PDF-Bytes und SHA-256 mit der Drive-Kopie vergleichen.</p><div class="actions"><button class="action" disabled>Archivlauf wiederholen</button><button class="action secondary" disabled>Notiz erfassen</button></div><p class="small muted" style="margin-top:12px">Ein manueller „Fall abschließen“-Knopf ist nicht vorgesehen.</p></div>
+      <div class="card span-12"><h3>Audit und Suche</h3><div class="table-wrap"><table><thead><tr><th>Datensatz</th><th>Referenz</th><th>Prüfstatus</th><th>Sichtbarkeit</th></tr></thead><tbody>
+        <tr><td>Kalenderereignis</td><td class="mono">event-id</td><td><span class="badge good">gebucht</span></td><td>Teilnehmende und Trainer</td></tr>
+        <tr><td>Formularantworten</td><td class="mono">trainer-response-id · participant-response-id</td><td><span class="badge good">identität geprüft</span></td><td>Daniel / Admin</td></tr>
+        <tr><td>Drive-Doc und PDF</td><td class="mono">doc-id · pdf-id</td><td><span class="badge good">erstellt</span></td><td>Daniel / Admin</td></tr>
+        <tr><td>Lokales Archiv</td><td class="mono">evidence/.../manifest.json</td><td><span class="badge warn">ausstehend</span></td><td>Lokaler Index / Admin</td></tr>
+        <tr><td>Skilländerung / Nachrichten</td><td class="mono">change-id · send-key</td><td><span class="badge">noch nicht ausgelöst</span></td><td>Daniel / Admin</td></tr>
+      </tbody></table></div></div>
+    </div>
+  </section>
+  <p class="footer">Alle Namen und IDs sind synthetisch. Die ausführlichen Feld- und Validierungsregeln stehen in den Vorlagen unter <code>docs/product/</code>.</p>
+</div>
+<script>
+  (function () {
+    var buttons = Array.prototype.slice.call(document.querySelectorAll('[data-panel]'));
+    var ids = buttons.map(function (button) { return button.getAttribute('data-panel'); });
+    function show(id) {
+      if (ids.indexOf(id) < 0) id = ids[0];
+      buttons.forEach(function (button) {
+        var selected = button.getAttribute('data-panel') === id;
+        button.setAttribute('aria-selected', selected ? 'true' : 'false');
+        document.getElementById(button.getAttribute('data-panel')).hidden = !selected;
+      });
+    }
+    buttons.forEach(function (button) {
+      button.addEventListener('click', function () {
+        var id = button.getAttribute('data-panel');
+        show(id);
+        history.replaceState(null, '', '#' + id);
+      });
+    });
+    show(location.hash.slice(1));
+  }());
+</script>
+</body>
+</html>

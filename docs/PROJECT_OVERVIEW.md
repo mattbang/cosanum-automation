@@ -8,6 +8,8 @@ The first demo uses a small synthetic catalogue and test accounts. It does not m
 
 ## Planned components
 
+The [GUI design baseline](GUI_DESIGN_BASELINE.md) records the parts of the nine-screen Figma mockup we will carry into the prototype. It maps each view to the workflow and keeps the local specification as the authority for behavior.
+
 | Component | Role |
 | --- | --- |
 | Google Apps Script and HTML Service | Administrator interface and workflow orchestration |

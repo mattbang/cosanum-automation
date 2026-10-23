@@ -1,0 +1,32 @@
+{
+  "example_only": true,
+  "schema_version": 1,
+  "demo_marker": "[DEMO]",
+  "topic_id": "TC_R030",
+  "request_id": "REQ-DEMO-001",
+  "session_ids": ["SES-DEMO-001"],
+  "case_id": "CASE-DEMO-001",
+  "person_key": "demo-person-01",
+  "proof_id": "PROOF-DEMO-001",
+  "proof_version": 1,
+  "generated_at_utc": "2026-10-23T15:00:00Z",
+  "source_response_ids": {
+    "trainer": ["TRAINER-RESPONSE-DEMO-001"],
+    "participant": ["PARTICIPANT-RESPONSE-DEMO-001"]
+  },
+  "drive": {
+    "doc_id": "DRIVE-DOC-DEMO-001",
+    "pdf_id": "DRIVE-PDF-DEMO-001"
+  },
+  "local": {
+    "pdf_path": "evidence/TC_R030/REQ-DEMO-001/demo-person-01/proof.pdf",
+    "editable_path": "evidence/TC_R030/REQ-DEMO-001/demo-person-01/proof.docx"
+  },
+  "pdf_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "verification": {
+    "status": "verified",
+    "verified_at_utc": "2026-10-23T15:05:00Z",
+    "drive_pdf_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "local_pdf_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+  }
+}

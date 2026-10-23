@@ -2,6 +2,10 @@
 
 Each increment below should end with a visible behavior and a repeatable acceptance check. Use synthetic data and test accounts. Keep source code local and versioned; keep credentials, individual evidence, and operational data outside this public repository.
 
+The [workflow asset inventory](WORKFLOW_ASSETS.md) links each step to its interface mockup, Calendar event, Form, proof, archive, checklist, and notification template. Use and update those canonical design inputs when building an increment so fields and wording are not recreated independently.
+
+Use the [GUI design baseline](GUI_DESIGN_BASELINE.md) as the interface starting point for these increments. Its screen map covers the user-facing work from intake through audit; the functional acceptance checks below remain the delivery gates.
+
 | # | Deliverable | Acceptance check |
 | --- | --- | --- |
 | 01 | Deployable demo interface and five-topic synthetic catalogue | The test URL loads; five topics come from the demo Sheet; rerunning setup creates no duplicates. |
@@ -15,8 +19,8 @@ Each increment below should end with a visible behavior and a repeatable accepta
 | 09 | Individual proof document and PDF | Each successful participant receives a separate, visibly marked demo proof with source evidence links. |
 | 10 | Matching Drive and local archive | The PDF is present in both places with matching hashes; missing or corrupt local copies leave the case pending. |
 | 11 | Automatic synthetic skill update | A verified case applies its explicit target once; replay and concurrent Sheet edits do not cause an incorrect raise. |
-| 12 | Two-day and five-day reminders | A simulated clock produces one reminder at each due point, with none for cancelled, absent, or completed cases. |
-| 13 | Completion, exception notices, and audit view | A fully completed request sends one notice; open cases produce exceptions and remain searchable with evidence links. |
+| 12 | Two-day and five-day reminders | A simulated clock produces one reminder at each due point, with none for cancelled, absent, or completed cases. Use the [notification templates and delivery contract](NOTIFICATION_TEMPLATES.md). |
+| 13 | Completion, exception notices, and audit view | A fully completed request sends one notice; open cases produce exceptions and remain searchable with evidence links. Use the [notification templates and delivery contract](NOTIFICATION_TEMPLATES.md). |
 | 14 | Clean integrated replay and measurement | Group, individual, and failure cases replay from fresh synthetic data; observed time and manual actions are recorded. |
 
 ## Review gates

@@ -1,0 +1,14 @@
+# Increment 02 deployment allowlist. Paths are relative to .clasp.json rootDir.
+**/**
+!appsscript.json
+!Schema.gs
+!Catalogue.gs
+!SheetGateway.gs
+!Intake.gs
+!PhasePlan.gs
+!Availability.gs
+!CalendarGateway.gs
+!Setup.gs
+!Code.gs
+!PrivateFixture.gs
+!Index.html
