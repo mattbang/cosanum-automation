@@ -245,7 +245,7 @@ function proofLedgerRow_(sheet, model, sourceHash) {
     var row = found[0].row;
     if (Number(row[1]) !== PROOF_VERSION || row[2] !== model.requestId || row[3] !== model.caseId ||
         row[4] !== model.personKey || row[5] !== model.topicId || row[6] !== sourceHash || row[12] !== '[DEMO]' ||
-        ['pending_creation', 'pending_local_archive'].indexOf(row[11]) < 0) {
+        ['pending_creation', 'pending_local_archive', 'archived_verified', 'archive_error'].indexOf(row[11]) < 0) {
       throw new Error('Vorhandener Nachweis widerspricht den aktuellen Quellen; Korrekturversion nötig.');
     }
     proofIso_(row[7], 'Nachweiserstellung');
@@ -319,7 +319,7 @@ function createIndividualProof(input) {
     var name = model.proofId + '-v' + PROOF_VERSION + ' [DEMO]';
     var text = proofText_(model, proofIso_(ledger.row[7], 'Nachweiserstellung'));
     var doc = proofEnsureDoc_(folder, name, text, ledger.row[9]);
-    proofSaveAssets_(sheet, ledger, folder.getId(), doc.getId(), ledger.row[10], 'pending_creation');
+    if (ledger.row[11] === 'pending_creation') proofSaveAssets_(sheet, ledger, folder.getId(), doc.getId(), ledger.row[10], 'pending_creation');
     var pdf = proofNamedFile_(folder, name + '.pdf', MimeType.PDF, ledger.row[10]);
     if (!pdf) {
       var blob = doc.getAs(MimeType.PDF).setName(name + '.pdf');
@@ -327,9 +327,9 @@ function createIndividualProof(input) {
       pdf = folder.createFile(blob);
     }
     if (pdf.getSize() < 100) throw new Error('Gespeichertes PDF ist leer.');
-    proofSaveAssets_(sheet, ledger, folder.getId(), doc.getId(), pdf.getId(), 'pending_local_archive');
+    if (ledger.row[11] === 'pending_creation') proofSaveAssets_(sheet, ledger, folder.getId(), doc.getId(), pdf.getId(), 'pending_local_archive');
     return { proofId: model.proofId, proofVersion: PROOF_VERSION, caseId: model.caseId,
-      docUrl: doc.getUrl(), pdfUrl: pdf.getUrl(), status: 'pending_local_archive', reused: ledger.reused };
+      docUrl: doc.getUrl(), pdfUrl: pdf.getUrl(), status: ledger.row[11], reused: ledger.reused };
   } finally { lock.releaseLock(); }
 }
 
@@ -344,7 +344,9 @@ function getIndividualProofQueue() {
     catch (error) { state = 'blocked'; reason = String(error.message || error); }
     var item = proof[0];
     return { caseId: row.case_id, personKey: row.person_key, personAlias: String(person.display_alias), requestId: row.request_id,
-      state: state === 'blocked' ? 'blocked' : item && item.status === 'pending_local_archive' ? 'created' : state,
+      state: state === 'blocked' ? 'blocked' : item && item.status === 'archived_verified' ? 'archived' :
+        item && item.status === 'archive_error' ? 'archive_error' :
+        item && item.status === 'pending_local_archive' ? 'created' : state,
       reason: reason, proofId: item ? item.proof_id : '',
       docUrl: item && item.doc_id ? 'https://docs.google.com/document/d/' + encodeURIComponent(item.doc_id) + '/edit' : '',
       pdfUrl: item && item.pdf_id ? 'https://drive.google.com/file/d/' + encodeURIComponent(item.pdf_id) + '/view' : '',

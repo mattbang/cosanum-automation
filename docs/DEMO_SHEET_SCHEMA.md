@@ -2,6 +2,12 @@
 
 The Google Sheet used by the prototype is synthetic and marked `[DEMO]`. Local source files define the contract; live asset IDs and account configuration stay in the ignored private handoff.
 
+## Version 10 (dual archive receipt)
+
+`setupDemo()` adds an empty `ArchiveReceipts` tab and preserves existing proof rows. Each receipt is keyed by proof ID/version and stores the case, request, person, topic, source fingerprint, Drive Doc/PDF IDs, SHA-256 of the downloaded Drive PDF and local PDF, SHA-256 of the DOCX snapshot, local file and manifest paths, verification time, status, and `[DEMO]`. A local Python helper rereads the register and Drive folder hierarchy, downloads the exact Drive PDF bytes, exports the native Doc to DOCX, verifies both local files, and writes one receipt before changing `Proofs.status` to `archived_verified`. It also builds `archive/index.csv` for topic/person lookup. The helper uses a separate ignored owner OAuth credential; credentials do not enter the evidence tree or repository.
+
+Missing or corrupt local evidence sets `archive_error` when Google is reachable. Without local connectivity, a first attempt leaves `pending_local_archive`; a previously verified remote receipt can become stale until the helper runs again. A repair rerun validates the same proof ID, version, source fingerprint, and Drive IDs before replacing damaged local bytes. Neither the receipt nor status changes the skill matrix or sends a completion notice. The later skill gate must require both `Proofs.status = archived_verified` and a matching verified receipt, with any offline/local freshness requirement made explicit.
+
 ## Version 9 (individual Google Doc and PDF proof)
 
 `setupDemo()` adds an empty `Proofs` tab. Each row stores a deterministic proof ID, version 1, request/case/person/topic IDs, a SHA-256 fingerprint of the validated source model, creation time, Drive topic-folder ID, Google Doc ID, PDF ID, status, and `[DEMO]`. `pending_creation` marks an interrupted write; `pending_local_archive` means the Doc and PDF exist in Drive, while the local duplicate has not yet been checked. The later archive handshake changes that status; proof creation itself never marks archive verification or updates a skill.

@@ -21,6 +21,7 @@ function setupDemo() {
     migrateDemoSchemaV6ToV7_(spreadsheet);
     migrateDemoSchemaV7ToV8_(spreadsheet);
     migrateDemoSchemaV8ToV9_(spreadsheet);
+    migrateDemoSchemaV9ToV10_(spreadsheet);
   } else {
     spreadsheet = SpreadsheetApp.create(DEMO_SCHEMA.spreadsheetName);
     DriveApp.getFileById(spreadsheet.getId()).moveTo(folder);
@@ -40,6 +41,14 @@ function setupDemo() {
     spreadsheet.deleteSheet(defaultSheet);
   }
   return { folderId: folder.getId(), spreadsheetId: spreadsheet.getId(), schemaVersion: DEMO_SCHEMA.version };
+}
+
+/** An empty receipt tab is added without changing existing proof rows. */
+function migrateDemoSchemaV9ToV10_(spreadsheet) {
+  var sheet = spreadsheet.getSheetByName('ArchiveReceipts');
+  if (!sheet || sheet.getLastRow() === 0) return;
+  assertHeaders_(sheet.getRange(1, 1, 1, DEMO_SCHEMA.sheets.ArchiveReceipts.length).getValues()[0],
+    DEMO_SCHEMA.sheets.ArchiveReceipts, 'ArchiveReceipts');
 }
 
 /** Increment 09 creates an empty proof ledger; it does not create proof files. */
