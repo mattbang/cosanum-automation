@@ -16,6 +16,7 @@ function setupDemo() {
     migrateDemoSchemaV1ToV2_(spreadsheet);
     migrateDemoSchemaV2ToV3_(spreadsheet, fixture);
     migrateDemoSchemaV3ToV4_(spreadsheet);
+    migrateDemoSchemaV4ToV5_(spreadsheet);
   } else {
     spreadsheet = SpreadsheetApp.create(DEMO_SCHEMA.spreadsheetName);
     DriveApp.getFileById(spreadsheet.getId()).moveTo(folder);
@@ -35,6 +36,23 @@ function setupDemo() {
     spreadsheet.deleteSheet(defaultSheet);
   }
   return { folderId: folder.getId(), spreadsheetId: spreadsheet.getId(), schemaVersion: DEMO_SCHEMA.version };
+}
+
+/** Add Calendar receipt columns without replacing or changing existing sessions. */
+function migrateDemoSchemaV4ToV5_(spreadsheet) {
+  var sessions = spreadsheet.getSheetByName('Sessions');
+  if (!sessions || sessions.getLastRow() === 0) return;
+  var headers = DEMO_SCHEMA.sheets.Sessions;
+  var existing = sessions.getRange(1, 1, 1, headers.length).getValues()[0];
+  if (existing[11] === 'calendar_event_id') {
+    assertHeaders_(existing, headers, 'Sessions');
+    return;
+  }
+  assertHeaders_(existing.slice(0, 11), headers.slice(0, 11), 'Sessions');
+  if (existing.slice(11).some(function (cell) { return cell !== ''; })) throw new Error('Sessions!L:O ist belegt; Migration abgebrochen.');
+  sessions.getRange(1, 12, 1, 4).setValues([headers.slice(11)]);
+  sessions.getRange(1, 12, 1, 4).setBackground('#1d3854').setFontColor('#ffffff').setFontWeight('bold');
+  sessions.autoResizeColumns(12, 4);
 }
 
 /** Add the request mode in H; setupDemo creates the two empty phase tabs. */

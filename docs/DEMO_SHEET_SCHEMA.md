@@ -2,6 +2,12 @@
 
 The Google Sheet used by the prototype is synthetic and marked `[DEMO]`. Local source files define the contract; live asset IDs and account configuration stay in the ignored private handoff.
 
+## Version 5 (Calendar booking receipt)
+
+`Sessions!L:O` adds `calendar_event_id`, `start_utc`, `end_utc`, and `calendar_event_url`. `setupDemo()` appends these headers to an existing version 4 sheet without changing session rows. The booking action writes these fields and changes the session status from `planned` to `invited` after it verifies the Calendar event. UTC timestamps are stored as ISO strings; the event itself is created in `Europe/Zurich` with the date's actual offset.
+
+Each session has a stable Calendar event ID derived from its session ID. A retry checks that event first, then repairs an incomplete Sheet receipt if needed. A different selected slot, missing calendar access, changed event, or overlapping booked phase is rejected. Practice may be invited after its linked theory event is booked and must start no earlier than theory ends. Passing theory remains a separate later completion requirement.
+
 ## Version 4 (mode and phase plan)
 
 `Requests!H` stores `mode` (`group` or `individual`) when a phase plan is saved. Existing draft rows keep their IDs and a blank mode until then. `Sessions` stores `session_id`, `request_id`, `phase`, `phase_order`, `mode`, `trainer_key`, `duration_minutes`, `theory_session_id`, `status`, `created_at`, `demo_marker`. `SessionCases` stores `session_id`, `case_id`, `request_id`, `person_key`, `demo_marker`; a group session links to multiple person cases. Both new tabs are created empty. Session status is `planned` only in Increment 03. The practice row points to its theory session, and target completion requires verified passes for every phase linked to the case, including theory.

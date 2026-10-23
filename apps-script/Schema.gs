@@ -1,6 +1,6 @@
-/** Version 4 adds phase sessions and case links without replacing draft records. */
+/** Version 5 records one Calendar invitation per phase session. */
 var DEMO_SCHEMA = Object.freeze({
-  version: 4,
+  version: 5,
   folderName: 'Cosanum Training Prototype',
   spreadsheetName: 'catalogue-and-skill-matrix',
   sheets: Object.freeze({
@@ -9,7 +9,7 @@ var DEMO_SCHEMA = Object.freeze({
     Skills: ['person_key', 'topic_id', 'skill_level', 'status_mark', 'demo_marker'],
     Requests: ['request_id', 'action_id', 'topic_id', 'target_level', 'status', 'created_at', 'demo_marker', 'mode'],
     ParticipantCases: ['case_id', 'request_id', 'person_key', 'current_level', 'target_level', 'status', 'created_at', 'demo_marker'],
-    Sessions: ['session_id', 'request_id', 'phase', 'phase_order', 'mode', 'trainer_key', 'duration_minutes', 'theory_session_id', 'status', 'created_at', 'demo_marker'],
+    Sessions: ['session_id', 'request_id', 'phase', 'phase_order', 'mode', 'trainer_key', 'duration_minutes', 'theory_session_id', 'status', 'created_at', 'demo_marker', 'calendar_event_id', 'start_utc', 'end_utc', 'calendar_event_url'],
     SessionCases: ['session_id', 'case_id', 'request_id', 'person_key', 'demo_marker']
   })
 });

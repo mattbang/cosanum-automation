@@ -91,8 +91,8 @@ function savePhasePlan(input) {
     plan.phases.forEach(function (p) {
       var saved = existing.filter(function (s) { return s.session_id === p.sessionId; })[0];
       if (saved) {
-        if (saved.phase !== p.phase || Number(saved.phase_order) !== p.order || saved.mode !== p.mode || saved.trainer_key !== p.trainerKey || Number(saved.duration_minutes) !== p.durationMinutes || String(saved.theory_session_id || '') !== p.theorySessionId || saved.status !== 'planned') throw new Error('Vorhandener Phasenplan weicht ab.');
-      } else newSessions.push([p.sessionId, plan.requestId, p.phase, p.order, p.mode, p.trainerKey, p.durationMinutes, p.theorySessionId, 'planned', now, '[DEMO]']);
+        if (saved.phase !== p.phase || Number(saved.phase_order) !== p.order || saved.mode !== p.mode || saved.trainer_key !== p.trainerKey || Number(saved.duration_minutes) !== p.durationMinutes || String(saved.theory_session_id || '') !== p.theorySessionId || ['planned', 'invited'].indexOf(saved.status) < 0) throw new Error('Vorhandener Phasenplan weicht ab.');
+      } else newSessions.push([p.sessionId, plan.requestId, p.phase, p.order, p.mode, p.trainerKey, p.durationMinutes, p.theorySessionId, 'planned', now, '[DEMO]', '', '', '', '']);
       p.caseIds.forEach(function (caseId, i) {
         var links = tables.SessionCases.filter(function (l) { return l.session_id === p.sessionId && l.case_id === caseId; });
         if (links.length > 1 || (links.length && (links[0].request_id !== plan.requestId || links[0].person_key !== p.personKeys[i]))) throw new Error('Widersprüchlicher Session-Fall-Link.');
