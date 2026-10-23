@@ -1,6 +1,6 @@
-/** Version 6 records one Calendar RSVP snapshot per participant and phase. */
+/** Version 7 adds per-person trainer Forms and append-only assessment attempts. */
 var DEMO_SCHEMA = Object.freeze({
-  version: 6,
+  version: 7,
   folderName: 'Cosanum Training Prototype',
   spreadsheetName: 'catalogue-and-skill-matrix',
   sheets: Object.freeze({
@@ -11,7 +11,9 @@ var DEMO_SCHEMA = Object.freeze({
     ParticipantCases: ['case_id', 'request_id', 'person_key', 'current_level', 'target_level', 'status', 'created_at', 'demo_marker'],
     Sessions: ['session_id', 'request_id', 'phase', 'phase_order', 'mode', 'trainer_key', 'duration_minutes', 'theory_session_id', 'status', 'created_at', 'demo_marker', 'calendar_event_id', 'start_utc', 'end_utc', 'calendar_event_url'],
     SessionCases: ['session_id', 'case_id', 'request_id', 'person_key', 'demo_marker'],
-    SessionRsvps: ['session_id', 'case_id', 'person_key', 'calendar_event_id', 'response_status', 'checked_at', 'flag', 'flagged_at', 'demo_marker']
+    SessionRsvps: ['session_id', 'case_id', 'person_key', 'calendar_event_id', 'response_status', 'checked_at', 'flag', 'flagged_at', 'demo_marker'],
+    TrainerForms: ['session_id', 'case_id', 'person_key', 'trainer_key', 'trainer_email', 'form_id', 'form_url', 'created_at', 'demo_marker', 'verified_at', 'verified_by'],
+    TrainerAssessments: ['response_id', 'form_id', 'session_id', 'case_id', 'person_key', 'reporter_email', 'submitted_at', 'attendance', 'assessment', 'note', 'attestation', 'disposition', 'reason', 'demo_marker']
   })
 });
 

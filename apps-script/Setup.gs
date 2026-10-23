@@ -18,6 +18,7 @@ function setupDemo() {
     migrateDemoSchemaV3ToV4_(spreadsheet);
     migrateDemoSchemaV4ToV5_(spreadsheet);
     migrateDemoSchemaV5ToV6_(spreadsheet);
+    migrateDemoSchemaV6ToV7_(spreadsheet);
   } else {
     spreadsheet = SpreadsheetApp.create(DEMO_SCHEMA.spreadsheetName);
     DriveApp.getFileById(spreadsheet.getId()).moveTo(folder);
@@ -37,6 +38,29 @@ function setupDemo() {
     spreadsheet.deleteSheet(defaultSheet);
   }
   return { folderId: folder.getId(), spreadsheetId: spreadsheet.getId(), schemaVersion: DEMO_SCHEMA.version };
+}
+
+/** The two new tabs are empty on upgrade; all earlier evidence stays untouched. */
+function migrateDemoSchemaV6ToV7_(spreadsheet) {
+  ['TrainerForms', 'TrainerAssessments'].forEach(function (name) {
+    var sheet = spreadsheet.getSheetByName(name);
+    if (!sheet || sheet.getLastRow() === 0) return;
+    var headers = DEMO_SCHEMA.sheets[name];
+    var actual = sheet.getRange(1, 1, 1, headers.length).getValues()[0];
+    if (name === 'TrainerForms' && actual[9] === '') {
+      assertHeaders_(actual.slice(0, 9), headers.slice(0, 9), name);
+      sheet.getRange(1, 10).setValue('verified_at');
+      sheet.getRange(1, 10).setBackground('#1d3854').setFontColor('#ffffff').setFontWeight('bold');
+      actual[9] = 'verified_at';
+    }
+    if (name === 'TrainerForms' && actual[10] === '') {
+      assertHeaders_(actual.slice(0, 10), headers.slice(0, 10), name);
+      sheet.getRange(1, 11).setValue('verified_by');
+      sheet.getRange(1, 11).setBackground('#1d3854').setFontColor('#ffffff').setFontWeight('bold');
+      actual[10] = 'verified_by';
+    }
+    assertHeaders_(actual, headers, name);
+  });
 }
 
 /** An empty RSVP tab is created by setupDemo; existing case and booking rows stay intact. */

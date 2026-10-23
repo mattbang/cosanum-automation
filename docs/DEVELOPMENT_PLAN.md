@@ -14,7 +14,7 @@ Use the [GUI design baseline](GUI_DESIGN_BASELINE.md) as the interface starting 
 | 04 | Calendar free/busy and varied slot proposals | Every selected calendar is checked; no proposed slot overlaps a busy period; missing access is shown as an error. |
 | 05 | Booking and invitations | One selected proposal creates one correctly timed event; retry creates no duplicate. |
 | 06 | RSVP monitoring | A declined group participant is flagged while the session remains for others; unanswered invitations are flagged before training. |
-| 07 | Trainer assessment | Only an assigned trainer can record attendance and result; absent or unsuccessful participants remain open. |
+| 07 | Trainer assessment | A manually inspected Google Form uses Verified email collection; its owner-check time is recorded before its link is released. Only the assigned trainer's later response can record attendance and result; absent or unsuccessful participants remain open. |
 | 08 | Individual participant acknowledgement | A verified account response closes only its assigned case; wrong-account and duplicate responses do not. |
 | 09 | Individual proof document and PDF | Each successful participant receives a separate, visibly marked demo proof with source evidence links. |
 | 10 | Matching Drive and local archive | The PDF is present in both places with matching hashes; missing or corrupt local copies leave the case pending. |
@@ -31,3 +31,5 @@ Use the [GUI design baseline](GUI_DESIGN_BASELINE.md) as the interface starting 
 - **Full demo:** after 14, run the group and individual paths plus the main exceptions.
 
 Each change should be a focused branch or pull request. The handoff must state what changed, which checks passed, which connected services were tested, any demo side effects, and any concrete limitation. A local fake is useful for fast rule checks, but a feature that promises a Google integration is finished only after its connected acceptance check passes.
+
+For Increment 07, the owner's personal Gmail account made `FormApp.setCollectEmail(true)` create a typed email field. The default Apps Script Cloud project returned `SERVICE_DISABLED` for Forms REST. This prototype therefore requires Daniel to select **Verified** in each Form's Google Settings and record that inspection in the admin UI; later setting changes cannot be detected automatically. A standard Cloud project migration is a separate reviewed deliverable before production identity claims.
