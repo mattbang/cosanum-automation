@@ -53,7 +53,14 @@ export function createPreviewServer() {
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  createPreviewServer().listen(port, host, function () {
+  createPreviewServer().on('error', error => {
+    if (error.code === 'EADDRINUSE') {
+      console.error(`Preview port ${port} is already in use. Stop the other preview or set PORT to a free port.`);
+    } else {
+      console.error(`Preview could not start: ${error.message}`);
+    }
+    process.exitCode = 1;
+  }).listen(port, host, function () {
     console.log(`Offline preview: http://${host === '0.0.0.0' ? 'localhost' : host}:${this.address().port}/`);
   });
 }

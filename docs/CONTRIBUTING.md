@@ -26,7 +26,7 @@ Open the repository in a tool that supports [dev containers](https://containers.
 | Preview looks stale | Reload the page. The server rereads `apps-script/Index.html` for each request. |
 | A Google action says “blocked” | This is the intended read-only behavior. Use the named connected test process for Google verification. |
 
-Observed recovery: while one preview was running on port 4191, starting a second on that port failed with `EADDRINUSE`. Running `PORT=4192 npm run dev` then served the offline banner at `http://127.0.0.1:4192/`.
+Observed recovery: while one preview was running on port 4191, starting a second on that port reported that the port was already in use. Running `PORT=4192 npm run dev` then served the offline banner at `http://127.0.0.1:4192/`.
 
 ## From local change to accepted increment
 
