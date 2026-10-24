@@ -110,10 +110,22 @@ function prepareParticipantForm(input) {
     if (!gate.allowed) throw new Error(gate.reason);
     verifyTrainerCalendar_(context, calendarBookingGet_);
     var saved = participantFormRow_(tables, input.sessionId, input.caseId);
+    if (input.requireExistingFormId) {
+      if (typeof input.requireExistingFormId !== 'string' || !saved || saved.form_id !== input.requireExistingFormId) {
+        throw new Error('Erwartetes bestehendes Teilnahmeformular fehlt; keine Neuanlage.');
+      }
+      var expectedTriggers = ScriptApp.getProjectTriggers().filter(function (trigger) {
+        return trigger.getHandlerFunction() === 'onParticipantFormSubmit' &&
+          trigger.getTriggerSourceId() === saved.form_id;
+      });
+      if (expectedTriggers.length !== 1 || !saved.verified_at || !saved.verified_by) {
+        throw new Error('Bestehendes Teilnahmeformular ist für eine schreibfreie Wiederholung nicht bereit.');
+      }
+    }
     if (saved) {
       assertParticipantFormAssignment_(saved, context);
       FormApp.openById(saved.form_id);
-      ensureParticipantFormTrigger_(saved.form_id);
+      if (!input.requireExistingFormId) ensureParticipantFormTrigger_(saved.form_id);
       saved = tryAutomatedFormVerification_(findDemoSpreadsheet_().getSheetByName('ParticipantForms'), saved, context.owner.email);
       var savedReady = formsReadyForLink_(saved, context.owner.email);
       return { sessionId: input.sessionId, caseId: input.caseId,
