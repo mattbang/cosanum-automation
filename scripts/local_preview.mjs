@@ -13,6 +13,11 @@ if (!Number.isInteger(port) || port < 0 || port > 65535) throw new Error('PORT m
 
 export function renderPreview(html, adapterCode, nonce) {
   if (!html.includes('<script>') || !html.includes('<body>')) throw new Error('Index.html structure changed; preview injection stopped');
+  // The production RSVP refresh persists status. Remap exactly its client call
+  // inside the served copy to a preview-only fixture RPC; never edit Index.html.
+  const rsvpCall = '.refreshRsvpStatus()';
+  if (html.split(rsvpCall).length !== 2) throw new Error('RSVP client call changed; preview injection stopped');
+  html = html.replace(rsvpCall, '.getOfflineRsvpPreview()');
   const banner = `<style>#offlinePreviewBanner{position:sticky;top:0;z-index:10000;background:#57204f;color:white;padding:12px 18px;font:700 15px/1.4 system-ui,sans-serif;box-shadow:0 2px 8px #0005}#offlinePreviewBanner small{display:block;font-weight:400}#offlinePreviewNotice{position:fixed;bottom:12px;left:12px;right:12px;z-index:10001;max-width:780px;margin:auto;background:#fff3cd;color:#422000;border:2px solid #a65a00;border-radius:8px;padding:12px;font:600 14px/1.4 system-ui,sans-serif;box-shadow:0 4px 16px #0004}#offlinePreviewNotice[hidden]{display:none}</style><div id="offlinePreviewBanner" role="status">OFFLINE PREVIEW · SYNTHETIC DATA · READ ONLY<small>No Google connection. Buttons that save, send, book, or change data are blocked.</small></div><div id="offlinePreviewNotice" role="alert" hidden></div>`;
   return html.replace('<body>', `<body>${banner}`)
     .replace('<script>', `<script nonce="${nonce}">${adapterCode}</script><script nonce="${nonce}">`);
