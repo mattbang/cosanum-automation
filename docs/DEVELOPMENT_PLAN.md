@@ -1,5 +1,7 @@
 # Development plan
 
+Der aktuelle Produktstand mit festen Feature-IDs und dem jeweils nächsten offenen Check steht im [Feature-Register](FEATURE_REGISTER.md). Aufgaben und Tagesfortschritt bleiben im [Kanban](https://github.com/users/mattbang/projects/1).
+
 Each increment below should end with a visible behavior and a repeatable acceptance check. Use synthetic data and test accounts. Keep source code local and versioned; keep credentials, individual evidence, and operational data outside this public repository.
 
 The [workflow asset inventory](WORKFLOW_ASSETS.md) links each step to its interface mockup, Calendar event, Form, proof, archive, checklist, and notification template. Use and update those canonical design inputs when building an increment so fields and wording are not recreated independently.
@@ -18,18 +20,42 @@ Use the [GUI design baseline](GUI_DESIGN_BASELINE.md) as the interface starting 
 | 08 | Individual participant acknowledgement | A verified account response closes only its assigned case; wrong-account and duplicate responses do not. |
 | 09 | Individual proof document and PDF | Each successful participant receives a separate, visibly marked demo proof with source evidence links. |
 | 10 | Matching Drive and local archive | The PDF is present in both places with matching hashes; missing or corrupt local copies leave the case pending. |
+| M | Dedicated demo account cutover, after 10 and before connected 11 | A new-owner script and owner-only deployment replay one bounded path from fresh synthetic data; the old account's assets remain intact. See the [Gate M acceptance milestone](https://github.com/mattbang/cosanum-automation/issues/19). |
 | 11 | Automatic synthetic skill update | A verified case applies its explicit target once; replay and concurrent Sheet edits do not cause an incorrect raise. |
 | 12 | Two-day and five-day reminders | A simulated clock produces one reminder at each due point, with none for cancelled, absent, or completed cases. Use the [notification templates and delivery contract](NOTIFICATION_TEMPLATES.md). |
 | 13 | Completion, exception notices, and audit view | A fully completed request sends one notice; open cases produce exceptions and remain searchable with evidence links. Use the [notification templates and delivery contract](NOTIFICATION_TEMPLATES.md). |
-| 14 | Clean integrated replay and measurement | Group, individual, and failure cases replay from fresh synthetic data; observed time and manual actions are recorded. |
+| UX1 | Demo Hub and guided admin workflow, after M and 13 | The owner-only app shows scenario entry, one current Process & Quality task, and per-person results. Progress comes from saved records; navigation never changes workflow state. |
+| UX2 | Group entry, role tour, and feedback, after UX1 | One starting link explains the roles and provides feedback. Trainers and participants act through their own assigned Google invitations and Forms; the role tour grants no access. |
+| 14 | Automate verified-email Form settings | Forms REST sets and reads back `VERIFIED` for trainer and participant Forms; a changed or unreadable setting blocks release. Keep the manual inspection gate until the connected API check passes. |
+| 15 | Searchable Drive proof metadata and checksum verification | Drive Advanced Service links the existing Doc and PDF to stable case/version IDs; the stored PDF's SHA-256 matches the local copy before completion. |
+| 16 | Clean integrated replay, measurement, and screen recording | Group, individual, and failure cases replay from fresh synthetic data. Record observed time and manual actions; after one complete successful run, capture and verify screen footage of the entire path. |
+
+## Contributor development track
+
+The contributor development track is recorded in [draft PR #29](https://github.com/mattbang/cosanum-automation/pull/29) and on the Kanban. [#27](https://github.com/mattbang/cosanum-automation/issues/27) standardizes a clean checkout, synthetic read-only preview, local checks, and pull-request CI. [#28](https://github.com/mattbang/cosanum-automation/issues/28) establishes a separate, access-reviewed Google test environment for team connected work. Local checks can run during a Google authorization blocker; they do not satisfy an increment's connected acceptance check. A shared test environment may support later team replay, but it does not widen the owner-only v0.1 app or change member access requirements.
+
+## Public synthetic tour and historical environment
+
+The [public role tour](https://mattbang.github.io/cosanum-automation/demo-tour/) now presents a role-only, synthetic week of availability, a selected shared slot, and role-labelled email previews at the existing URL. [#34](https://github.com/mattbang/cosanum-automation/issues/34) tracks the separate, opt-in mail tour in [draft PR #32](https://github.com/mattbang/cosanum-automation/pull/32). Its local tests passed, but live delivery and the public endpoint have not passed connected verification; the current tour sends no mail. Address variants may label one inbox's sample messages but cannot represent separate verified Google identities. This visitor simulation does not satisfy the private app's assigned-account, controlled-mail, or replay checks.
+
+**Release candidate checkpoint, 24 October 2026:** `codex/training-release-candidate` at `98fca797` combines the current main source, draft PR #31's operator/mobile work, and draft PR #24's final Form setup guard. The dedicated editor `@HEAD` has a connected, bounded Form identity check, but the candidate has not been deployed as a numbered `/exec` version or run through the complete workflow. Its restricted manifest has no `script.send_mail`; connected reminder and completion delivery remain separate release checks. The local private checkpoint records the precise source comparison and tests.
+
+Gate M established the dedicated owner while preserving the earlier environment as historical evidence. [#35](https://github.com/mattbang/cosanum-automation/issues/35) is the separate retirement decision and verification gate. Review its private audit before stopping old automation or access; retain historical records until the retirement scope is approved and checked. This follow-up does not reopen Gate M or alter the v0.1 release sequence.
 
 ## Review gates
 
 - **Scheduling:** after 05, demonstrate a valid free slot and one test-calendar invitation.
 - **Evidence:** after 10, demonstrate a signed-off individual proof in both archives.
+- **Dedicated account:** after M, demonstrate a clean connected path under `cosanum.training.demo@gmail.com` before accepting 11.
 - **Skill:** after 11, demonstrate one justified level update without duplicate application.
-- **Full demo:** after 14, run the group and individual paths plus the main exceptions.
+- **Guided demo:** after UX1 and UX2, a new tester can start from one link, understand the next role handoff, find a result and feedback by request ID, and see separate statuses for people in one group event. The admin app remains owner-only.
+- **Full demo:** after 16, run the group and individual paths plus the main exceptions and retain a complete successful screen recording that shows the role handoffs privately.
+
+## Later bounded UX and access work
+
+- **UX3 — Configurable test runs:** After the fixed-roster demo, add run and scenario IDs, validated unique Google addresses, role and per-topic synthetic skill data, schema migration, and isolation between testers. An entered address never establishes respondent identity.
+- **ACCESS1 — Independent Process & Quality operators:** After a separate identity design, verify allowed and unlisted accounts at the server before widening admin access. The first group release uses the dedicated demo coordinator; no owner password is shared.
 
 Each change should be a focused branch or pull request. The handoff must state what changed, which checks passed, which connected services were tested, any demo side effects, and any concrete limitation. A local fake is useful for fast rule checks, but a feature that promises a Google integration is finished only after its connected acceptance check passes.
 
-For Increment 07, the owner's personal Gmail account made `FormApp.setCollectEmail(true)` create a typed email field. The default Apps Script Cloud project returned `SERVICE_DISABLED` for Forms REST. This prototype therefore requires Daniel to select **Verified** in each Form's Google Settings and record that inspection in the admin UI; later setting changes cannot be detected automatically. A standard Cloud project migration is a separate reviewed deliverable before production identity claims.
+For Increment 07, the original personal Gmail account made `FormApp.setCollectEmail(true)` create a typed email field. The default Apps Script Cloud project returned `SERVICE_DISABLED` for Forms REST. Gate M moved the demo to a dedicated owner and standard Cloud project. The dedicated editor `@HEAD` later passed a bounded Forms REST setting and assigned/wrong-account check. Keep the older manually inspected deployment path distinct until the integrated candidate passes the same checks on a numbered `/exec` version; a source or editor result alone does not establish release acceptance.
