@@ -2,6 +2,14 @@
 
 The Google Sheet used by the prototype is synthetic and marked `[DEMO]`. Local source files define the contract; live asset IDs and account configuration stay in the ignored private handoff.
 
+## Version 12 (acknowledgement reminders and open cases)
+
+`setupDemo()` adds empty `MessageLedger` and `FollowUps` tabs without changing existing cases, proofs, or skills. A daily 09:00 Europe/Zurich trigger calls `processAcknowledgementFollowUps()`. The processor uses the training date in Zurich: one German reminder becomes due on local date +2 and another on +5. It rereads the live trainer result, participant acknowledgement, verified responder Form, assigned account, and Calendar event under a script lock. A cancelled event, absent or failed participant, accepted acknowledgement, unverified Form, or address outside the private four-account fixture blocks sending. If an unattended run first executes after day +5, it sends the day-5 reminder only; it does not send both reminders together.
+
+`MessageLedger` stores a stable key `ack_day_<2|5>:<case_id>:<session_id>`, template version, request/case/session IDs, recipient, due and attempt times, sent time, delivery state, error summary, and `[DEMO]`. It reserves the key before calling `MailApp`. `sent` is not retried. A send exception or interrupted reservation becomes `unknown` and requires manual inspection because delivery cannot be inferred safely; quota exhaustion before reservation stays pending. The daily trigger has its own installer and does not alter the skill update trigger.
+
+After local day +5, an unresolved attended and passed case appears as **open** in the Process & Quality view even if its Form has not been verified, so the missing link is visible. `FollowUps` records an owner action (`note`, `request_link`, or `arrange_follow_up`) with a short note and timestamp. Requesting a link records a task for Process & Quality; it does not create or email a new Form. None of these actions accepts a participant acknowledgement, creates a proof, or changes a skill level.
+
 ## Version 11 (audited synthetic skill update)
 
 `setupDemo()` adds the empty `SkillUpdates` tab without changing the existing `Skills` values. An owner-only action accepts a person case only when its trainer reports show attendance and pass for every required phase, its participant responses are accepted and tied to the assigned verified Google accounts, its original proof source hash still matches, and `Proofs.status` is `archived_verified`. Exactly one verified `ArchiveReceipts` row must match the proof/version, case/request/person/topic, source hash, Doc/PDF IDs, and equal Drive/local PDF SHA-256 values. The archive receipt represents the local helper's last verification; Apps Script does not inspect the current local disk.

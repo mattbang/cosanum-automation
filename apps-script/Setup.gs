@@ -23,6 +23,7 @@ function setupDemo() {
     migrateDemoSchemaV8ToV9_(spreadsheet);
     migrateDemoSchemaV9ToV10_(spreadsheet);
     migrateDemoSchemaV10ToV11_(spreadsheet);
+    migrateDemoSchemaV11ToV12_(spreadsheet);
   } else {
     spreadsheet = SpreadsheetApp.create(DEMO_SCHEMA.spreadsheetName);
     DriveApp.getFileById(spreadsheet.getId()).moveTo(folder);
@@ -42,6 +43,15 @@ function setupDemo() {
     spreadsheet.deleteSheet(defaultSheet);
   }
   return { folderId: folder.getId(), spreadsheetId: spreadsheet.getId(), schemaVersion: DEMO_SCHEMA.version };
+}
+
+/** Add empty follow-up ledgers without changing prior cases or skills. */
+function migrateDemoSchemaV11ToV12_(spreadsheet) {
+  ['MessageLedger', 'FollowUps'].forEach(function (name) {
+    var sheet = spreadsheet.getSheetByName(name);
+    if (!sheet || sheet.getLastRow() === 0) return;
+    assertHeaders_(sheet.getRange(1, 1, 1, DEMO_SCHEMA.sheets[name].length).getValues()[0], DEMO_SCHEMA.sheets[name], name);
+  });
 }
 
 /** An empty skill-update ledger is added without changing the live matrix. */

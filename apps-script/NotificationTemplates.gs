@@ -5,7 +5,7 @@
  * See docs/NOTIFICATION_TEMPLATES.md for the event and delivery contract.
  */
 var DEMO_EMAIL_TEMPLATES = Object.freeze({
-  version: 2,
+  version: 3,
   messages: Object.freeze({
     trainer_assessment_request: {
       audience: 'trainer',
@@ -34,6 +34,7 @@ var DEMO_EMAIL_TEMPLATES = Object.freeze({
       audience: 'participant',
       subject: '[DEMO] Erinnerung: Teilnahme an „{{topic_name}}“ bestätigen',
       body: 'Guten Tag {{recipient_name}}\n\n' +
+        'Dies ist ein technischer Demo-Test. Es hat keine reale Schulung stattgefunden; bitte bestätigen Sie keine tatsächliche Teilnahme.\n\n' +
         'Für die Schulung am {{training_date}} fehlt noch Ihre persönliche Teilnahmebestätigung. ' +
         'Bitte öffnen Sie Ihren Link und prüfen Sie die Angaben:\n\n' +
         '{{acknowledgement_url}}\n\n' +
@@ -44,6 +45,7 @@ var DEMO_EMAIL_TEMPLATES = Object.freeze({
       audience: 'participant',
       subject: '[DEMO] Zweite Erinnerung: Teilnahmebestätigung für „{{topic_name}}“ offen',
       body: 'Guten Tag {{recipient_name}}\n\n' +
+        'Dies ist ein technischer Demo-Test. Es hat keine reale Schulung stattgefunden; bitte bestätigen Sie keine tatsächliche Teilnahme.\n\n' +
         'Ihre Teilnahmebestätigung für die Schulung am {{training_date}} ist weiterhin offen. ' +
         'Bitte reichen Sie sie über Ihren persönlichen Link ein:\n\n' +
         '{{acknowledgement_url}}\n\n' +
