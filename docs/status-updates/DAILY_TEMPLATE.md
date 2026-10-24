@@ -2,7 +2,7 @@
 
 **Datum:** {{YYYY-MM-DD}}  
 **Stand der Quellen:** {{Datum/Uhrzeit, Europe/Zurich}}  
-**GitHub-Archivfassung:** {{Bestätigter GitHub-Link oder „Veröffentlichung offen“, Revision}}  
+**Archiv-Revision:** {{r1; spätere Korrekturen r2, r3 usw.}}  
 **Kurzlage:** {{Ein Satz: was sich heute für die Demo geändert hat oder „Keine belegte Statusänderung.“}}
 
 > **Heute neu** · {{Ein bis drei konkrete Ergebnisse seit dem letzten Update. Wenn nichts neu ist: „Keine neue Implementierung oder Abnahme belegt.“}}
