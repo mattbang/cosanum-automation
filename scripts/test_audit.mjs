@@ -19,7 +19,7 @@ function setup() {
     Requests: [{ request_id: 'REQ-R', topic_id: 'TC_R052', mode: 'group', created_at: '2026-10-20T10:00:00Z', demo_marker: '[DEMO]' }],
     ParticipantCases: cases.map((id, i) => ({ case_id: id, request_id: 'REQ-R', person_key: i ? 'B' : 'A', current_level: 0, target_level: 1, demo_marker: '[DEMO]' })),
     SessionCases: cases.map(id => ({ case_id: id, request_id: 'REQ-R', session_id: `SES-${id}`, demo_marker: '[DEMO]' })),
-    Sessions: cases.map(id => ({ session_id: `SES-${id}`, phase: 'theory', start_utc: '2026-10-20T11:00:00Z', end_utc: '2026-10-20T12:00:00Z', calendar_event_url: 'https://calendar.google.com/calendar/event?id=' + id, demo_marker: '[DEMO]' })),
+    Sessions: cases.map(id => ({ session_id: `SES-${id}`, request_id: 'REQ-R', phase: 'theory', start_utc: '2026-10-20T11:00:00Z', end_utc: '2026-10-20T12:00:00Z', calendar_event_id: `EVENT-${id}`, calendar_event_url: 'https://calendar.google.com/calendar/event?id=' + id, demo_marker: '[DEMO]' })),
     SessionRsvps: [], TrainerForms: [], ParticipantForms: [], TrainerAssessments: [], ParticipantAcknowledgements: [],
     Proofs: [], ArchiveReceipts: [], SkillUpdates: [], MessageLedger: [], Skills: []
   };
@@ -60,6 +60,8 @@ const at = new Date('2026-10-26T12:00:00Z');
   completed.add(cases[1]);
   const first = ctx.processAuditNoticesCore_(at, gateway);
   assert.equal(first.requests[0].state, 'waiting');
+  assert.equal(first.requests[0].plannedSessions, 2);
+  assert.equal(first.requests[0].bookedSessions, 2);
   assert.equal(sent.length, 0, 'one completed person cannot close two-person group');
   completed.add(cases[0]);
   const second = ctx.processAuditNoticesCore_(at, gateway);

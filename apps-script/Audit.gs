@@ -120,9 +120,11 @@ function auditView_(tables, now, spreadsheetUrl) {
     var complete = caseRows.every(function (row) { return row.state === 'complete'; });
     var notices = tables.MessageLedger.filter(function (row) { return row.request_id === request.request_id && row.demo_marker === '[DEMO]' &&
       (row.purpose === 'completion_notice' || row.purpose === 'exception_notice'); });
+    var sessions = tables.Sessions.filter(function (row) { return row.request_id === request.request_id && row.demo_marker === '[DEMO]'; });
     return { requestId: request.request_id, topicId: request.topic_id, topicName: String(topic.display_name),
       mode: String(request.mode), createdAt: String(request.created_at), state: complete ? 'complete' :
         caseRows.some(function (row) { return row.state === 'open'; }) ? 'open' : 'waiting',
+      plannedSessions: sessions.length, bookedSessions: sessions.filter(function (row) { return !!row.calendar_event_id; }).length,
       sheetUrl: spreadsheetUrl, cases: caseRows,
       completionNoticeState: notices.filter(function (row) { return row.purpose === 'completion_notice'; }).map(function (row) { return row.state; })[0] || '',
       notices: notices.map(function (row) { return { key: row.send_key, purpose: row.purpose, state: row.state, sentAt: String(row.sent_at_utc) }; }) };

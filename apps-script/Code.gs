@@ -1,5 +1,5 @@
 function doGet() {
-  return HtmlService.createHtmlOutputFromFile('Index').setTitle('Schulungsbedarf [DEMO]');
+  return HtmlService.createHtmlOutputFromFile('Index').setTitle('Cosanum Demo Hub [DEMO]');
 }
 
 function getCatalogue() {
