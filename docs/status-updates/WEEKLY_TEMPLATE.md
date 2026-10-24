@@ -28,6 +28,6 @@ Unveränderte Features nicht wiederholen; für den Gesamtstand auf das Feature-R
 2. {{Weitere Priorität nur falls erforderlich.}}
 
 **Entscheidungen / Risiken:** {{Was die Gruppe entscheiden muss und bis wann; sonst „keine neue Entscheidung“.}}  
-**Quellen:** {{Roadmap, Kanban, PRs, Übergaben mit Standdatum.}}
+**Quellen:** {{Öffentliche Roadmap-, Kanban- und PR-Links mit Standdatum; private Übergaben nur intern prüfen und hier nicht verlinken.}}
 
 **Teams-Kurzfassung:** {{Drei bis fünf Sätze: Ergebnis, Abnahme, offener Punkt, nächste Woche.}}
