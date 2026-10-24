@@ -18,8 +18,12 @@ assert.equal(tour.tourContext('?request=CASE-PRIVATE&scenario=wrong').request, '
 assert.doesNotMatch(pure[1], /google\.script\.run|fetch\(|localStorage|sessionStorage|sendBeacon|XMLHttpRequest/);
 assert.doesNotMatch(page, /gmail\.com|\/macros\/s\/|CASE-[A-Z0-9]|entry\.\d+=REQ-/,
   'public page contains no private account, case, or live form identifier');
-assert.match(page, /Die Auswahl ändert nur die Erklärung/);
-assert.match(page, /persönlich zugewiesenen Google-Links/);
+assert.match(page, /Alle Antworten und Freigaben sind hier simuliert/);
+assert.match(page, /Diese Seite sendet keine E-Mails/);
+assert.match(page, /Gemeinsame freie Zeiten/);
+assert.equal(tour.nextMonday(new Date('2026-10-24T12:00:00Z')).toISOString().slice(0, 10), '2026-10-26');
+assert.deepEqual(Array.from(tour.commonSlots(['hcm4', 'ma1'], 0)), [11, 13, 16]);
+assert.deepEqual(Array.from(tour.commonSlots(['hcm4', 'ma1', 'ma2'], 0)), [13]);
 assert.match(fs.readFileSync('docs/index.html', 'utf8'), /demo-tour\//);
 
 const files = { root: [], demo: [] };
