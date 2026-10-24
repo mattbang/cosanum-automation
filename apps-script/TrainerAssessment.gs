@@ -119,6 +119,18 @@ function prepareTrainerForm(input) {
     verifyTrainerCalendar_(context, calendarBookingGet_);
     var saved = trainerFormRow_(tables, input.sessionId, input.caseId);
     var sheet = findDemoSpreadsheet_().getSheetByName('TrainerForms');
+    if (input.requireExistingFormId) {
+      if (typeof input.requireExistingFormId !== 'string' || !saved || saved.form_id !== input.requireExistingFormId) {
+        throw new Error('Erwartetes bestehendes Trainerformular fehlt; keine Neuanlage.');
+      }
+      var expectedTriggers = ScriptApp.getProjectTriggers().filter(function (trigger) {
+        return trigger.getHandlerFunction() === 'onTrainerFormSubmit' &&
+          trigger.getTriggerSourceId() === saved.form_id;
+      });
+      if (expectedTriggers.length !== 1 || !saved.verified_at || !saved.verified_by) {
+        throw new Error('Bestehendes Trainerformular ist für eine schreibfreie Wiederholung nicht bereit.');
+      }
+    }
     if (saved) {
       if (saved.demo_marker !== '[DEMO]' || saved.person_key !== context.person.person_key ||
           saved.trainer_key !== context.trainer.person_key ||
@@ -126,7 +138,7 @@ function prepareTrainerForm(input) {
         throw new Error('Gespeichertes Trainerformular widerspricht der Zuweisung.');
       }
       FormApp.openById(saved.form_id);
-      ensureTrainerFormTrigger_(saved.form_id);
+      if (!input.requireExistingFormId) ensureTrainerFormTrigger_(saved.form_id);
       saved = tryAutomatedFormVerification_(sheet, saved, context.owner.email);
       var savedReady = formsReadyForLink_(saved, context.owner.email);
       return { sessionId: input.sessionId, caseId: input.caseId,
