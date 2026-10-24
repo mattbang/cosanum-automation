@@ -1,0 +1,41 @@
+{
+  "Topics": [
+    ["TC_R030", "Demo topic A", "Synthetic module A", true, true, 60, 180, "Theorie Gruppe; Praxis einzeln", "0→1→2→3", "[DEMO]", ""],
+    ["TC_R027", "Demo topic B", "Synthetic module B", true, true, 60, 180, "Theorie Gruppe; Praxis einzeln", "0→1→2→3", "[DEMO]", ""],
+    ["TC_R033", "Demo topic C", "Synthetic module C", true, true, 60, 180, "Theorie und Praxis Gruppe möglich", "explizites Ziel", "[DEMO]", 1],
+    ["TC_R052", "Demo topic D", "Synthetic module D", true, false, 60, 0, "Theorie Gruppe möglich", "explizites Ziel", "[DEMO]", 1],
+    ["TC_R077", "Demo topic E", "Synthetic module E", true, true, 60, 180, "Theorie und Praxis Gruppe möglich", "explizites Ziel", "[DEMO]", 1]
+  ],
+  "People": [
+    ["MATT", "owner@example.test", "Administration / group trainer", "[DEMO]", "PER-DEMO-01", "Demo Coordinator"],
+    ["MARIE", "coach@example.test", "Individual coach", "[DEMO]", "PER-DEMO-02", "Demo Coach"],
+    ["WOHNUNG", "participant-a@example.test", "Participant", "[DEMO]", "PER-DEMO-03", "Demo Participant A"],
+    ["SUMNER", "participant-b@example.test", "Participant", "[DEMO]", "PER-DEMO-04", "Demo Participant B"]
+  ],
+  "Skills": [
+    ["MATT", "TC_R030", 4, "S", "[DEMO]"],
+    ["MATT", "TC_R027", 4, "S", "[DEMO]"],
+    ["MATT", "TC_R033", 4, "S", "[DEMO]"],
+    ["MATT", "TC_R052", 4, "S", "[DEMO]"],
+    ["MATT", "TC_R077", 4, "S", "[DEMO]"],
+    ["MARIE", "TC_R030", 4, "S", "[DEMO]"],
+    ["MARIE", "TC_R027", 3, "S", "[DEMO]"],
+    ["MARIE", "TC_R033", 2, "S", "[DEMO]"],
+    ["MARIE", "TC_R052", 1, "S", "[DEMO]"],
+    ["MARIE", "TC_R077", 2, "S", "[DEMO]"],
+    ["WOHNUNG", "TC_R030", 0, "S", "[DEMO]"],
+    ["WOHNUNG", "TC_R027", 1, "S", "[DEMO]"],
+    ["WOHNUNG", "TC_R033", 0, "S", "[DEMO]"],
+    ["WOHNUNG", "TC_R052", "–", "S", "[DEMO]"],
+    ["WOHNUNG", "TC_R077", "", "S", "[DEMO]"],
+    ["SUMNER", "TC_R030", 1, "S", "[DEMO]"],
+    ["SUMNER", "TC_R027", 0, "S", "[DEMO]"],
+    ["SUMNER", "TC_R033", "–", "S", "[DEMO]"],
+    ["SUMNER", "TC_R052", 0, "S", "[DEMO]"],
+    ["SUMNER", "TC_R077", 1, "S", "[DEMO]"]
+  ],
+  "Requests": [],
+  "ParticipantCases": [],
+  "Sessions": [],
+  "SessionCases": []
+}

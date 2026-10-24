@@ -3,7 +3,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import vm from 'node:vm';
 
-const fixture = JSON.parse(fs.readFileSync('data/demo_fixture.json', 'utf8'));
+const fixture = JSON.parse(fs.readFileSync('fixtures/synthetic_demo.json', 'utf8'));
 const headers = {
   Topics: ['topic_id','display_name','source_material','theory_required','practice_required','theory_minutes','practice_minutes','group_suitability','progression_rule','demo_marker','configured_target_level'],
   People: ['person_key','email','demo_role','demo_marker','persona_id','display_alias'],
@@ -100,7 +100,7 @@ assert.equal(tables.Sessions[0].status,'invited');
 assert.equal(first.startUtc,theory.startUtc);
 assert.equal(first.endUtc,theory.endUtc);
 const savedEvent = gateway.events.get(first.eventId);
-assert.equal(savedEvent.summary,'[DEMO] Schulung: Wareneingang · Theorie');
+assert.equal(savedEvent.summary,`[DEMO] Schulung: ${fixture.Topics[0][1]} · Theorie`);
 assert.equal(savedEvent.guestsCanSeeOtherGuests,false);
 assert.equal(savedEvent.start.timeZone,zone);
 assert.equal(savedEvent.start.dateTime,theory.startLocal);

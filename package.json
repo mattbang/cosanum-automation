@@ -1,0 +1,15 @@
+{
+  "name": "cosanum-automation-local",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Credential-free local checks and synthetic preview for the Cosanum training prototype",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "check": "node scripts/check_local.mjs",
+    "check:js": "node scripts/check_local.mjs --js-only",
+    "check:container": "node scripts/check_local.mjs && node scripts/smoke_container_preview.mjs",
+    "dev": "node scripts/local_preview.mjs"
+  }
+}
