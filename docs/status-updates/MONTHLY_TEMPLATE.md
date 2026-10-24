@@ -2,7 +2,7 @@
 
 **Monat:** {{YYYY-MM}}  
 **Stand der Quellen:** {{Datum/Uhrzeit, Europe/Zurich}}  
-**GitHub-Archivfassung:** {{Bestätigter GitHub-Link oder „Veröffentlichung offen“, Revision}}  
+**Archiv-Revision:** {{r1; spätere Korrekturen r2, r3 usw.}}  
 **Kurzlage:** {{Zwei Sätze: Produktentwicklung, wichtigste Grenze der aktuellen Demo.}}
 
 > **Im Monat sichtbar geworden** · {{Das wichtigste belegte Ergebnis und seine Bedeutung für die Demo.}}
