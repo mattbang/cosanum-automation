@@ -18,6 +18,14 @@ const scenarios = [
   { key: 'missing_acknowledgement', topicId: 'TC_R052', mode: 'group', personKeys: ['SUMNER'], targetLevel: 1, result: 'Day +2 and +5 once each; remains open without completion notice', checks: ['trainer_pass', 'day2_once', 'day5_once', 'open_case', 'no_completion'] },
   { key: 'archive_failure_retry', topicId: 'TC_R052', mode: 'group', personKeys: ['SUMNER'], targetLevel: 1, result: 'Archive error blocks skill and notice; retry yields one verified receipt', checks: ['archive_error', 'no_skill_or_notice_before_retry', 'one_verified_receipt_after_retry'] }
 ];
+const requiredOutboundTypes = {
+  group_success: ['calendar', 'email'],
+  individual_progression: ['calendar', 'email'],
+  matrix_block_correction: [],
+  group_decline_no_rsvp: ['calendar'],
+  missing_acknowledgement: ['calendar', 'email'],
+  archive_failure_retry: ['calendar', 'email']
+};
 
 function within(parent, path) {
   const rel = relative(parent, resolve(path));
@@ -58,7 +66,7 @@ export function makeRunRecord(fixture, { runId = `RUN-${randomUUID().toUpperCase
       checks: item.checks.map(key => ({ key, result: null, evidence: null })),
       scenarioRunId: `${runId}-${item.key.toUpperCase().replaceAll('_', '-')}`,
       requestId: null, sessionIds: [], caseIds: [], status: 'not_run',
-      observedAtUtc: null, evidence: [], defects: [], outbound: [], archivePairs: []
+      observedAtUtc: null, evidence: [], defects: [], outbound: [], noOutboundEvidence: null, archivePairs: []
     })),
     measurements: {
       taskDefinition: 'Select the same training and participants, find a mutually free slot, and prepare the invitation.',
@@ -114,8 +122,21 @@ export function assessRunRecord(record, { fixture = null, hashFile = path => cre
     }
     for (const outbound of item.outbound || []) {
       const recipients = outbound.recipients || [];
-      if (!Array.isArray(recipients) || recipients.some(email => !allowlist.has(String(email).toLowerCase()))) violations.push(`${item.key}: outbound recipient is outside the test allowlist.`);
+      if (!Array.isArray(recipients) || !recipients.length || recipients.some(email => !allowlist.has(String(email).toLowerCase()))) violations.push(`${item.key}: outbound recipients are missing or outside the test allowlist.`);
       if (outbound.type !== 'email' && outbound.type !== 'calendar') violations.push(`${item.key}: unknown outbound type.`);
+      if (!outbound.evidence) pending.push(`${item.key}: outbound recipient evidence is missing.`);
+    }
+    if (item.status === 'pass') {
+      const required = requiredOutboundTypes[item.key] || [];
+      for (const type of required) {
+        if (!(item.outbound || []).some(row => row.type === type && Array.isArray(row.recipients) && row.recipients.length && row.evidence)) {
+          pending.push(`${item.key}: required ${type} outbound evidence is missing.`);
+        }
+      }
+      if (!required.length && !(item.outbound || []).length &&
+          (!item.noOutboundEvidence?.reason || !item.noOutboundEvidence?.evidence)) {
+        pending.push(`${item.key}: explicit evidence of no outbound recipients is missing.`);
+      }
     }
     for (const pair of item.archivePairs || []) {
       if (!pair.localPdfPath || !pair.drivePdfSha256 || !pair.localPdfSha256) { pending.push(`${item.key}: archive pair incomplete.`); continue; }

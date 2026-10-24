@@ -33,6 +33,10 @@ function setup() {
   ctx.participantAcknowledgementGate_ = () => ({ allowed: tables.TrainerAssessments.some(row => row.disposition === 'accepted' && row.attendance === 'attended' && row.assessment === 'passed') });
   ctx.assertParticipantFormAssignment_ = () => {};
   ctx.formsReadyForLink_ = form => !!form.verified_at;
+  ctx.FormApp = { openById: id => ({
+    getPublishedUrl: () => id === trainerForm.form_id ? 'https://docs.google.com/forms/d/e/trainer/viewform' :
+      id === participantForm.form_id ? 'https://docs.google.com/forms/d/e/participant/viewform' : ''
+  }) };
   ctx.getPrivateFixture_ = () => ({ Topics: new Array(5), Skills: new Array(20), People: [
     ['MATT', owner, '', '[DEMO]'], ['T', trainer, '', '[DEMO]'], ['P', person, '', '[DEMO]']] });
   ctx.validateFixture_ = () => {};
@@ -71,6 +75,19 @@ const before = new Date('2026-10-24T11:59:59Z'), after = new Date('2026-10-24T12
   assert.equal(sent.length, 2); assert.equal(ledger.rows.length, 3);
   tables.ParticipantAcknowledgements.push({ session_id: 'SES-1', case_id: 'CASE-1', disposition: 'accepted', demo_marker: '[DEMO]' });
   assert.equal(ctx.processFormRequestsCore_(after, gateway).results.length, 0);
+}
+{
+  const { ctx, trainerForm, sent, ledger, gateway } = setup();
+  trainerForm.form_url = 'https://docs.google.com/forms/d/e/participant/viewform';
+  assert.equal(ctx.processFormRequestsCore_(after, gateway).results[0].state, 'blocked');
+  assert.equal(sent.length, 0); assert.equal(ledger.rows.length, 1);
+}
+{
+  const { ctx, tables, participantForm, sent, ledger, gateway } = setup();
+  tables.TrainerAssessments.push({ session_id: 'SES-1', case_id: 'CASE-1', disposition: 'accepted', attendance: 'attended', assessment: 'passed', demo_marker: '[DEMO]' });
+  participantForm.form_url = 'https://docs.google.com/forms/d/e/trainer/viewform';
+  assert.equal(ctx.processFormRequestsCore_(after, gateway).results[0].state, 'blocked');
+  assert.equal(sent.length, 0); assert.equal(ledger.rows.length, 1);
 }
 {
   const { ctx, sent, ledger, gateway } = setup();
