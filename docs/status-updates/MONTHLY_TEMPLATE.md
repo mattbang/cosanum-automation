@@ -37,6 +37,6 @@ Diese Rubrik übernimmt die strategische Sicht der Quartalsvorlage, ohne einen v
 
 **Nächster Monat:** {{Zwei bis vier überprüfbare Ziele und ihre Abnahmekriterien.}}  
 **Blick auf das nächste Quartal:** {{Nur relevante Meilensteine, Risiken und Entscheidungen.}}  
-**Quellen:** {{Feature-Register, Roadmap, Kanban, PRs, private Übergaben mit Standdatum.}}
+**Quellen:** {{Öffentliche Links zu Feature-Register, Roadmap, Kanban und PRs mit Standdatum; private Übergaben nur intern prüfen und hier nicht verlinken.}}
 
 **Teams-Kurzfassung:** {{Vier bis sechs Sätze: Monatsfortschritt, belegter Google-Testumfang, wichtigste Entscheidung, nächste Ziele.}}
