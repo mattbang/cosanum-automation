@@ -2,7 +2,7 @@
 
 **Woche:** {{YYYY-Www · Datumsbereich}}  
 **Stand der Quellen:** {{Datum/Uhrzeit, Europe/Zurich}}  
-**GitHub-Archivfassung:** {{Bestätigter GitHub-Link oder „Veröffentlichung offen“, Revision}}  
+**Archiv-Revision:** {{r1; spätere Korrekturen r2, r3 usw.}}  
 **Kurzlage:** {{Ein bis zwei Sätze zum Ergebnis der Woche und zur nächsten Produktetappe.}}
 
 > **Diese Woche erreicht** · {{Das wichtigste implementierte oder abgenommene Ergebnis mit seinem genauen Testumfang.}}
