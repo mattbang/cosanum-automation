@@ -17,6 +17,9 @@
 !NotificationTemplates.gs
 !FollowUp.gs
 !Audit.gs
+!FormsIdentity.gs
+!ProofMetadata.gs
+!Feedback.gs
 !Setup.gs
 !Code.gs
 !PrivateFixture.gs
