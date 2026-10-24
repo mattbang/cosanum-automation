@@ -16,6 +16,11 @@
 !SkillUpdate.gs
 !NotificationTemplates.gs
 !FollowUp.gs
+!Audit.gs
+!FormsIdentity.gs
+!ProofMetadata.gs
+!Feedback.gs
+!FormDispatch.gs
 !Setup.gs
 !Code.gs
 !PrivateFixture.gs

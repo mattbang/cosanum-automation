@@ -29,9 +29,8 @@ function followUpContext_(tables, session, link, requireVerifiedForm) {
   if (!participantAcknowledgementGate_(tables, context).allowed || followUpAccepted_(tables, session.session_id, link.case_id)) return null;
   var form = participantFormRow_(tables, session.session_id, link.case_id);
   if (form) assertParticipantFormAssignment_(form, context);
-  var formReady = !!form && !!form.verified_at && !!form.verified_by &&
-    /^https:\/\/docs\.google\.com\/forms\//.test(String(form.form_url)) &&
-    String(form.verified_by).trim().toLowerCase() === String(context.owner.email).trim().toLowerCase();
+  var formReady = !!form && formsReadyForLink_(form, context.owner.email) &&
+    /^https:\/\/docs\.google\.com\/forms\//.test(String(form.form_url));
   if (requireVerifiedForm && !formReady) return null;
   return { context: context, form: form, formReady: formReady };
 }
@@ -66,6 +65,9 @@ function followUpCandidates_(tables, now) {
     tables.SessionCases.filter(function (link) { return link.session_id === session.session_id && link.demo_marker === '[DEMO]'; }).forEach(function (link) {
       var eligible = followUpContext_(tables, session, link, true);
       if (!eligible) return;
+      var initial = followUpLedgerRow_(tables, 'ack_request:' + link.case_id + ':' + session.session_id);
+      var initialSent = initial && initial.state === 'sent' ? Date.parse(String(initial.sent_at_utc)) : NaN;
+      if (!Number.isFinite(initialSent) || now.getTime() - initialSent < 24 * 60 * 60 * 1000) return;
       var day2 = followUpDue_(session, 2), day5 = followUpDue_(session, 5);
       if (now.getTime() < day2.dueAt.getTime()) return;
       // A missed day-2 run does not send two differently worded reminders together on day 5.
@@ -151,12 +153,14 @@ function processAcknowledgementFollowUpsCore_(clock, gateway) {
     });
     var results = [];
     followUpCandidates_(readDemoTables_(), now).forEach(function (candidate) {
-      // Re-read for each recipient so a newly accepted response suppresses subsequent work.
-      var tables = readDemoTables_();
-      var current = followUpCandidates_(tables, now).filter(function (row) { return row.key === candidate.key; })[0];
-      if (!current) return;
-      try { results.push(followUpSendOne_(tables, current, now, gateway)); }
-      catch (error) { results.push({ key: current.key, state: 'blocked', reason: String(error && error.message || error) }); }
+      try {
+        // A delayed Form trigger may have left a valid response only in Forms.
+        // Reconcile under the same lock, then derive the candidate afresh.
+        reconcileParticipantResponsesLocked_(readDemoTables_(), candidate.form);
+        var tables = readDemoTables_();
+        var current = followUpCandidates_(tables, now).filter(function (row) { return row.key === candidate.key; })[0];
+        if (current) results.push(followUpSendOne_(tables, current, now, gateway));
+      } catch (error) { results.push({ key: candidate.key, state: 'blocked', reason: String(error && error.message || error) }); }
     });
     return { checkedAt: now.toISOString(), recoveredUnknown: recoveredUnknown,
       results: results, rows: acknowledgementFollowUpQueue_(readDemoTables_(), now) };

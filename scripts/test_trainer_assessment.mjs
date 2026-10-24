@@ -10,7 +10,7 @@ const ctx = vm.createContext({
     return event;
   }
 });
-vm.runInContext(fs.readFileSync('apps-script/TrainerAssessment.gs', 'utf8'), ctx);
+for (const file of ['FormsIdentity.gs', 'TrainerAssessment.gs']) vm.runInContext(fs.readFileSync('apps-script/' + file, 'utf8'), ctx);
 const now = '2026-10-23T12:00:00Z';
 const session = {session_id:'SES-TRAINER',request_id:'REQ-TRAINER',phase:'theory',mode:'group',
   trainer_key:'MATT',status:'invited',calendar_event_id:'event-SES-TRAINER',

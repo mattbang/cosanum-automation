@@ -2,6 +2,12 @@
 
 The Google Sheet used by the prototype is synthetic and marked `[DEMO]`. Local source files define the contract; live asset IDs and account configuration stay in the ignored private handoff.
 
+## Current Form dispatch and response reconciliation
+
+`processFormRequests()` scans ended, still-invited sessions once daily. It prepares or rechecks each assigned trainer Form, replays raw trainer responses, and sends `trainer_assessment_request` only while that person's accepted report is missing. Once an accepted attended/pass report exists, it prepares or rechecks the assigned participant Form, replays raw participant responses, and sends `acknowledgement_request` only while an accepted response is missing. Both responder links require the current verified-email gate. Calendar assignment, private owner/trainer/participant allowlist, and mail quota are checked before a ledger reservation. `installFormRequestProcessor()` installs the separate daily trigger; it is not installed by setup.
+
+The initial requests use `trainer_report:<case_id>:<session_id>` and `ack_request:<case_id>:<session_id>` in `MessageLedger`. A send exception or interrupted reservation becomes `unknown` and is never automatically retried. A reminder requires a `sent` initial acknowledgement request at least 24 hours earlier. The reminder processor rereads the relevant raw participant Form immediately before a due send. The audit processor rereads all Forms for potentially overdue accepted trainer passes before calculating notices. If Forms cannot be read, the reminder for that case and the entire audit notice run stop without sending missing-confirmation mail. Accepted raw responses are saved through the same identity and timing checks as submit-trigger responses.
+
 ## Version 12 (acknowledgement reminders and open cases)
 
 `setupDemo()` adds empty `MessageLedger` and `FollowUps` tabs without changing existing cases, proofs, or skills. A daily 09:00 Europe/Zurich trigger calls `processAcknowledgementFollowUps()`. The processor uses the training date in Zurich: one German reminder becomes due on local date +2 and another on +5. It rereads the live trainer result, participant acknowledgement, verified responder Form, assigned account, and Calendar event under a script lock. A cancelled event, absent or failed participant, accepted acknowledgement, unverified Form, or address outside the private four-account fixture blocks sending. If an unattended run first executes after day +5, it sends the day-5 reminder only; it does not send both reminders together.

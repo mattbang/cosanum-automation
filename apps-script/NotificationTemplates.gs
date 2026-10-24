@@ -1,7 +1,7 @@
 /**
  * Versioned German email copy for the synthetic training prototype.
- * These templates render plain text only. Sending and recipient selection belong
- * to the future notification processor; loading this file sends no email.
+ * These templates render plain text only. FormDispatch, FollowUp and Audit
+ * choose recipients and delivery times; loading this file sends no email.
  * See docs/NOTIFICATION_TEMPLATES.md for the event and delivery contract.
  */
 var DEMO_EMAIL_TEMPLATES = Object.freeze({
@@ -11,6 +11,7 @@ var DEMO_EMAIL_TEMPLATES = Object.freeze({
       audience: 'trainer',
       subject: '[DEMO] Beurteilung erfassen: {{topic_name}} · {{request_id}}',
       body: 'Guten Tag {{trainer_name}}\n\n' +
+        'Dies ist ein technischer Demo-Test. Es hat keine reale Schulung stattgefunden.\n\n' +
         'Bitte erfassen Sie für {{person_name}} die Anwesenheit und das Ergebnis ' +
         'der Schulung vom {{training_date}}. Verwenden Sie dazu Ihren Link:\n\n' +
         '{{trainer_form_url}}\n\n' +
@@ -22,6 +23,7 @@ var DEMO_EMAIL_TEMPLATES = Object.freeze({
       audience: 'participant',
       subject: '[DEMO] Bitte Teilnahme an „{{topic_name}}“ bestätigen',
       body: 'Guten Tag {{recipient_name}}\n\n' +
+        'Dies ist ein technischer Demo-Test. Es hat keine reale Schulung stattgefunden; bitte bestätigen Sie keine tatsächliche Teilnahme.\n\n' +
         'Die schulende Person hat Ihre Teilnahme am Termin vom {{training_date}} erfasst. ' +
         'Bitte bestätigen Sie Ihre Teilnahme über Ihren persönlichen Link:\n\n' +
         '{{acknowledgement_url}}\n\n' +

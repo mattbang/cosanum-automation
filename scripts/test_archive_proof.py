@@ -59,6 +59,13 @@ class FakeSource:
             {'id': 'pdf-1', 'name': PROOF + '-v1 [DEMO].pdf', 'mimeType': 'application/pdf'},
         ]
         self.pdf_bytes = b'%PDF-1.7\n' + b'a' * 200
+        props = archive.proof_properties(proof)
+        for item in self.children:
+            item['parents'] = ['person-folder']
+            item['properties'] = props.copy()
+            if item['id'] == 'pdf-1':
+                item['sha256Checksum'] = archive.sha256(self.pdf_bytes)
+            self.files[item['id']] = item
         self.docx_bytes = docx_bytes()
         self.fail_pdf = False
         self.fail_proof_update_once = False
@@ -73,6 +80,9 @@ class FakeSource:
 
     def list_files(self, query):
         return self.children
+
+    def metadata_files(self, proof_id):
+        return [item for item in self.children if item.get('properties', {}).get('cosanum_proof_id') == proof_id]
 
     def pdf(self, file_id):
         if self.fail_pdf:
@@ -155,8 +165,41 @@ class ArchiveProofTests(unittest.TestCase):
     def test_changed_drive_pdf_requires_corrected_version(self):
         archive.archive_case(self.source, CASE, self.root)
         self.source.pdf_bytes = b'%PDF-1.7\n' + b'b' * 200
+        self.source.files['pdf-1']['sha256Checksum'] = archive.sha256(self.source.pdf_bytes)
         with self.assertRaisesRegex(archive.ArchiveError, 'corrected version'):
             archive.archive_case(self.source, CASE, self.root, repair=True)
+        self.assertEqual(self.source.tables['Proofs'][0]['status'], 'archive_error')
+
+    def test_missing_or_mismatched_stored_checksum_blocks_receipt(self):
+        self.source.files['pdf-1'].pop('sha256Checksum')
+        with self.assertRaisesRegex(archive.ArchiveError, 'checksum is unavailable'):
+            archive.archive_case(self.source, CASE, self.root)
+        self.assertEqual(self.source.tables['ArchiveReceipts'], [])
+        self.source.files['pdf-1']['sha256Checksum'] = '0' * 64
+        with self.assertRaisesRegex(archive.ArchiveError, 'stored Drive SHA-256 checksum'):
+            archive.archive_case(self.source, CASE, self.root)
+        self.assertEqual(self.source.tables['Proofs'][0]['status'], 'archive_error')
+
+    def test_duplicate_or_mismatched_metadata_lookup_blocks_archive(self):
+        duplicate = dict(self.source.children[0], id='other-doc')
+        self.source.children.append(duplicate)
+        with self.assertRaisesRegex(archive.ArchiveError, 'exactly the registered'):
+            archive.archive_case(self.source, CASE, self.root)
+        self.source.children.pop()
+        self.source.children[0]['properties']['cosanum_case_id'] = 'CASE-OTHER'
+        with self.assertRaisesRegex(archive.ArchiveError, 'metadata, version, or folder'):
+            archive.archive_case(self.source, CASE, self.root)
+        self.assertEqual(self.source.tables['ArchiveReceipts'], [])
+
+    def test_missing_drive_pdf_or_wrong_version_remains_unverified(self):
+        self.source.children = [item for item in self.source.children if item['id'] != 'pdf-1']
+        with self.assertRaisesRegex(archive.ArchiveError, 'exactly the registered'):
+            archive.archive_case(self.source, CASE, self.root)
+        self.assertEqual(self.source.tables['ArchiveReceipts'], [])
+        self.source.children.append(self.source.files['pdf-1'])
+        self.source.files['pdf-1']['properties']['cosanum_proof_version'] = '2'
+        with self.assertRaisesRegex(archive.ArchiveError, 'metadata, version, or folder'):
+            archive.archive_case(self.source, CASE, self.root)
         self.assertEqual(self.source.tables['Proofs'][0]['status'], 'archive_error')
 
     def test_corrupt_docx_repair_requires_same_snapshot(self):
@@ -191,7 +234,8 @@ class ArchiveProofTests(unittest.TestCase):
             'actor_email': 'owner@example.com', 'demo_root': self.source.root,
             'spreadsheet_id': 'sheet-1', 'proof_folder_id': 'person-folder',
             'doc_id': 'doc-1', 'pdf_id': 'pdf-1', 'files': self.source.files,
-            'children': [dict(item, parents=['person-folder']) for item in self.source.children],
+            'children': copy.deepcopy(self.source.children),
+            'metadata_matches': copy.deepcopy(self.source.metadata_files(PROOF)),
             'tables': {},
             'pdf_base64': base64.b64encode(self.source.pdf_bytes).decode(),
             'docx_base64': base64.b64encode(self.source.docx_bytes).decode(),

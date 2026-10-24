@@ -41,7 +41,7 @@ function proofPhase_(tables, context) {
       trainer.form_id !== trainerForm.form_id || trainer.person_key !== c.person_key ||
       proofEmail_(trainer.reporter_email) !== proofEmail_(context.trainer.email) ||
       trainer.attendance !== 'attended' || trainer.assessment !== 'passed' || trainer.attestation !== 'yes' ||
-      proofEmail_(trainerForm.verified_by) !== proofEmail_(context.owner.email) || !trainerForm.verified_at) {
+      !formsIdentityGate_(trainerForm, context.owner.email).allowed) {
     throw new Error('Trainerzuordnung oder bestandene Beurteilung ist widersprüchlich.');
   }
   var trainerAt = proofIso_(trainer.submitted_at, 'Trainerantwort');
@@ -70,7 +70,7 @@ function proofPhase_(tables, context) {
       acknowledgement.request_id !== c.request_id || acknowledgement.person_key !== c.person_key ||
       proofEmail_(acknowledgement.respondent_email) !== proofEmail_(context.person.email) ||
       acknowledgement.affirmative !== 'yes' || !String(acknowledgement.typed_name || '').trim() ||
-      proofEmail_(participantForm.verified_by) !== proofEmail_(context.owner.email) || !participantForm.verified_at) {
+      !formsIdentityGate_(participantForm, context.owner.email).allowed) {
     throw new Error('Teilnahmebestätigung oder Kontozuordnung ist widersprüchlich.');
   }
   var acknowledgementAt = proofIso_(acknowledgement.submitted_at, 'Teilnahmeantwort');
@@ -328,6 +328,8 @@ function createIndividualProof(input) {
     }
     if (pdf.getSize() < 100) throw new Error('Gespeichertes PDF ist leer.');
     if (ledger.row[11] === 'pending_creation') proofSaveAssets_(sheet, ledger, folder.getId(), doc.getId(), pdf.getId(), 'pending_local_archive');
+    // A retry also backfills properties on the same Doc/PDF; no replacement asset is made.
+    proofMetadataEnsurePair_(ledger.row);
     return { proofId: model.proofId, proofVersion: PROOF_VERSION, caseId: model.caseId,
       docUrl: doc.getUrl(), pdfUrl: pdf.getUrl(), status: ledger.row[11], reused: ledger.reused };
   } finally { lock.releaseLock(); }

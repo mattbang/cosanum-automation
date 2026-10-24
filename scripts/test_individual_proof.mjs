@@ -4,7 +4,7 @@ import vm from 'node:vm';
 import crypto from 'node:crypto';
 
 const ctx = vm.createContext({Date, Set, Object, Array, Number, String});
-vm.runInContext(fs.readFileSync('apps-script/IndividualProof.gs','utf8'),ctx);
+for (const file of ['FormsIdentity.gs', 'IndividualProof.gs']) vm.runInContext(fs.readFileSync('apps-script/'+file,'utf8'),ctx);
 const start='2026-10-22T10:00:00Z', end='2026-10-22T11:00:00Z';
 const trainerAt='2026-10-22T11:10:00.293Z', participantAt='2026-10-22T11:20:00.652Z';
 const base={

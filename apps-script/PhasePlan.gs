@@ -56,6 +56,31 @@ function getPhasePlanPreview(requestId, mode) {
   return phasePlanModel_(requestId, mode, readDemoTables_());
 }
 
+/** Read-only resume data for the owner-only guided page. */
+function getSavedPhasePlan(requestId) {
+  var tables = readDemoTables_();
+  auditOwner_(tables);
+  var request = tables.Requests.filter(function (row) { return row.request_id === requestId && row.demo_marker === '[DEMO]'; });
+  if (request.length !== 1) throw new Error('Demo-Auftrag nicht eindeutig.');
+  var sessions = tables.Sessions.filter(function (row) { return row.request_id === requestId && row.demo_marker === '[DEMO]'; });
+  if (!sessions.length) return null;
+  if (new Set(sessions.map(function (row) { return row.session_id; })).size !== sessions.length) throw new Error('Doppelte Session-ID.');
+  return { requestId: requestId, mode: request[0].mode, phases: sessions.map(function (session) {
+    var links = tables.SessionCases.filter(function (row) { return row.session_id === session.session_id && row.request_id === requestId && row.demo_marker === '[DEMO]'; });
+    if (!links.length || new Set(links.map(function (row) { return row.case_id; })).size !== links.length) throw new Error('Session-Fälle fehlen oder sind doppelt.');
+    links.forEach(function (link) {
+      if (tables.ParticipantCases.filter(function (row) { return row.case_id === link.case_id && row.request_id === requestId && row.person_key === link.person_key && row.demo_marker === '[DEMO]'; }).length !== 1) {
+        throw new Error('Session-Fall passt nicht zur Testperson im Auftrag.');
+      }
+    });
+    return { sessionId: session.session_id, phase: session.phase, order: Number(session.phase_order), mode: session.mode,
+      personKeys: links.map(function (row) { return row.person_key; }), caseIds: links.map(function (row) { return row.case_id; }),
+      durationMinutes: Number(session.duration_minutes), trainerKey: session.trainer_key,
+      theorySessionId: session.theory_session_id || '', eventId: session.calendar_event_id || '',
+      eventUrl: session.calendar_event_url || '', startUtc: session.start_utc || '', endUtc: session.end_utc || '' };
+  }).sort(function (a, b) { return a.order - b.order || a.sessionId.localeCompare(b.sessionId); }) };
+}
+
 /** A later skill writer must call this gate using verified phase pass states. */
 function canCompleteTargetLevel_(plan, passedSessionIds, caseId) {
   var linked = plan.phases.filter(function (p) { return p.caseIds.indexOf(caseId) >= 0; });
