@@ -19,10 +19,10 @@ function setup() {
   };
   const owner = { email: ownerEmail }, person = { person_key: 'SUMNER', email: participantEmail, display_alias: 'Selina Keller' };
   const context = { session: tables.Sessions[0], person, owner, personCase: { case_id: caseId }, request: { request_id: 'REQ-DEMO' }, topic: { display_name: 'Hochregallager' } };
-  const form = { form_url: 'https://docs.google.com/forms/d/e/test/viewform', verified_at: '2026-10-22T12:05:00Z', verified_by: owner.email };
+  const form = { form_id: 'FORM-TEST', form_url: 'https://docs.google.com/forms/d/e/test/viewform', verified_at: '2026-10-22T12:05:00Z', verified_by: owner.email };
   const sent = [];
   const ctx = vm.createContext({ Date, Object, Array, Number, String, RegExp, Error, Set });
-  for (const file of ['NotificationTemplates.gs', 'FollowUp.gs']) vm.runInContext(fs.readFileSync('apps-script/' + file, 'utf8'), ctx);
+  for (const file of ['FormsIdentity.gs', 'NotificationTemplates.gs', 'FollowUp.gs']) vm.runInContext(fs.readFileSync('apps-script/' + file, 'utf8'), ctx);
   ctx.DEMO_SCHEMA = { sheets: { MessageLedger: headers } };
   ctx.SLOT_TIME_ZONE = 'Europe/Zurich';
   ctx.Utilities = { formatDate: date => new Date(date).toISOString().slice(0,10), parseDate: (value) => {

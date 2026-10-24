@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 
 const ctx = vm.createContext({Date, Set, Object, Array, Number, String});
-vm.runInContext(fs.readFileSync('apps-script/ParticipantAcknowledgement.gs', 'utf8'), ctx);
+for (const file of ['FormsIdentity.gs', 'ParticipantAcknowledgement.gs']) vm.runInContext(fs.readFileSync('apps-script/' + file, 'utf8'), ctx);
 
 const end = '2026-10-22T09:00:00Z';
 const review = '2026-10-22T09:20:00Z';

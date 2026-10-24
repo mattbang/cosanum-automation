@@ -29,9 +29,8 @@ function followUpContext_(tables, session, link, requireVerifiedForm) {
   if (!participantAcknowledgementGate_(tables, context).allowed || followUpAccepted_(tables, session.session_id, link.case_id)) return null;
   var form = participantFormRow_(tables, session.session_id, link.case_id);
   if (form) assertParticipantFormAssignment_(form, context);
-  var formReady = !!form && !!form.verified_at && !!form.verified_by &&
-    /^https:\/\/docs\.google\.com\/forms\//.test(String(form.form_url)) &&
-    String(form.verified_by).trim().toLowerCase() === String(context.owner.email).trim().toLowerCase();
+  var formReady = !!form && formsReadyForLink_(form, context.owner.email) &&
+    /^https:\/\/docs\.google\.com\/forms\//.test(String(form.form_url));
   if (requireVerifiedForm && !formReady) return null;
   return { context: context, form: form, formReady: formReady };
 }

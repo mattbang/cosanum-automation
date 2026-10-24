@@ -97,10 +97,12 @@ function prepareParticipantForm(input) {
       assertParticipantFormAssignment_(saved, context);
       FormApp.openById(saved.form_id);
       ensureParticipantFormTrigger_(saved.form_id);
+      saved = tryAutomatedFormVerification_(findDemoSpreadsheet_().getSheetByName('ParticipantForms'), saved, context.owner.email);
+      var savedReady = formsReadyForLink_(saved, context.owner.email);
       return { sessionId: input.sessionId, caseId: input.caseId,
-        formUrl: saved.verified_at && saved.verified_by ? String(saved.form_url) : '',
+        formUrl: savedReady ? String(saved.form_url) : '',
         editUrl: 'https://docs.google.com/forms/d/' + encodeURIComponent(saved.form_id) + '/edit',
-        needsVerifiedReview: !saved.verified_at || !saved.verified_by, reused: true };
+        needsVerifiedReview: !savedReady, reused: true };
     }
     var created = buildParticipantForm_(context, function (title) { return FormApp.create(title); }, findDemoFolder_());
     var sheet = findDemoSpreadsheet_().getSheetByName('ParticipantForms');
@@ -109,13 +111,18 @@ function prepareParticipantForm(input) {
       new Date().toISOString(), '[DEMO]', '', '']);
     SpreadsheetApp.flush();
     ensureParticipantFormTrigger_(created.formId);
-    return { sessionId: input.sessionId, caseId: input.caseId, formUrl: '',
+    var createdRow = tryAutomatedFormVerification_(sheet, {
+      session_id: input.sessionId, case_id: input.caseId, form_id: created.formId,
+      form_url: created.formUrl, verified_at: '', verified_by: ''
+    }, context.owner.email);
+    var createdReady = formsReadyForLink_(createdRow, context.owner.email);
+    return { sessionId: input.sessionId, caseId: input.caseId, formUrl: createdReady ? created.formUrl : '',
       editUrl: 'https://docs.google.com/forms/d/' + encodeURIComponent(created.formId) + '/edit',
-      needsVerifiedReview: true, reused: false };
+      needsVerifiedReview: !createdReady, reused: false };
   } finally { lock.releaseLock(); }
 }
 
-/** Process & Quality manually inspects Google's Verified setting; FormApp cannot inspect that mode. */
+/** Manual fallback when Forms REST could not verify the setting. */
 function confirmParticipantVerifiedEmail(input) {
   if (!input || input.confirmation !== true || typeof input.sessionId !== 'string' || typeof input.caseId !== 'string') {
     throw new Error('Bitte die Einstellung „Verifiziert“ im Google-Formular prüfen und bestätigen.');
@@ -136,6 +143,10 @@ function confirmParticipantVerifiedEmail(input) {
     var form = FormApp.openById(formRow.form_id);
     if (!form.collectsEmail()) throw new Error('Das Teilnahmeformular sammelt keine E-Mail-Adressen.');
     if (formRow.verified_at || formRow.verified_by) {
+      if (formsVerificationIsApi_(formRow)) {
+        if (!formsReadyForLink_(formRow, context.owner.email)) throw new Error('Automatische Formularprüfung ist nicht mehr gültig.');
+        return { formUrl: String(formRow.form_url), verifiedAt: String(formRow.verified_at), verifiedBy: actor, reused: true };
+      }
       if (!formRow.verified_at || String(formRow.verified_by).toLowerCase() !== actor) throw new Error('Widersprüchliche manuelle Verifizierung.');
       return { formUrl: String(formRow.form_url), verifiedAt: String(formRow.verified_at), verifiedBy: actor, reused: true };
     }
@@ -184,10 +195,11 @@ function participantAcknowledgementDecision_(context, formRow, response, existin
     respondentEmail: email, submittedAt: submittedAt, typedName: answers.typedName,
     affirmative: answers.affirmative, disposition: 'rejected', reason: '' };
   if (!responseId || !submittedAt) result.reason = 'Antwort-ID oder Zeitstempel fehlt.';
-  else if (!formRow.verified_at || !formRow.verified_by ||
-      !Number.isFinite(Date.parse(formRow.verified_at)) || Date.parse(submittedAt) < Date.parse(formRow.verified_at)) {
-    result.reason = 'Antwort entstand vor der manuellen Prüfung der verifizierten E-Mail-Erfassung.';
-  } else if (!email || email !== String(context.person.email).trim().toLowerCase()) result.reason = 'Falsches Google-Konto für diesen Personenfall.';
+  else if (!formsIdentityGate_(formRow, context.owner.email).allowed) result.reason = 'Verifizierte E-Mail-Erfassung ist nicht bestätigt oder nicht mehr gültig.';
+  else if (Date.parse(submittedAt) < Date.parse(formRow.verified_at)) result.reason =
+    formsVerificationIsApi_(formRow) ? 'Antwort entstand vor der automatischen Prüfung der verifizierten E-Mail-Erfassung.' :
+      'Antwort entstand vor der manuellen Prüfung der verifizierten E-Mail-Erfassung.';
+  else if (!email || email !== String(context.person.email).trim().toLowerCase()) result.reason = 'Falsches Google-Konto für diesen Personenfall.';
   else if (existing.some(function (row) { return row.response_id === responseId; })) {
     result.disposition = 'duplicate'; result.reason = 'Antwort wurde bereits verarbeitet.';
   } else if (existing.some(function (row) { return row.disposition === 'accepted'; })) {
@@ -272,9 +284,9 @@ function participantAcknowledgementQueue_() {
       all.push({ sessionId: session.session_id, caseId: link.case_id, personAlias: String(context.person.display_alias),
         topicName: String(context.topic.display_name), phase: session.phase, endUtc: session.end_utc,
         status: result && gate.allowed ? 'acknowledged' : gate.allowed ? 'awaiting_acknowledgement' : 'awaiting_trainer',
-        gateReason: gate.reason, formUrl: gate.allowed && form && form.verified_at && form.verified_by ? String(form.form_url) : '',
+        gateReason: gate.reason, formUrl: gate.allowed && formsReadyForLink_(form, context.owner.email) ? String(form.form_url) : '',
         formEditUrl: form ? 'https://docs.google.com/forms/d/' + encodeURIComponent(form.form_id) + '/edit' : '',
-        needsVerifiedReview: !!form && (!form.verified_at || !form.verified_by),
+        needsVerifiedReview: !!form && !formsReadyForLink_(form, context.owner.email),
         respondentEmail: result ? String(result.respondent_email) : '', submittedAt: result ? String(result.submitted_at) : '',
         responseId: result ? String(result.response_id) : '', typedName: result ? String(result.typed_name) : '',
         lastRejection: rejected.length ? String(rejected[rejected.length - 1].reason) : '' });
