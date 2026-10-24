@@ -3,6 +3,15 @@ function formDispatchDate_(session) {
   return Utilities.formatDate(new Date(session.start_utc), SLOT_TIME_ZONE, 'dd.MM.yyyy');
 }
 
+function formDispatchVerifiedUrl_(form) {
+  var saved = String(form.form_url || '');
+  if (!/^https:\/\/docs\.google\.com\/forms\//.test(saved) ||
+      saved !== FormApp.openById(form.form_id).getPublishedUrl()) {
+    throw new Error('Formularlink gehört nicht zur verifizierten Formular-ID.');
+  }
+  return saved;
+}
+
 function formDispatchCandidates_(tables, now, target) {
   var items = [];
   tables.Sessions.filter(function (session) {
@@ -28,7 +37,7 @@ function formDispatchCandidates_(tables, now, target) {
           throw new Error('Trainerformular und Fallzuweisung stimmen nicht überein.');
         }
         if (formsReadyForLink_(trainerForm, context.owner.email) &&
-            /^https:\/\/docs\.google\.com\/forms\//.test(String(trainerForm.form_url))) {
+            formDispatchVerifiedUrl_(trainerForm)) {
           items.push({ key: 'trainer_report:' + link.case_id + ':' + session.session_id,
             purpose: 'trainer_assessment_request', context: context, form: trainerForm });
         }
@@ -39,7 +48,7 @@ function formDispatchCandidates_(tables, now, target) {
       if (!participantForm) return;
       assertParticipantFormAssignment_(participantForm, context);
       if (formsReadyForLink_(participantForm, context.owner.email) &&
-          /^https:\/\/docs\.google\.com\/forms\//.test(String(participantForm.form_url))) {
+          formDispatchVerifiedUrl_(participantForm)) {
         items.push({ key: 'ack_request:' + link.case_id + ':' + session.session_id,
           purpose: 'acknowledgement_request', context: context, form: participantForm });
       }

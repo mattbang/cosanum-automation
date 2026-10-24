@@ -21,6 +21,14 @@ function participantAcknowledgementGate_(tables, context) {
   if (!currentPass) {
     return { allowed: false, reason: 'Anwesenheit und Bestehen wurden für diesen Schulungsteil nicht bestätigt.' };
   }
+  var trainerForm = trainerFormRow_(tables, session.session_id, caseId);
+  if (!trainerForm || trainerForm.form_id !== currentPass.form_id || trainerForm.demo_marker !== '[DEMO]') {
+    return { allowed: false, identityBlocked: true, reason: 'Trainerformular und bestätigter Bericht stimmen nicht überein.' };
+  }
+  var trainerIdentity = formsIdentityGate_(trainerForm, context.owner.email);
+  if (!trainerIdentity.allowed) {
+    return { allowed: false, identityBlocked: true, reason: trainerIdentity.reason };
+  }
   if (session.phase === 'practice') {
     var theory = tables.Sessions.filter(function (row) {
       return row.session_id === session.theory_session_id && row.request_id === session.request_id &&
@@ -29,8 +37,17 @@ function participantAcknowledgementGate_(tables, context) {
     var links = tables.SessionCases.filter(function (row) {
       return row.session_id === session.theory_session_id && row.case_id === caseId && row.demo_marker === '[DEMO]';
     });
-    if (theory.length !== 1 || links.length !== 1 || !acceptedTrainerPassRow_(tables, session.theory_session_id, caseId)) {
+    var theoryPass = acceptedTrainerPassRow_(tables, session.theory_session_id, caseId);
+    if (theory.length !== 1 || links.length !== 1 || !theoryPass) {
       return { allowed: false, reason: 'Die bestandene Theorie für diese Person fehlt.' };
+    }
+    var theoryForm = trainerFormRow_(tables, session.theory_session_id, caseId);
+    if (!theoryForm || theoryForm.form_id !== theoryPass.form_id || theoryForm.demo_marker !== '[DEMO]') {
+      return { allowed: false, identityBlocked: true, reason: 'Theorieformular und bestätigter Bericht stimmen nicht überein.' };
+    }
+    var theoryIdentity = formsIdentityGate_(theoryForm, context.owner.email);
+    if (!theoryIdentity.allowed) {
+      return { allowed: false, identityBlocked: true, reason: 'Verifizierung des Theorieformulars ist nicht mehr gültig.' };
     }
   }
   return { allowed: true, reason: '', releasedAt: String(currentPass.submitted_at) };
@@ -93,10 +110,22 @@ function prepareParticipantForm(input) {
     if (!gate.allowed) throw new Error(gate.reason);
     verifyTrainerCalendar_(context, calendarBookingGet_);
     var saved = participantFormRow_(tables, input.sessionId, input.caseId);
+    if (input.requireExistingFormId) {
+      if (typeof input.requireExistingFormId !== 'string' || !saved || saved.form_id !== input.requireExistingFormId) {
+        throw new Error('Erwartetes bestehendes Teilnahmeformular fehlt; keine Neuanlage.');
+      }
+      var expectedTriggers = ScriptApp.getProjectTriggers().filter(function (trigger) {
+        return trigger.getHandlerFunction() === 'onParticipantFormSubmit' &&
+          trigger.getTriggerSourceId() === saved.form_id;
+      });
+      if (expectedTriggers.length !== 1 || !saved.verified_at || !saved.verified_by) {
+        throw new Error('Bestehendes Teilnahmeformular ist für eine schreibfreie Wiederholung nicht bereit.');
+      }
+    }
     if (saved) {
       assertParticipantFormAssignment_(saved, context);
       FormApp.openById(saved.form_id);
-      ensureParticipantFormTrigger_(saved.form_id);
+      if (!input.requireExistingFormId) ensureParticipantFormTrigger_(saved.form_id);
       saved = tryAutomatedFormVerification_(findDemoSpreadsheet_().getSheetByName('ParticipantForms'), saved, context.owner.email);
       var savedReady = formsReadyForLink_(saved, context.owner.email);
       return { sessionId: input.sessionId, caseId: input.caseId,
@@ -143,13 +172,11 @@ function confirmParticipantVerifiedEmail(input) {
     var form = FormApp.openById(formRow.form_id);
     if (!form.collectsEmail()) throw new Error('Das Teilnahmeformular sammelt keine E-Mail-Adressen.');
     if (formRow.verified_at || formRow.verified_by) {
-      if (formsVerificationIsApi_(formRow)) {
-        if (!formsReadyForLink_(formRow, context.owner.email)) throw new Error('Automatische Formularprüfung ist nicht mehr gültig.');
-        return { formUrl: String(formRow.form_url), verifiedAt: String(formRow.verified_at), verifiedBy: actor, reused: true };
-      }
-      if (!formRow.verified_at || String(formRow.verified_by).toLowerCase() !== actor) throw new Error('Widersprüchliche manuelle Verifizierung.');
+      if (!formRow.verified_at || formsVerificationActor_(formRow) !== actor) throw new Error('Widersprüchliche Formularverifizierung.');
+      if (!formsReadyForLink_(formRow, context.owner.email)) throw new Error('Formularprüfung ist nicht mehr gültig.');
       return { formUrl: String(formRow.form_url), verifiedAt: String(formRow.verified_at), verifiedBy: actor, reused: true };
     }
+    if (!ensureFormsVerifiedEmail_(formRow.form_id)) throw new Error('Verifizierte E-Mail-Erfassung konnte nicht bestätigt werden.');
     var sheet = findDemoSpreadsheet_().getSheetByName('ParticipantForms');
     var rows = sheet.getDataRange().getValues();
     var index = rows.findIndex(function (row) {
@@ -157,9 +184,9 @@ function confirmParticipantVerifiedEmail(input) {
     });
     if (index < 1) throw new Error('Teilnahmeformular-Zeile fehlt.');
     var stamp = new Date().toISOString();
-    sheet.getRange(index + 1, 10, 1, 2).setValues([[stamp, actor]]);
+    sheet.getRange(index + 1, 10, 1, 2).setValues([[stamp, FORMS_API_ACTOR_PREFIX + actor]]);
     SpreadsheetApp.flush();
-    return { formUrl: String(formRow.form_url), verifiedAt: stamp, verifiedBy: actor, reused: false };
+    return { formUrl: String(formRow.form_url), verifiedAt: stamp, verifiedBy: FORMS_API_ACTOR_PREFIX + actor, reused: false };
   } finally { lock.releaseLock(); }
 }
 
@@ -285,7 +312,9 @@ function participantAcknowledgementQueue_() {
       return link.session_id === session.session_id && link.demo_marker === '[DEMO]';
     }).forEach(function (link) {
       var context = trainerCaseContext_(tables, session.session_id, link.case_id);
-      var gate = participantAcknowledgementGate_(tables, context);
+      var gate;
+      try { gate = participantAcknowledgementGate_(tables, context); }
+      catch (error) { gate = { allowed: false, identityBlocked: true, reason: 'Formularprüfung derzeit nicht möglich.' }; }
       var form = participantFormRow_(tables, session.session_id, link.case_id);
       if (form) assertParticipantFormAssignment_(form, context);
       var attempts = tables.ParticipantAcknowledgements.filter(function (row) {
@@ -295,12 +324,17 @@ function participantAcknowledgementQueue_() {
       if (accepted.length > 1) throw new Error('Mehrere gültige Teilnahmebestätigungen für denselben Schulungsteil.');
       var result = accepted[0];
       var rejected = attempts.filter(function (row) { return row.disposition === 'rejected'; });
+      var trainerForm = trainerFormRow_(tables, session.session_id, link.case_id);
+      var trainerFormReady = formsReadyForLink_(trainerForm, context.owner.email);
+      var participantFormReady = formsReadyForLink_(form, context.owner.email);
+      var identityBlocked = gate.identityBlocked || (result || gate.allowed) && (!trainerFormReady || ((form || result) && !participantFormReady));
       all.push({ sessionId: session.session_id, caseId: link.case_id, personAlias: String(context.person.display_alias),
         topicName: String(context.topic.display_name), phase: session.phase, endUtc: session.end_utc,
-        status: result && gate.allowed ? 'acknowledged' : gate.allowed ? 'awaiting_acknowledgement' : 'awaiting_trainer',
-        gateReason: gate.reason, formUrl: gate.allowed && formsReadyForLink_(form, context.owner.email) ? String(form.form_url) : '',
+        status: identityBlocked ? 'identity_blocked' : result && gate.allowed ? 'acknowledged' : gate.allowed ? 'awaiting_acknowledgement' : 'awaiting_trainer',
+        gateReason: gate.reason, identityReason: gate.identityBlocked || !trainerFormReady ? 'Trainerformular' : 'Teilnahmeformular',
+        formUrl: gate.allowed && trainerFormReady && participantFormReady ? String(form.form_url) : '',
         formEditUrl: form ? 'https://docs.google.com/forms/d/' + encodeURIComponent(form.form_id) + '/edit' : '',
-        needsVerifiedReview: !!form && !formsReadyForLink_(form, context.owner.email),
+        needsVerifiedReview: !!form && !participantFormReady,
         respondentEmail: result ? String(result.respondent_email) : '', submittedAt: result ? String(result.submitted_at) : '',
         responseId: result ? String(result.response_id) : '', typedName: result ? String(result.typed_name) : '',
         lastRejection: rejected.length ? String(rejected[rejected.length - 1].reason) : '' });
