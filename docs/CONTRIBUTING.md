@@ -14,7 +14,7 @@ The preview serves the checked-in Apps Script HTML with a synthetic adapter. It 
 
 ## Optional container or Codespaces
 
-Open the repository in a tool that supports [dev containers](https://containers.dev/) or create a GitHub Codespace. The [container configuration](../.devcontainer/devcontainer.json) installs Node 24 and Python 3.13 and runs `npm run check` after creation. The pull-request workflow also builds this container, runs the checks, then starts the real preview command and requests its page through the container network interface. Start `npm run dev` in its terminal, then open the forwarded port 4173. Keep that port **private** to your account. The container sets `PREVIEW_HOST=0.0.0.0` so the forwarding service can reach the read-only preview; the ordinary local command listens only on `127.0.0.1`. A local Docker daemon is needed only if you choose the local container route.
+Open the repository in a tool that supports [dev containers](https://containers.dev/) or create a GitHub Codespace. The [container configuration](../.devcontainer/devcontainer.json) installs Node 24 and Python 3.13 and runs `npm run check` after creation. The pull-request workflow also builds this container, runs the checks, then starts the real preview command and requests its page through the container network interface. Start `npm run dev` in its terminal, then open the forwarded port 4173. In Codespaces, confirm that port 4173 shows **Private** in the Ports tab before opening its URL; GitHub's [port guide](https://docs.github.com/en/codespaces/developing-in-a-codespace/forwarding-ports-in-your-codespace) explains how to change visibility. The container sets `PREVIEW_HOST=0.0.0.0` so the forwarding service can reach the read-only preview; the ordinary local command listens only on `127.0.0.1`. A local Docker daemon is needed only if you choose the local container route.
 
 ## Common recovery steps
 
@@ -25,6 +25,8 @@ Open the repository in a tool that supports [dev containers](https://containers.
 | Port 4173 is already in use | Stop the other preview or set a different `PORT` before `npm run dev` (`PORT=4180 npm run dev` in a Unix shell; `$env:PORT=4180; npm run dev` in PowerShell). |
 | Preview looks stale | Reload the page. The server rereads `apps-script/Index.html` for each request. |
 | A Google action says “blocked” | This is the intended read-only behavior. Use the named connected test process for Google verification. |
+
+Observed recovery: while one preview was running on port 4191, starting a second on that port failed with `EADDRINUSE`. Running `PORT=4192 npm run dev` then served the offline banner at `http://127.0.0.1:4192/`.
 
 ## From local change to accepted increment
 
