@@ -40,4 +40,4 @@ jobs:
         with:
           imageName: local/cosanum-devcontainer
           push: never
-          runCmd: npm run check
+          runCmd: npm run check:container
