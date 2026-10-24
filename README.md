@@ -2,6 +2,8 @@
 
 A prototype for coordinating logistics training with Google Workspace. The current private demo app covers the five-topic catalogue, manual draft intake, the skill progression gate, and a persisted trainer and phase plan. Calendar scheduling, trainer assessment, individual acknowledgement, evidence archiving, and skill updates belong to later increments.
 
+The [contributor development plan](docs/CONTRIBUTOR_DEVELOPMENT.md) tracks the clean-checkout setup, synthetic preview, PR checks, and a separate Google test environment. These are planned contributor capabilities; use the linked issues for their acceptance status.
+
 The [public project overview](docs/PROJECT_OVERVIEW.md) describes the goal and technology. The [development plan](docs/DEVELOPMENT_PLAN.md) breaks delivery into small, testable increments. The connected prototype is developed one verified feature at a time.
 
 The [notification templates and delivery contract](docs/NOTIFICATION_TEMPLATES.md) define the German email copy, required fields, recipient rules, and retry behavior for the later communication increments.
