@@ -14,7 +14,7 @@ The preview serves the checked-in Apps Script HTML with a synthetic adapter. It 
 
 ## Optional container or Codespaces
 
-Open the repository in a tool that supports [dev containers](https://containers.dev/) or create a GitHub Codespace. The [container configuration](../.devcontainer/devcontainer.json) installs Node 24 and Python 3.13 and runs `npm run check` after creation. Start `npm run dev` in its terminal, then open the forwarded port 4173. Keep that port **private** to your account. The container sets `PREVIEW_HOST=0.0.0.0` so the forwarding service can reach the read-only preview; the ordinary local command listens only on `127.0.0.1`. A local Docker daemon is needed only if you choose the local container route.
+Open the repository in a tool that supports [dev containers](https://containers.dev/) or create a GitHub Codespace. The [container configuration](../.devcontainer/devcontainer.json) installs Node 24 and Python 3.13 and runs `npm run check` after creation. The pull-request workflow also builds this container and runs the same checks inside it. Start `npm run dev` in its terminal, then open the forwarded port 4173. Keep that port **private** to your account. The container sets `PREVIEW_HOST=0.0.0.0` so the forwarding service can reach the read-only preview; the ordinary local command listens only on `127.0.0.1`. A local Docker daemon is needed only if you choose the local container route.
 
 ## Common recovery steps
 

@@ -28,3 +28,16 @@ jobs:
         with:
           python-version: '3.13'
       - run: npm run check
+
+  devcontainer:
+    name: Dev container check (Ubuntu)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: devcontainers/ci@v0.3
+        with:
+          imageName: local/cosanum-devcontainer
+          push: never
+          runCmd: npm run check
