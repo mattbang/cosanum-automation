@@ -107,4 +107,10 @@ assert.equal([...partial.properties.values()].some(value=>String(value).includes
 const expired=harness();
 expired.request();expired.cache.clear();
 assert.throws(()=>expired.confirm(),/abgelaufen/);
+const cleanup=harness();
+cleanup.properties.set('total.20260801','5');
+cleanup.properties.set('address.20260801.oldhash','reserved');
+cleanup.properties.set('receipt.oldhash',JSON.stringify({status:'unknown',day:'20260801'}));
+cleanup.request();
+assert.equal([...cleanup.properties.keys()].some(key=>key.includes('20260801')||key==='receipt.oldhash'),false);
 console.log('mail tour: validation, confirmation, role labels, caps, quota, expiry and uncertain send passed');
