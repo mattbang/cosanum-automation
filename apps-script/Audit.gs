@@ -217,6 +217,18 @@ function processAuditNoticesCore_(clock, gateway) {
       remainingQuota: function () { return MailApp.getRemainingDailyQuota(); },
       sendEmail: function (message) { MailApp.sendEmail(message); },
       dashboardUrl: function () { return ScriptApp.getService().getUrl(); } };
+    // Reconcile every overdue participant Form before calculating exception notices.
+    // A Forms read failure blocks the entire audit send run, including completion.
+    var before = readDemoTables_();
+    before.ParticipantForms.filter(function (form) {
+      if (form.demo_marker !== '[DEMO]') return false;
+      var session = before.Sessions.filter(function (row) {
+        return row.session_id === form.session_id && row.demo_marker === '[DEMO]';
+      });
+      return session.length === 1 && session[0].status === 'invited' &&
+        now.getTime() >= followUpDue_(session[0], 5).dueAt.getTime() &&
+        !!acceptedTrainerPassRow_(before, form.session_id, form.case_id);
+    }).forEach(function (form) { reconcileParticipantResponsesLocked_(readDemoTables_(), form); });
     var recovered = [];
     readDemoTables_().MessageLedger.filter(function (row) {
       return row.demo_marker === '[DEMO]' && row.state === 'reserved' &&

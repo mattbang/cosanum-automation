@@ -122,4 +122,19 @@ assert.equal(ctx.participantAcknowledgementDecision_(context,{...formRow,verifie
 ctx.Session={getEffectiveUser:()=>({getEmail:()=> 'other@example.com'})};
 assert.throws(()=>ctx.confirmParticipantVerifiedEmail({sessionId:'SES-THEORY',caseId:'CASE-ONE',confirmation:true}),/Nur Process & Quality/);
 
+const replay = vm.createContext({ Date, Object, Array, Number, String, RegExp, Error, Set });
+vm.runInContext(fs.readFileSync('apps-script/ParticipantAcknowledgement.gs', 'utf8'), replay);
+const replayed = [];
+replay.trainerCaseContext_ = () => context;
+replay.assertParticipantFormAssignment_ = () => {};
+replay.FormApp = { openById: id => {
+  assert.equal(id, 'FORM-ONE');
+  return { getResponses: () => [response('RAW-1'), response('RAW-2')] };
+} };
+replay.processParticipantResponseLocked_ = (id, raw) => { replayed.push([id, raw.getId()]); return { saved: true }; };
+assert.equal(replay.reconcileParticipantResponsesLocked_(tables, formRow).length, 2);
+assert.deepEqual(replayed, [['FORM-ONE', 'RAW-1'], ['FORM-ONE', 'RAW-2']]);
+replay.FormApp = { openById: () => { throw Error('Forms unavailable'); } };
+assert.throws(() => replay.reconcileParticipantResponsesLocked_(tables, formRow), /Forms unavailable/);
+
 console.log('Pass: phase gates, assigned account, owner review, trainer timing, affirmative answer, typed name, duplicate replay, and open/accepted queue.');

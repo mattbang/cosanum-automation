@@ -19,7 +19,7 @@ function setup() {
     Requests: [{ request_id: 'REQ-R', topic_id: 'TC_R052', mode: 'group', created_at: '2026-10-20T10:00:00Z', demo_marker: '[DEMO]' }],
     ParticipantCases: cases.map((id, i) => ({ case_id: id, request_id: 'REQ-R', person_key: i ? 'B' : 'A', current_level: 0, target_level: 1, demo_marker: '[DEMO]' })),
     SessionCases: cases.map(id => ({ case_id: id, request_id: 'REQ-R', session_id: `SES-${id}`, demo_marker: '[DEMO]' })),
-    Sessions: cases.map(id => ({ session_id: `SES-${id}`, request_id: 'REQ-R', phase: 'theory', start_utc: '2026-10-20T11:00:00Z', end_utc: '2026-10-20T12:00:00Z', calendar_event_id: `EVENT-${id}`, calendar_event_url: 'https://calendar.google.com/calendar/event?id=' + id, demo_marker: '[DEMO]' })),
+    Sessions: cases.map(id => ({ session_id: `SES-${id}`, request_id: 'REQ-R', phase: 'theory', status: 'invited', start_utc: '2026-10-20T11:00:00Z', end_utc: '2026-10-20T12:00:00Z', calendar_event_id: `EVENT-${id}`, calendar_event_url: 'https://calendar.google.com/calendar/event?id=' + id, demo_marker: '[DEMO]' })),
     SessionRsvps: [], TrainerForms: [], ParticipantForms: [], TrainerAssessments: [], ParticipantAcknowledgements: [],
     Proofs: [], ArchiveReceipts: [], SkillUpdates: [], MessageLedger: [], Skills: []
   };
@@ -36,6 +36,8 @@ function setup() {
   ctx.PropertiesService = { getScriptProperties: () => ({ getProperty: () => ccs }) };
   ctx.followUpDue_ = (s, days) => ({ dueAt: new Date(Date.parse(s.start_utc) + days * 86400000) });
   ctx.followUpNow_ = x => x;
+  ctx.acceptedTrainerPassRow_ = (t, sessionId, caseId) => t.TrainerAssessments.find(row => row.session_id === sessionId && row.case_id === caseId && row.disposition === 'accepted' && row.attendance === 'attended' && row.assessment === 'passed') || null;
+  ctx.reconcileParticipantResponsesLocked_ = () => [];
   const realCompletionGate = ctx.auditCompletionGate_;
   ctx.auditCompletionGate_ = (_, row) => { if (!completed.has(row.case_id)) throw Error('not complete'); };
   ctx.followUpLedgerRow_ = (_, key) => {
@@ -104,6 +106,25 @@ for (const cause of ['declined', 'failed', 'acknowledgement_overdue', 'archive_e
   assert.match(sent[0].subject, /Klärung erforderlich/);
   ctx.processAuditNoticesCore_(at, gateway);
   assert.equal(sent.length, 1, 'same exception must not resend');
+}
+{
+  const { ctx, tables, sent, gateway } = setup();
+  tables.TrainerAssessments.push({ case_id: cases[1], session_id: `SES-${cases[1]}`, attendance: 'attended', assessment: 'passed', disposition: 'accepted' });
+  tables.ParticipantForms.push({ case_id: cases[1], session_id: `SES-${cases[1]}`, demo_marker: '[DEMO]' });
+  ctx.reconcileParticipantResponsesLocked_ = () => {
+    tables.ParticipantAcknowledgements.push({ case_id: cases[1], session_id: `SES-${cases[1]}`, response_id: 'RAW-1', disposition: 'accepted', demo_marker: '[DEMO]' });
+  };
+  const result = ctx.processAuditNoticesCore_(at, gateway);
+  assert.equal(result.requests[0].cases[1].reasonCode, '');
+  assert.equal(sent.length, 0, 'accepted raw Form answer suppresses overdue exception');
+}
+{
+  const { ctx, tables, sent, gateway } = setup();
+  tables.TrainerAssessments.push({ case_id: cases[1], session_id: `SES-${cases[1]}`, attendance: 'attended', assessment: 'passed', disposition: 'accepted' });
+  tables.ParticipantForms.push({ case_id: cases[1], session_id: `SES-${cases[1]}`, demo_marker: '[DEMO]' });
+  ctx.reconcileParticipantResponsesLocked_ = () => { throw Error('Forms temporarily unavailable'); };
+  assert.throws(() => ctx.processAuditNoticesCore_(at, gateway), /Forms temporarily unavailable/);
+  assert.equal(sent.length, 0, 'audit sends fail closed on Forms read failure');
 }
 {
   const { ctx, tables, sent, gateway } = setup();

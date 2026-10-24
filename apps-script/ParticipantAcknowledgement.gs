@@ -226,23 +226,37 @@ function saveParticipantAttempt_(decision, sheet) {
   return { saved: true, decision: decision };
 }
 
+/** Caller holds the script lock; used by both submit triggers and scheduled reconciliation. */
+function processParticipantResponseLocked_(formId, response) {
+  var tables = readDemoTables_();
+  var formRow = uniqueTrainerRow_(tables.ParticipantForms, function (row) {
+    return row.form_id === formId && row.demo_marker === '[DEMO]';
+  }, 'Teilnahmeformular');
+  var context = trainerCaseContext_(tables, formRow.session_id, formRow.case_id);
+  assertParticipantFormAssignment_(formRow, context);
+  var existing = tables.ParticipantAcknowledgements.filter(function (row) {
+    return row.form_id === formId && row.session_id === formRow.session_id && row.case_id === formRow.case_id;
+  });
+  var gate = participantAcknowledgementGate_(tables, context);
+  var decision = participantAcknowledgementDecision_(context, formRow, response, existing, gate);
+  return saveParticipantAttempt_(decision, findDemoSpreadsheet_().getSheetByName('ParticipantAcknowledgements'));
+}
+
 function processParticipantResponse_(formId, response) {
   var lock = LockService.getScriptLock();
   lock.waitLock(30000);
   try {
-    var tables = readDemoTables_();
-    var formRow = uniqueTrainerRow_(tables.ParticipantForms, function (row) {
-      return row.form_id === formId && row.demo_marker === '[DEMO]';
-    }, 'Teilnahmeformular');
-    var context = trainerCaseContext_(tables, formRow.session_id, formRow.case_id);
-    assertParticipantFormAssignment_(formRow, context);
-    var existing = tables.ParticipantAcknowledgements.filter(function (row) {
-      return row.form_id === formId && row.session_id === formRow.session_id && row.case_id === formRow.case_id;
-    });
-    var gate = participantAcknowledgementGate_(tables, context);
-    var decision = participantAcknowledgementDecision_(context, formRow, response, existing, gate);
-    return saveParticipantAttempt_(decision, findDemoSpreadsheet_().getSheetByName('ParticipantAcknowledgements'));
+    return processParticipantResponseLocked_(formId, response);
   } finally { lock.releaseLock(); }
+}
+
+/** Read the assigned Form before any missing-confirmation mail is considered. */
+function reconcileParticipantResponsesLocked_(tables, formRow) {
+  var context = trainerCaseContext_(tables, formRow.session_id, formRow.case_id);
+  assertParticipantFormAssignment_(formRow, context);
+  var raw = FormApp.openById(formRow.form_id).getResponses();
+  if (!Array.isArray(raw)) throw new Error('Teilnahmeformular lieferte keine Antwortenliste.');
+  return raw.map(function (response) { return processParticipantResponseLocked_(formRow.form_id, response); });
 }
 
 function onParticipantFormSubmit(event) {
