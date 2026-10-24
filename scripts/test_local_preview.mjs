@@ -32,10 +32,12 @@ test('adapter supplies synthetic read views and rejects writes and unknown calls
     assert.equal(plan.phases[0].phase, 'theory');
     assert.equal(plan.phases[0].durationMinutes, 60);
     assert.equal(plan.phases.filter(row => row.eventId).length, request.bookedSessions);
+    assert.ok(plan.phases.every(row => request.bookedSessions ? row.startUtc && Date.parse(row.endUtc) === Date.parse(row.startUtc) + row.durationMinutes * 60000 : !row.startUtc && !row.endUtc));
     if (topic.practice) {
       assert.equal(plan.phases[1].phase, 'practice');
       assert.equal(plan.phases[1].durationMinutes, 180);
       assert.equal(plan.phases[1].theorySessionId, plan.phases[0].sessionId);
+      if (request.bookedSessions) assert.ok(Date.parse(plan.phases[1].startUtc) >= Date.parse(plan.phases[0].endUtc));
     }
     for (const person of request.cases) {
       assert.deepEqual(Array.from(person.phases.map(row => row.sessionId)), Array.from(plan.phases.map(row => row.sessionId)));
@@ -51,6 +53,11 @@ test('adapter supplies synthetic read views and rejects writes and unknown calls
   assert.equal(rsvp.errors.length, 0);
   assert.equal(rsvp.rows.filter(row => row.caseId.startsWith('SAMPLE-INDIVIDUAL-')).length, 0);
   assert.equal(rsvp.rows.filter(row => row.caseId.startsWith('SAMPLE-GROUP-')).length, 4);
+  const groupPlan = (await call('getSavedPhasePlan', 'SAMPLE-GROUP')).value;
+  assert.ok(Date.parse(groupPlan.phases[1].startUtc) >= Date.parse(groupPlan.phases[0].endUtc));
+  for (const row of rsvp.rows.filter(row => row.caseId.startsWith('SAMPLE-GROUP-'))) {
+    assert.equal(row.startUtc, groupPlan.phases.find(phase => phase.sessionId === row.sessionId).startUtc);
+  }
   assert.match((await call('saveDraftRequest')).error, /blocked saveDraftRequest/);
   assert.match((await call('processVerifiedSkillUpdates')).error, /blocked processVerifiedSkillUpdates/);
   assert.match((await call('refreshRsvpStatus')).error, /blocked refreshRsvpStatus/);

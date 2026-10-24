@@ -35,15 +35,23 @@
     { requestId: 'SAMPLE-INDIVIDUAL', topicId: topics[2].id, topicName: topics[2].name, mode: 'individual', createdAt: '2026-01-02T10:00:00Z', state: 'waiting', plannedSessions: 2, bookedSessions: 0, sheetUrl: '', cases: [personCase('SAMPLE-INDIVIDUAL', people[3], 'waiting', '', ['theory', 'practice'], false)] },
     { requestId: 'SAMPLE-EXCEPTION', topicId: topics[1].id, topicName: topics[1].name, mode: 'group', createdAt: '2026-01-04T10:00:00Z', state: 'open', plannedSessions: 1, bookedSessions: 1, sheetUrl: '', cases: [personCase('SAMPLE-EXCEPTION', people[0], 'open', 'declined', ['theory'], true), personCase('SAMPLE-EXCEPTION', people[1], 'waiting', '', ['theory'], true)] }
   ];
+  function sampleStartUtc(requestId, phaseName) {
+    if (requestId === 'SAMPLE-GROUP') return phaseName === 'theory' ? '2026-01-12T09:00:00Z' : '2026-01-13T09:00:00Z';
+    if (requestId === 'SAMPLE-EXCEPTION') return '2027-01-12T09:00:00Z';
+    return '';
+  }
   const plans = Object.fromEntries(requests.map(request => {
     const topic = topics.find(row => row.id === request.topicId);
-    const phases = ['theory', ...(topic.practice ? ['practice'] : [])].map((name, index) => ({
-      sessionId: `${request.requestId}-${name === 'theory' ? 'T' : 'P'}`, phase: name, order: index + 1,
-      mode: request.mode, personKeys: request.cases.map(row => row.personKey), caseIds: request.cases.map(row => row.caseId),
-      durationMinutes: name === 'theory' ? 60 : 180, trainerKey: request.mode === 'group' ? 'MATT' : 'P03',
-      theorySessionId: name === 'practice' ? `${request.requestId}-T` : '',
-      eventId: request.bookedSessions ? `SAMPLE-EVENT-${name}` : '', eventUrl: ''
-    }));
+    const phases = ['theory', ...(topic.practice ? ['practice'] : [])].map((name, index) => {
+      const durationMinutes = name === 'theory' ? 60 : 180;
+      const startUtc = sampleStartUtc(request.requestId, name);
+      return { sessionId: `${request.requestId}-${name === 'theory' ? 'T' : 'P'}`, phase: name, order: index + 1,
+        mode: request.mode, personKeys: request.cases.map(row => row.personKey), caseIds: request.cases.map(row => row.caseId),
+        durationMinutes, trainerKey: request.mode === 'group' ? 'MATT' : 'P03',
+        theorySessionId: name === 'practice' ? `${request.requestId}-T` : '',
+        eventId: startUtc ? `SAMPLE-EVENT-${name}` : '', eventUrl: '', startUtc,
+        endUtc: startUtc ? new Date(Date.parse(startUtc) + durationMinutes * 60000).toISOString() : '' };
+    });
     return [request.requestId, { requestId: request.requestId, mode: request.mode, phases }];
   }));
   function clone(value) { return JSON.parse(JSON.stringify(value)); }
@@ -66,7 +74,7 @@
       .filter(item => item.rsvp)
       .map(item => ({ caseId: row.caseId, personKey: row.personKey, personAlias: row.personAlias,
         sessionId: item.sessionId, phase: item.phase,
-        startUtc: request.requestId === 'SAMPLE-EXCEPTION' ? '2027-01-12T09:00:00Z' : '2026-01-10T09:00:00Z',
+        startUtc: sampleStartUtc(request.requestId, item.phase),
         responseStatus: item.rsvp, flag: item.rsvp === 'declined' ? 'declined' : '' })))),
       errors: [], checkedAt: 'synthetic preview' }),
     checkDemoCalendarAccess: () => ({ calendars: [{ key: 'SAMPLE', alias: 'Synthetic calendar', ok: false, error: 'Offline preview' }] }),
