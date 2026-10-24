@@ -2,7 +2,7 @@
 
 This project tests an end-to-end logistics training workflow with synthetic people and five representative topics. Process & Quality enters a need, checks skill prerequisites and calendars, books a session, collects a trainer result and each participant's own acknowledgement, then verifies an individual proof in both Google Drive and a local archive before updating the demo skill matrix.
 
-**Current status, 24 October 2026:** one local release candidate combines the open training-app source changes. It is not the numbered Google web deployment and has not passed a fresh complete run. The active private demo is owned by a dedicated Google test account; the earlier personal-account prototype is historical. The [feature register](docs/FEATURE_REGISTER.md) distinguishes implemented, deployed, and connected-accepted behavior. This checkout's `main` may lag the candidate branch.
+**Current status, 24 October 2026:** [PR #39](https://github.com/mattbang/cosanum-automation/pull/39) integrated the training-app source, and the dedicated demo account now runs owner-only version 6. The numbered deployment has not passed a fresh complete workflow run. The earlier personal-account prototype remains historical. The [feature register](docs/FEATURE_REGISTER.md) distinguishes implemented, deployed, and connected-accepted behavior.
 
 ## Start here
 
@@ -20,6 +20,6 @@ The [GUI design baseline](docs/GUI_DESIGN_BASELINE.md) records the agreed starti
 
 ## Release boundary
 
-The private training web app remains owner-only. A source commit, Apps Script editor `@HEAD`, and a numbered `/exec` deployment are separate states. The current candidate has no mail scope; reminders and completion messages still require a reviewed permission grant and connected delivery test. The public synthetic role tour and its proposed mail sender are separate from the training app.
+The private training web app remains owner-only. A source commit, Apps Script editor `@HEAD`, and a numbered `/exec` deployment are separate states. Version 6 has no mail scope; reminders and completion messages still require a reviewed permission grant and connected delivery test. The public synthetic role tour and its proposed mail sender are separate from the training app.
 
 Use synthetic data only. Keep OAuth credentials, account-specific configuration, local evidence, and personal test identities out of the public repository. The [agent instructions](AGENTS.md) describe the active Google target and the historical one; the ignored local `docs/private/README.md` indexes account-specific evidence.
