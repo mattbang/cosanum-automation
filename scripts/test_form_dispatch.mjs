@@ -171,4 +171,24 @@ const before = new Date('2026-10-24T11:59:59Z'), after = new Date('2026-10-24T12
   assert.deepEqual(calls, ['trainer', 'participant'], 'both Forms are prepared before raw responses are replayed');
   assert.equal(sent.length, 0);
 }
+{
+  const { ctx, tables, trainerForm, participantForm, sent, gateway } = setup();
+  vm.runInContext(fs.readFileSync('apps-script/FormsIdentity.gs', 'utf8'), ctx);
+  vm.runInContext(fs.readFileSync('apps-script/ParticipantAcknowledgement.gs', 'utf8'), ctx);
+  trainerForm.verified_by = 'owner@example.test';
+  participantForm.verified_by = 'owner@example.test';
+  tables.TrainerAssessments.push({ session_id: 'SES-1', case_id: 'CASE-1', form_id: 'TF-1',
+    disposition: 'accepted', attendance: 'attended', assessment: 'passed', submitted_at: after.toISOString(), demo_marker: '[DEMO]' });
+  let mode = 'RESPONDER_INPUT', outage = false;
+  ctx.ScriptApp = { getOAuthToken: () => 'test-token' };
+  ctx.UrlFetchApp = { fetch: url => ({ getResponseCode: () => outage ? 503 : 200,
+    getContentText: () => JSON.stringify({ formId: decodeURIComponent(url.split('/').at(-1)),
+      settings: { emailCollectionType: url.includes('TF-1') ? mode : 'VERIFIED' } }) }) };
+  assert.equal(ctx.processFormRequestsCore_(after, gateway).results.length, 0,
+    'downgraded trainer Form must not dispatch participant link');
+  outage = true;
+  assert.equal(ctx.processFormRequestsCore_(after, gateway).results[0].state, 'blocked',
+    'REST outage must block participant dispatch');
+  assert.equal(sent.length, 0);
+}
 console.log('Form request dispatch: timing, verified links, allowlist, replay, quotas, and ambiguous delivery passed');
