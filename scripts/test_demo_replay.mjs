@@ -15,6 +15,11 @@ const record = makeRunRecord(fixture);
 assert.equal(record.scenarios.length, 6);
 assert.equal(record.scenarios.every(row => row.status === 'not_run' && row.requestId === null), true);
 assert.equal(assessRunRecord(record, { fixture }).ready, false);
+assert.match(assessRunRecord(record, { fixture }).pending.join(' '), /Reviewed source commit/);
+const noMeasurements = structuredClone(record);
+delete noMeasurements.measurements;
+assert.match(assessRunRecord(noMeasurements, { fixture }).pending.join(' '), /manual: observed time/);
+assert.match(assessRunRecord(noMeasurements, { fixture }).pending.join(' '), /prototype: observed time/);
 
 const tampered = structuredClone(fixture);
 tampered.People[0][3] = '';
@@ -41,11 +46,21 @@ try {
   writeFileSync(pdf, 'synthetic pdf bytes');
   const digest = createHash('sha256').update(readFileSync(pdf)).digest('hex');
   const archived = structuredClone(record);
-  archived.scenarios[0].archivePairs.push({ localPdfPath: pdf, drivePdfSha256: digest, localPdfSha256: digest });
+  archived.scenarios[0].archivePairs.push({ personKey: 'WOHNUNG', caseId: 'case-one', proofId: 'proof-one', drivePdfId: 'drive-one', localPdfPath: pdf, drivePdfSha256: digest, localPdfSha256: digest });
   assert.equal(assessRunRecord(archived).violations.length, 0);
   archived.scenarios[0].archivePairs[0].drivePdfSha256 = '0'.repeat(64);
   assert.match(assessRunRecord(archived).violations.join(' '), /hashes differ/);
 } finally { rmSync(temp, { recursive: true, force: true }); }
+
+const duplicateArchives = structuredClone(record);
+duplicateArchives.scenarios[0].status = 'pass';
+duplicateArchives.scenarios[0].caseIds = ['case-one', 'case-two'];
+const samePair = { personKey: 'WOHNUNG', caseId: 'case-one', proofId: 'proof-one', drivePdfId: 'drive-one' };
+duplicateArchives.scenarios[0].archivePairs = [samePair, { ...samePair }];
+assert.match(assessRunRecord(duplicateArchives, { fixture }).pending.join(' '), /distinct participant, case, proof/);
+const wrongRecording = structuredClone(record);
+wrongRecording.recording.requestId = 'unrelated';
+assert.match(assessRunRecord(wrongRecording, { fixture }).pending.join(' '), /Recording must match/);
 
 // Every tracked source file in the public Apps Script tree must reach the staged push.
 const ignoreLines = readFileSync(resolve(root, '.claspignore'), 'utf8').split('\n').map(line => line.trim());

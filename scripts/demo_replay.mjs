@@ -4,6 +4,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { execFileSync } from 'node:child_process';
 
 const root = resolve(import.meta.dirname, '..');
 const privateRuns = resolve(root, 'data/demo-replays');
@@ -50,7 +51,7 @@ export function makeRunRecord(fixture, { runId = `RUN-${randomUUID().toUpperCase
     marker: '[DEMO]', fixtureVersion: 'five-topic-v1',
     fixtureSha256: createHash('sha256').update(JSON.stringify(fixture)).digest('hex'), timeZone: 'Europe/Zurich',
     boundary: { demoSheetId: null, productionSheetId: null, productionMatrixUntouchedEvidence: null, ownerChecked: false },
-    allowlist, deploymentId: null,
+    allowlist, deploymentId: null, deploymentVersion: null,
     reset: { mode: 'fresh_ids_preserve_existing', previousEvidenceSnapshot: null, connectedSeedApplied: false, note: 'Never call resetDemoFixture on the evidence-bearing Sheet. Use new request IDs; snapshot before any future reset.' },
     scenarios: scenarios.map(item => ({
       ...item, seedAdjustments: (item.seedAdjustments || []).map(row => ({ ...row, applied: false, evidence: null })),
@@ -85,6 +86,9 @@ export function assessRunRecord(record, { fixture = null, hashFile = path => cre
   if (!boundary.demoSheetId || !boundary.ownerChecked || !boundary.productionMatrixUntouchedEvidence) pending.push('Demo Sheet owner and untouched production matrix have not been verified.');
   if (!record.reset?.connectedSeedApplied) pending.push('Fresh-ID connected seed has not been checked.');
   if (!record.deploymentId) pending.push('Deployment ID is missing.');
+  if (!/^[a-f0-9]{40}$/i.test(record.sourceCommit || '') || !Number.isInteger(record.deploymentVersion) || record.deploymentVersion < 1) {
+    pending.push('Reviewed source commit and numbered deployment version are missing.');
+  }
   const scenarioKeys = new Set();
   for (const item of record.scenarios || []) {
     scenarioKeys.add(item.key);
@@ -99,6 +103,14 @@ export function assessRunRecord(record, { fixture = null, hashFile = path => cre
       if (item.status === 'pass' && expected.seedAdjustments?.some((row, i) => !item.seedAdjustments?.[i]?.applied || !item.seedAdjustments[i].evidence)) pending.push(`${item.key}: synthetic correction audit evidence incomplete.`);
       const minArchives = item.key === 'group_success' ? 2 : ['individual_progression', 'archive_failure_retry'].includes(item.key) ? 1 : 0;
       if (item.status === 'pass' && (item.archivePairs || []).length < minArchives) pending.push(`${item.key}: required archive pairs incomplete.`);
+      if (item.status === 'pass' && minArchives) {
+        const pairs = item.archivePairs || [];
+        const unique = field => new Set(pairs.map(pair => pair[field])).size === pairs.length;
+        if (pairs.some(pair => !pair.personKey || !item.personKeys.includes(pair.personKey) || !pair.caseId || !item.caseIds?.includes(pair.caseId) || !pair.proofId || !pair.drivePdfId) ||
+            !unique('personKey') || !unique('caseId') || !unique('proofId') || !unique('drivePdfId')) {
+          pending.push(`${item.key}: distinct participant, case, proof, and Drive PDF identities are incomplete.`);
+        }
+      }
     }
     for (const outbound of item.outbound || []) {
       const recipients = outbound.recipients || [];
@@ -115,9 +127,9 @@ export function assessRunRecord(record, { fixture = null, hashFile = path => cre
     }
   }
   if (scenarioKeys.size !== scenarios.length || scenarios.some(item => !scenarioKeys.has(item.key))) violations.push('The six required scenarios are not all present.');
-  for (const [label, measure] of Object.entries(record.measurements || {})) {
-    if (label !== 'manual' && label !== 'prototype') continue;
-    if (!Number.isFinite(measure.elapsedSeconds) || measure.elapsedSeconds < 0 || !Number.isInteger(measure.humanActions) || measure.humanActions < 0 || !measure.evidence) pending.push(`${label}: observed time/actions/evidence incomplete.`);
+  for (const label of ['manual', 'prototype']) {
+    const measure = record.measurements?.[label];
+    if (!measure || !Number.isFinite(measure.elapsedSeconds) || measure.elapsedSeconds < 0 || !Number.isInteger(measure.humanActions) || measure.humanActions < 0 || !measure.evidence) pending.push(`${label}: observed time/actions/evidence incomplete.`);
   }
   const recording = record.recording || {};
   if (recording.relativePath) {
@@ -126,6 +138,8 @@ export function assessRunRecord(record, { fixture = null, hashFile = path => cre
     else if (!existsSync(path)) pending.push('Recording file is missing.');
   }
   if (!recording.relativePath || !recording.requestId || !recording.playbackVerifiedAtUtc || recording.completeAndReadable !== true) pending.push('Full happy-path recording and playback verification incomplete.');
+  const happyPath = (record.scenarios || []).find(item => item.key === 'group_success');
+  if (recording.requestId && (happyPath?.status !== 'pass' || recording.requestId !== happyPath.requestId)) pending.push('Recording must match the passed group-success request.');
   if (!record.gate?.connectedReplayVerified) pending.push('Connected replay gate is not approved.');
   return { ready: violations.length === 0 && pending.length === 0, violations, pending };
 }
@@ -146,7 +160,8 @@ function main(args) {
     }
     if (!within(resolve(root, 'data'), fixturePath)) throw Error('Use an ignored fixture under data/.');
     const fixture = JSON.parse(readFileSync(fixturePath, 'utf8'));
-    const record = makeRunRecord(fixture);
+    const sourceCommit = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
+    const record = makeRunRecord(fixture, { sourceCommit });
     if (!write) { console.log(`Dry run: ${record.runId}; six scenarios validated. No files or Google assets changed. Use --write for a private record.`); return; }
     const dir = resolve(privateRuns, record.runId);
     if (!within(privateRuns, dir) || existsSync(dir)) throw Error('Run directory already exists.');
