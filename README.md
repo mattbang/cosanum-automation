@@ -8,6 +8,8 @@ The [notification templates and delivery contract](docs/NOTIFICATION_TEMPLATES.m
 
 The [workflow asset inventory](docs/WORKFLOW_ASSETS.md) links the interface mockups and templates for each handoff, including Calendar invitations, Google Forms, individual proof, archives, and the integrated demo checklist.
 
+The [status update templates](docs/status-updates/README.md) define the daily, weekly, and monthly group reports and their GitHub archive and Teams publication workflow.
+
 The [GUI design baseline](docs/GUI_DESIGN_BASELINE.md) records the agreed starting direction from the [Figma mockup](https://www.figma.com/design/z4Nppuwp1uSg7XTdWEY2b5/Cosanum-%C2%B7-Schulungsverwaltung-%E2%80%94-GUI-Konzept?node-id=0-1) and maps its nine screen concepts to the planned workflow.
 
 Increment 03 adds group or individual mode, topic-qualified synthetic trainer choices, and linked 60-minute theory and 180-minute practice sessions where required. The [demo Sheet schema](docs/DEMO_SHEET_SCHEMA.md) documents version 4 and its migrations. The connected app remains private to the demo account; deployment details and Google asset IDs are in the ignored local handoff.
