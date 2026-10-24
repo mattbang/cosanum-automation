@@ -25,6 +25,6 @@ Nur geänderte oder für den nächsten Schritt entscheidende Features aufführen
 
 - **Blockiert / Entscheidung nötig:** {{Problem, Auswirkung, zuständige Entscheidung; sonst „keine neue“.}}
 - **Als Nächstes:** {{Ein konkreter nächster Schritt mit Verantwortlichkeit, falls bekannt.}}
-- **Belege:** {{Links auf Registerzeilen, Kanban-Vorgänge, PRs oder private Übergabe.}}
+- **Belege:** {{Öffentliche Links auf Registerzeilen, Kanban-Vorgänge oder PRs; private Übergaben nur intern prüfen und hier nicht verlinken.}}
 
 **Teams-Kurzfassung:** {{Zwei bis vier Sätze: neue Arbeit, belegter Teststand, nächster Schritt. Keine sensiblen Testdaten.}}
