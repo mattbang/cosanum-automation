@@ -51,6 +51,8 @@ const first = context.saveDraftRequest(input), second = context.saveDraftRequest
 assert.equal(first.reused, false);
 assert.equal(second.reused, true);
 assert.equal(first.requestId, second.requestId);
+assert.equal(first.requestNo, 1);
+assert.equal(second.requestNo, 1);
 assert.equal(first.cases[0].caseId, second.cases[0].caseId);
 assert.equal(rows.Requests.length, 1);
 assert.equal(rows.ParticipantCases.length, 1);
@@ -59,9 +61,13 @@ const secondPerson = fixture.Skills.find(row => row[0] === 'SUMNER' && row[1] ==
 secondPerson[2] = 0;
 const group = { topicId: 'TC_R030', targetLevel: 1, personKeys: ['WOHNUNG', 'SUMNER'], actionId: '123e4567-e89b-42d3-a456-426614174001' };
 const groupSaved = context.saveDraftRequest(group);
+assert.equal(groupSaved.requestNo, 2);
 assert.equal(groupSaved.cases.length, 2);
 assert.notEqual(groupSaved.cases[0].caseId, groupSaved.cases[1].caseId);
 assert.equal(context.saveDraftRequest(group).reused, true);
 assert.equal(rows.Requests.length, 2);
 assert.equal(rows.ParticipantCases.length, 3);
-console.log('Pass: next-level and blocked rules, explicit target, live reread, stable draft IDs and duplicate retry.');
+rows.Requests.length = 9999;
+assert.throws(() => context.saveDraftRequest({ ...group, actionId: '123e4567-e89b-42d3-a456-426614174002' }), /Nummernraum/i);
+rows.Requests.length = 2;
+console.log('Pass: next-level and blocked rules, explicit target, stable four-digit order numbers, and duplicate retry.');

@@ -62,6 +62,7 @@ const at = new Date('2026-10-26T12:00:00Z');
   completed.add(cases[1]);
   const first = ctx.processAuditNoticesCore_(at, gateway);
   assert.equal(first.requests[0].state, 'waiting');
+  assert.equal(first.requests[0].requestNo, 1);
   assert.equal(first.requests[0].plannedSessions, 2);
   assert.equal(first.requests[0].bookedSessions, 2);
   assert.equal(sent.length, 0, 'one completed person cannot close two-person group');

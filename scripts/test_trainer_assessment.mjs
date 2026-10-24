@@ -42,6 +42,20 @@ const context = ctx.trainerCaseContext_(tables,session.session_id,cases[0].case_
 assert.equal(context.trainer.email,'trainer@example.com');
 assert.equal(ctx.verifyTrainerCalendar_(context,()=>event),event);
 assert.throws(()=>ctx.trainerCaseContext_(tables,session.session_id,'CASE-OTHER'),/Zuordnung/);
+const qualified = {person_key:'MARIE',email:'coach@example.com',display_alias:'Marie Test',demo_role:'HCM Einzeltraining',demo_marker:'[DEMO]'};
+tables.People.push(qualified);
+tables.Skills=[{person_key:'MARIE',topic_id:'TC_R052',skill_level:4,demo_marker:'[DEMO]'}];
+session.trainer_key='MARIE';
+const secondLink=tables.SessionCases.pop();
+assert.equal(ctx.trainerCaseContext_(tables,session.session_id,cases[0].case_id).trainer.person_key,'MARIE');
+tables.SessionCases.push(secondLink);
+assert.throws(()=>ctx.trainerCaseContext_(tables,session.session_id,cases[0].case_id),/Gruppentrainer/);
+tables.SessionCases.pop();
+tables.Skills[0].skill_level=3;
+assert.throws(()=>ctx.trainerCaseContext_(tables,session.session_id,cases[0].case_id),/Stufe-4-Trainer/);
+tables.Skills[0].skill_level=4;
+session.trainer_key='MATT';
+tables.SessionCases.push(secondLink);
 
 const titles = ctx.TRAINER_QUESTIONS;
 function response(id, {email='trainer@example.com',at=now,attendance='Ja, anwesend',assessment='Bestanden',note='',attestation=['Ja']}={}) {
@@ -124,4 +138,4 @@ assert.equal(formRows[1][10],'forms-api:trainer@example.com');
 assert.equal(ctx.trainerAssessmentDecision_(context,{...formRow,verified_at:'',verified_by:''},response('R-20'),[],()=>event).disposition,'rejected');
 ctx.Session={getEffectiveUser:()=>({getEmail:()=> 'wrong@example.com'})};
 assert.throws(()=>ctx.confirmTrainerVerifiedEmail({sessionId:session.session_id,caseId:cases[0].case_id,confirmation:true}),/Nur Process & Quality/);
-console.log('Pass: assigned-trainer identity, post-session gate, per-person attendance/result, open cases, wrong-account and duplicate rejection, and RSVP separation.');
+console.log('Pass: assigned-trainer identity, one-person group level-4 exception, post-session gate, per-person attendance/result, open cases, wrong-account and duplicate rejection, and RSVP separation.');

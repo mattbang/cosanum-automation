@@ -54,7 +54,14 @@ function trainerCaseContext_(tables, sessionId, caseId) {
   var person = uniqueTrainerRow_(tables.People, function (row) {
     return row.person_key === personCase.person_key && row.demo_marker === '[DEMO]';
   }, 'Teilnehmende Person');
-  if (session.mode === 'group' && session.trainer_key !== 'MATT') throw new Error('Gruppentrainer muss Process & Quality sein.');
+  if (session.mode === 'group' && session.trainer_key !== 'MATT') {
+    var sessionLinks = tables.SessionCases.filter(function (row) { return row.session_id === sessionId && row.demo_marker === '[DEMO]'; });
+    var trainerSkills = tables.Skills.filter(function (row) { return row.person_key === session.trainer_key && row.topic_id === request.topic_id && row.demo_marker === '[DEMO]'; });
+    if (sessionLinks.length !== 1 || !/Einzeltraining|Coach|Supervisor|HCM/i.test(String(trainer.demo_role)) ||
+        trainerSkills.length !== 1 || Number(trainerSkills[0].skill_level) !== 4 || session.trainer_key === person.person_key) {
+      throw new Error('Gruppentrainer muss Process & Quality sein; bei einer Person ist ein qualifizierter Stufe-4-Trainer zulässig.');
+    }
+  }
   if (session.phase !== 'theory' && session.phase !== 'practice') throw new Error('Unbekannter Schulungsteil.');
   if (!String(trainer.email).trim() || !String(person.email).trim()) throw new Error('Konto für den Schulungsteil fehlt.');
   return { session: session, link: link, personCase: personCase, request: request,
