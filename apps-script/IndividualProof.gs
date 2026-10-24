@@ -328,6 +328,8 @@ function createIndividualProof(input) {
     }
     if (pdf.getSize() < 100) throw new Error('Gespeichertes PDF ist leer.');
     if (ledger.row[11] === 'pending_creation') proofSaveAssets_(sheet, ledger, folder.getId(), doc.getId(), pdf.getId(), 'pending_local_archive');
+    // A retry also backfills properties on the same Doc/PDF; no replacement asset is made.
+    proofMetadataEnsurePair_(ledger.row);
     return { proofId: model.proofId, proofVersion: PROOF_VERSION, caseId: model.caseId,
       docUrl: doc.getUrl(), pdfUrl: pdf.getUrl(), status: ledger.row[11], reused: ledger.reused };
   } finally { lock.releaseLock(); }

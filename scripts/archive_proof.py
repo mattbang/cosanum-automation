@@ -294,7 +294,7 @@ class Source:
         files, page = [], ''
         while True:
             result = self.api.json(api_url(self.drive, 'files', q=query, pageSize='1000',
-                                           fields='nextPageToken,files(id,name,mimeType,parents,size,trashed)',
+                                           fields='nextPageToken,files(id,name,mimeType,parents,size,trashed,properties,sha256Checksum)',
                                            pageToken=page))
             files.extend(result.get('files', []))
             page = result.get('nextPageToken', '')
@@ -303,7 +303,11 @@ class Source:
 
     def file(self, file_id: str) -> dict:
         return self.api.json(api_url(self.drive, 'files/' + quote(file_id),
-                                     fields='id,name,mimeType,parents,size,trashed'))
+                                     fields='id,name,mimeType,parents,size,trashed,properties,sha256Checksum'))
+
+    def metadata_files(self, proof_id: str) -> list[dict]:
+        escaped = proof_id.replace('\\', '\\\\').replace("'", "\\'")
+        return self.list_files("trashed = false and properties has { key='cosanum_proof_id' and value='" + escaped + "' }")
 
     def rows(self, tab: str) -> list[dict]:
         expected = SHEETS[tab]
@@ -385,6 +389,12 @@ class BundleSource:
             raise ArchiveError('Connector bundle child has a different parent.')
         return copy.deepcopy(children)
 
+    def metadata_files(self, proof_id: str) -> list[dict]:
+        matches = self.bundle.get('metadata_matches')
+        if not isinstance(matches, list) or any(not isinstance(item, dict) for item in matches):
+            raise ArchiveError('Connector bundle lacks a complete Drive metadata search result.')
+        return copy.deepcopy(matches)
+
     def pdf(self, file_id: str) -> bytes:
         if file_id != self.bundle.get('pdf_id'):
             raise ArchiveError('Connector PDF ID differs from the proof register.')
@@ -433,7 +443,13 @@ def proof_record(source: Source, case_id: str) -> tuple[dict, int]:
     return proof, number
 
 
-def folder_and_files(source: Source, proof: dict) -> None:
+def proof_properties(proof: dict) -> dict[str, str]:
+    return {'cosanum_request_id': str(proof['request_id']), 'cosanum_case_id': str(proof['case_id']),
+            'cosanum_proof_id': str(proof['proof_id']), 'cosanum_proof_version': str(proof['proof_version']),
+            'cosanum_demo_marker': '[DEMO]'}
+
+
+def folder_and_files(source: Source, proof: dict) -> str:
     # Check each parent and exact file name. File IDs alone could point elsewhere.
     folder = source.file(proof['folder_id'])
     expected = [proof['person_key'], proof['request_id'], proof['topic_id'], 'evidence-archive']
@@ -450,10 +466,29 @@ def folder_and_files(source: Source, proof: dict) -> None:
     expected_files = [(proof['doc_id'], name, 'application/vnd.google-apps.document'),
                       (proof['pdf_id'], name + '.pdf', 'application/pdf')]
     children = source.list_files(f"'{proof['folder_id']}' in parents and trashed = false")
+    matches = source.metadata_files(proof['proof_id'])
+    if len(matches) != 2 or {item.get('id') for item in matches} != {proof['doc_id'], proof['pdf_id']}:
+        raise ArchiveError('Drive metadata lookup did not find exactly the registered Doc/PDF pair.')
+    expected_properties = proof_properties(proof)
     for file_id, filename, mime in expected_files:
         found = [item for item in children if item['name'] == filename]
         if len(found) != 1 or found[0]['id'] != file_id or found[0]['mimeType'] != mime:
             raise ArchiveError('Drive proof file identity, format, or uniqueness does not match the register.')
+        metadata = one([item for item in matches if item.get('id') == file_id], 'Drive metadata match')
+        direct = source.file(file_id)
+        for item in (found[0], metadata, direct):
+            if (item.get('id') != file_id or item.get('name') != filename or item.get('mimeType') != mime or
+                    item.get('trashed') or item.get('parents') != [proof['folder_id']] or
+                    any(item.get('properties', {}).get(key) != value for key, value in expected_properties.items())):
+                raise ArchiveError('Drive proof metadata, version, or folder differs from the register.')
+    checksums = [item.get('sha256Checksum') for item in
+                 (one([row for row in matches if row.get('id') == proof['pdf_id']], 'PDF metadata'),
+                  source.file(proof['pdf_id']))]
+    if any(not isinstance(value, str) or not HEX64.fullmatch(value) for value in checksums):
+        raise ArchiveError('Stored Drive PDF SHA-256 checksum is unavailable.')
+    if checksums[0] != checksums[1]:
+        raise ArchiveError('Stored Drive PDF SHA-256 checksum changed during verification.')
+    return checksums[0]
 
 
 def source_ids(source: Source, proof: dict) -> tuple[list[str], dict[str, list[str]]]:
@@ -613,12 +648,14 @@ def mark_archive_error(source: Source, proof: dict, number: int) -> None:
 def archive_case(source: Source, case_id: str, root: Path, *, repair: bool = False) -> dict:
     proof, number = proof_record(source, case_id)
     try:
-        folder_and_files(source, proof)
+        stored_sha = folder_and_files(source, proof)
         sessions, responses = source_ids(source, proof)
         pdf = source.pdf(proof['pdf_id'])
         if not pdf.startswith(b'%PDF-') or len(pdf) < 100:
             raise ArchiveError('Drive PDF is not a readable proof PDF.')
         drive_sha = sha256(pdf)
+        if drive_sha != stored_sha:
+            raise ArchiveError('Downloaded PDF differs from its stored Drive SHA-256 checksum.')
         pdf_path, docx_path, manifest_path = archive_paths(root, proof)
         existing = json.loads(manifest_path.read_text()) if manifest_path.exists() else None
         reuse = existing is not None and verify_existing(existing, proof, pdf_path, docx_path, drive_sha)
@@ -691,14 +728,16 @@ def verify_bundle_commit(bundle_path: Path, case_id: str, root: Path) -> dict:
     proof, _ = proof_record(source, case_id)
     if proof['status'] != 'archived_verified':
         raise ArchiveError('Proof register is not archived_verified.')
-    folder_and_files(source, proof)
+    stored_sha = folder_and_files(source, proof)
     sessions, responses = source_ids(source, proof)
     pdf = source.pdf(proof['pdf_id'])
+    if sha256(pdf) != stored_sha:
+        raise ArchiveError('Downloaded PDF differs from its stored Drive SHA-256 checksum.')
     pdf_path, docx_path, manifest_path = archive_paths(root, proof)
     if not manifest_path.is_file():
         raise ArchiveError('Local manifest is missing.')
     manifest = json.loads(manifest_path.read_text())
-    if not verify_existing(manifest, proof, pdf_path, docx_path, sha256(pdf)):
+    if not verify_existing(manifest, proof, pdf_path, docx_path, stored_sha):
         raise ArchiveError('Local PDF or DOCX no longer verifies.')
     if manifest['session_ids'] != sessions or manifest['source_response_ids'] != responses:
         raise ArchiveError('Archived source response IDs differ from the fresh connector capture.')

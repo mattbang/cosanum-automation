@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 
 const HEADERS={
+  Proofs:['proof_id','proof_version','request_id','case_id','person_key','topic_id','source_hash','created_at','folder_id','doc_id','pdf_id','status','demo_marker'],
   Skills:['person_key','topic_id','skill_level','status_mark','demo_marker'],
   SkillUpdates:['idempotency_key','case_id','request_id','person_key','topic_id','previous_level','target_level','proof_id','proof_version','source_hash','archive_verified_at','applied_at','status','reason','demo_marker']
 };
@@ -12,7 +13,7 @@ function fixture(){return {
   People:[{person_key:'MATT',email:'owner@example.com',demo_marker:'[DEMO]'}],
   ParticipantCases:[{case_id:CASE,request_id:'REQ-ABCD',person_key:'SUMNER',current_level:0,target_level:1,demo_marker:'[DEMO]'}],
   Requests:[{request_id:'REQ-ABCD',topic_id:'TC_R052',target_level:1,demo_marker:'[DEMO]'}],
-  Proofs:[{proof_id:PROOF,proof_version:1,request_id:'REQ-ABCD',case_id:CASE,person_key:'SUMNER',topic_id:'TC_R052',source_hash:HASH,created_at:'2026-10-22T12:00:00Z',doc_id:'doc-id',pdf_id:'pdf-id',status:'archived_verified',demo_marker:'[DEMO]'}],
+  Proofs:[{proof_id:PROOF,proof_version:1,request_id:'REQ-ABCD',case_id:CASE,person_key:'SUMNER',topic_id:'TC_R052',source_hash:HASH,created_at:'2026-10-22T12:00:00Z',folder_id:'folder-id',doc_id:'doc-id',pdf_id:'pdf-id',status:'archived_verified',demo_marker:'[DEMO]'}],
   ArchiveReceipts:[{proof_id:PROOF,proof_version:1,case_id:CASE,request_id:'REQ-ABCD',person_key:'SUMNER',topic_id:'TC_R052',source_hash:HASH,doc_id:'doc-id',pdf_id:'pdf-id',drive_pdf_sha256:PDF_HASH,local_pdf_sha256:PDF_HASH,local_docx_sha256:DOCX_HASH,local_pdf_path:'/archive/proof.pdf',local_docx_path:'/archive/proof.docx',manifest_path:'/archive/manifest.json',verified_at:'2026-10-23T12:00:00Z',status:'verified',demo_marker:'[DEMO]'}],
   SkillUpdates:[]
 }}
@@ -36,6 +37,7 @@ function setup(){
   ctx.proofEmail_=(email)=>String(email||'').trim().toLowerCase();
   ctx.proofSourceModel_=()=>({proofId:PROOF,previousLevel:'0',targetLevel:'1'});
   ctx.proofHash_=()=>HASH;
+  ctx.proofMetadataLookup_=(row, expectedSha)=>{assert.equal(row[9],'doc-id');assert.equal(row[10],'pdf-id');assert.equal(expectedSha,PDF_HASH)};
   ctx.assertHeaders_=(actual,expected)=>assert.deepEqual(actual,expected);
   ctx.readDemoTables_=()=>({...tables,Skills:skills.rows.slice(1).map(row=>({person_key:row[0],topic_id:row[1],skill_level:row[2],demo_marker:row[4]})),SkillUpdates:updates.rows.slice(1).map(row=>Object.fromEntries(HEADERS.SkillUpdates.map((key,i)=>[key,row[i]])))});
   ctx.findDemoSpreadsheet_=()=>({getSheetByName:name=>({Skills:skills,SkillUpdates:updates})[name]});
@@ -84,6 +86,13 @@ function setup(){
 {
   const {ctx,tables}=setup();tables.ArchiveReceipts[0].local_pdf_sha256='f'.repeat(64);
   assert.throws(()=>ctx.applyVerifiedSkillUpdate({caseId:CASE}),/Archivbeleg/);
+}
+{
+  const {ctx,skills,updates}=setup();
+  ctx.proofMetadataLookup_=()=>{throw Error('Stored Drive checksum unavailable')};
+  assert.throws(()=>ctx.applyVerifiedSkillUpdate({caseId:CASE}),/checksum unavailable/);
+  assert.equal(skills.rows[1][2],0);
+  assert.equal(updates.rows.length,1);
 }
 {
   const {ctx,tables}=setup();tables.ParticipantCases[0].target_level=4;

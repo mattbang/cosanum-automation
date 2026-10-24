@@ -32,6 +32,10 @@ function skillArchiveGate_(tables, caseId) {
       !receipt.local_pdf_path || !receipt.local_docx_path || !receipt.manifest_path) {
     throw new Error('Archivbeleg und Nachweis stimmen nicht überein.');
   }
+  // Completion and skill writes use a read-only exact Drive lookup. The archive
+  // helper separately checks the downloaded/local bytes against this checksum.
+  var proofRow = DEMO_SCHEMA.sheets.Proofs.map(function (key) { return proof[key]; });
+  proofMetadataLookup_(proofRow, receipt.drive_pdf_sha256);
   proofIso_(receipt.verified_at, 'Archivprüfung');
   if (Date.parse(proofIso_(receipt.verified_at, 'Archivprüfung')) < Date.parse(proofIso_(proof.created_at, 'Nachweis'))) {
     throw new Error('Archivprüfung liegt vor der Nachweiserstellung.');
