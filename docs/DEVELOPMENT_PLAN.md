@@ -23,6 +23,10 @@ Use the [GUI design baseline](GUI_DESIGN_BASELINE.md) as the interface starting 
 | 13 | Completion, exception notices, and audit view | A fully completed request sends one notice; open cases produce exceptions and remain searchable with evidence links. Use the [notification templates and delivery contract](NOTIFICATION_TEMPLATES.md). |
 | 14 | Clean integrated replay and measurement | Group, individual, and failure cases replay from fresh synthetic data; observed time and manual actions are recorded. |
 
+## Contributor development track
+
+The [contributor development plan](CONTRIBUTOR_DEVELOPMENT.md) adds a cross-cutting track beside the numbered product increments. [#27](https://github.com/mattbang/cosanum-automation/issues/27) standardizes a clean checkout, synthetic read-only preview, local checks, and pull-request CI. [#28](https://github.com/mattbang/cosanum-automation/issues/28) establishes a separate, access-reviewed Google test environment for team connected work. Local checks can run during a Google authorization blocker; they do not satisfy an increment's connected acceptance check. A shared test environment may support later team replay, but it does not widen the owner-only v0.1 app or change member access requirements.
+
 ## Review gates
 
 - **Scheduling:** after 05, demonstrate a valid free slot and one test-calendar invitation.
