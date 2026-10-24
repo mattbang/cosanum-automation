@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 
-const fixture = JSON.parse(fs.readFileSync('data/demo_fixture.json', 'utf8'));
+const fixture = JSON.parse(fs.readFileSync('fixtures/synthetic_demo.json', 'utf8'));
 const oldHeaders = ['person_key','email','demo_role','demo_marker'];
 const data = [oldHeaders.concat(['','']), ...fixture.People.map(row => row.slice(0, 4).concat(['','']))];
 const original = data.map(row => row.slice(0, 4));

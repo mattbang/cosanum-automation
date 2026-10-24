@@ -1,13 +1,12 @@
 import assert from 'node:assert/strict';
-import { readFileSync, readdirSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { readFileSync, readdirSync, mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { assessRunRecord, makeRunRecord, validateFixture } from './demo_replay.mjs';
 
 const root = resolve(import.meta.dirname, '..');
-const fixture = JSON.parse(readFileSync(resolve(root, 'data/demo_fixture.json'), 'utf8'));
+const fixture = JSON.parse(readFileSync(resolve(root, 'fixtures/synthetic_demo.json'), 'utf8'));
 const original = JSON.stringify(fixture);
 const { allowlist } = validateFixture(fixture);
 assert.equal(allowlist.length, 4);
@@ -52,6 +51,7 @@ const swapped = structuredClone(record);
 swapped.allowlist[0] = 'different@example.test';
 assert.match(assessRunRecord(swapped, { fixture }).violations.join(' '), /allowlist differs/);
 
+mkdirSync(resolve(root, 'data'), { recursive: true });
 const temp = mkdtempSync(resolve(root, 'data', 'demo-replay-test-'));
 try {
   const pdf = resolve(temp, 'test.pdf');
