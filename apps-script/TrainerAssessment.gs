@@ -169,21 +169,19 @@ function confirmTrainerVerifiedEmail(input) {
     var form = FormApp.openById(formRow.form_id);
     if (!form.collectsEmail()) throw new Error('Das Trainerformular sammelt keine E-Mail-Adressen.');
     if (formRow.verified_at || formRow.verified_by) {
-      if (formsVerificationIsApi_(formRow)) {
-        if (!formsReadyForLink_(formRow, context.owner.email)) throw new Error('Automatische Formularprüfung ist nicht mehr gültig.');
-        return { formUrl: String(formRow.form_url), verifiedAt: String(formRow.verified_at), verifiedBy: actor, reused: true };
-      }
-      if (!formRow.verified_at || String(formRow.verified_by).toLowerCase() !== actor) throw new Error('Widersprüchliche manuelle Verifizierung.');
+      if (!formRow.verified_at || formsVerificationActor_(formRow) !== actor) throw new Error('Widersprüchliche Formularverifizierung.');
+      if (!formsReadyForLink_(formRow, context.owner.email)) throw new Error('Formularprüfung ist nicht mehr gültig.');
       return { formUrl: String(formRow.form_url), verifiedAt: String(formRow.verified_at), verifiedBy: actor, reused: true };
     }
+    if (!ensureFormsVerifiedEmail_(formRow.form_id)) throw new Error('Verifizierte E-Mail-Erfassung konnte nicht bestätigt werden.');
     var sheet = findDemoSpreadsheet_().getSheetByName('TrainerForms');
     var rows = sheet.getDataRange().getValues();
     var index = rows.findIndex(function (row) { return row[0] === input.sessionId && row[1] === input.caseId && row[5] === formRow.form_id; });
     if (index < 1) throw new Error('Trainerformular-Zeile fehlt.');
     var stamp = new Date().toISOString();
-    sheet.getRange(index + 1, 10, 1, 2).setValues([[stamp, actor]]);
+    sheet.getRange(index + 1, 10, 1, 2).setValues([[stamp, FORMS_API_ACTOR_PREFIX + actor]]);
     SpreadsheetApp.flush();
-    return { formUrl: String(formRow.form_url), verifiedAt: stamp, verifiedBy: actor, reused: false };
+    return { formUrl: String(formRow.form_url), verifiedAt: stamp, verifiedBy: FORMS_API_ACTOR_PREFIX + actor, reused: false };
   } finally { lock.releaseLock(); }
 }
 
@@ -304,12 +302,13 @@ function trainerAssessmentQueue_() {
       });
       if (accepted.length > 1) throw new Error('Mehrere gültige Trainerberichte für denselben Fall.');
       var result = accepted[0];
+      var formReady = formsReadyForLink_(form, context.owner.email);
       all.push({ sessionId: session.session_id, caseId: link.case_id, personAlias: String(context.person.display_alias),
         topicName: String(context.topic.display_name), phase: session.phase, trainerAlias: String(context.trainer.display_alias),
-        endUtc: session.end_utc, formUrl: formsReadyForLink_(form, context.owner.email) ? String(form.form_url) : '',
+        endUtc: session.end_utc, formUrl: formReady ? String(form.form_url) : '',
         formEditUrl: form ? 'https://docs.google.com/forms/d/' + encodeURIComponent(form.form_id) + '/edit' : '',
-        needsVerifiedReview: !!form && !formsReadyForLink_(form, context.owner.email),
-        status: result ? result.attendance === 'attended' && result.assessment === 'passed' ? 'awaiting_acknowledgement' : 'open' : 'awaiting_trainer',
+        needsVerifiedReview: !!form && !formReady,
+        status: result && !formReady ? 'identity_blocked' : result ? result.attendance === 'attended' && result.assessment === 'passed' ? 'awaiting_acknowledgement' : 'open' : 'awaiting_trainer',
         attendance: result ? result.attendance : '', assessment: result ? result.assessment : '',
         note: result ? String(result.note || '') : '', reporterEmail: result ? String(result.reporter_email) : '',
         submittedAt: result ? String(result.submitted_at) : '', responseId: result ? String(result.response_id) : '' });

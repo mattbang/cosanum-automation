@@ -25,6 +25,10 @@ function setup() {
   const sent = [];
   const ctx = vm.createContext({ Date, Object, Array, Number, String, RegExp, Error, Set });
   for (const file of ['FormsIdentity.gs', 'NotificationTemplates.gs', 'FollowUp.gs']) vm.runInContext(fs.readFileSync('apps-script/' + file, 'utf8'), ctx);
+  ctx.ScriptApp = { getOAuthToken: () => 'test-token' };
+  ctx.UrlFetchApp = { fetch: url => ({ getResponseCode: () => 200,
+    getContentText: () => JSON.stringify({ formId: decodeURIComponent(url.split('/').at(-1)),
+      settings: { emailCollectionType: 'VERIFIED' } }) }) };
   ctx.DEMO_SCHEMA = { sheets: { MessageLedger: headers } };
   ctx.SLOT_TIME_ZONE = 'Europe/Zurich';
   ctx.Utilities = { formatDate: date => new Date(date).toISOString().slice(0,10), parseDate: (value) => {
@@ -176,5 +180,15 @@ for (const change of ['absent', 'cancelled']) {
   const result = ctx.processAcknowledgementFollowUpsCore_(new Date('2026-10-27T08:00:00Z'), gateway);
   assert.equal(result.results.length, 0); assert.equal(sent.length, 0);
   assert.equal(result.rows[0].state, 'open'); assert.equal(result.rows[0].formReady, false);
+}
+{
+  const {ctx, sent, gateway} = setup();
+  ctx.participantAcknowledgementGate_ = () => { throw Error('Forms API GET fehlgeschlagen'); };
+  const queue = ctx.acknowledgementFollowUpQueue_(ctx.readDemoTables_(), new Date('2026-10-24T08:00:00Z'));
+  assert.equal(queue[0].state, 'identity_blocked');
+  assert.equal(queue[0].formReady, false);
+  assert.throws(() => ctx.processAcknowledgementFollowUpsCore_(new Date('2026-10-24T08:00:00Z'), gateway),
+    /Forms API GET fehlgeschlagen/);
+  assert.equal(sent.length, 0);
 }
 console.log('Follow-up reminders: due dates, one send per day, gates, unknown delivery, quota, allowlist and open queue passed');

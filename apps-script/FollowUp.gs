@@ -26,13 +26,20 @@ function followUpAccepted_(tables, sessionId, caseId) {
 function followUpContext_(tables, session, link, requireVerifiedForm) {
   if (session.demo_marker !== '[DEMO]' || session.status !== 'invited' || link.demo_marker !== '[DEMO]') return null;
   var context = trainerCaseContext_(tables, session.session_id, link.case_id);
-  if (!participantAcknowledgementGate_(tables, context).allowed || followUpAccepted_(tables, session.session_id, link.case_id)) return null;
+  var gate;
+  try { gate = participantAcknowledgementGate_(tables, context); }
+  catch (error) {
+    if (requireVerifiedForm) throw error;
+    gate = { allowed: false, identityBlocked: true, reason: 'Formularprüfung derzeit nicht möglich.' };
+  }
+  if ((!gate.allowed && (requireVerifiedForm || !gate.identityBlocked)) ||
+      followUpAccepted_(tables, session.session_id, link.case_id)) return null;
   var form = participantFormRow_(tables, session.session_id, link.case_id);
   if (form) assertParticipantFormAssignment_(form, context);
-  var formReady = !!form && formsReadyForLink_(form, context.owner.email) &&
+  var formReady = gate.allowed && !!form && formsReadyForLink_(form, context.owner.email) &&
     /^https:\/\/docs\.google\.com\/forms\//.test(String(form.form_url));
   if (requireVerifiedForm && !formReady) return null;
-  return { context: context, form: form, formReady: formReady };
+  return { context: context, form: form, formReady: formReady, identityBlocked: !!gate.identityBlocked };
 }
 
 function followUpAllowlisted_(context) {
@@ -185,7 +192,8 @@ function acknowledgementFollowUpQueue_(tables, clock) {
       });
       rows.push({ caseId: link.case_id, sessionId: session.session_id, requestId: session.request_id,
         personAlias: String(eligible.context.person.display_alias), topicName: String(eligible.context.topic.display_name),
-        state: open ? 'open' : 'awaiting_acknowledgement', dueDay5Utc: due.dueAt.toISOString(),
+        state: open ? 'open' : eligible.identityBlocked ? 'identity_blocked' : 'awaiting_acknowledgement',
+        identityBlocked: eligible.identityBlocked, dueDay5Utc: due.dueAt.toISOString(),
         day2State: day2 ? day2.state : '', day5State: day5 ? day5.state : '',
         formUrl: eligible.formReady ? String(eligible.form.form_url) : '', formReady: eligible.formReady,
         lastAction: actions.length ? String(actions[actions.length - 1].action) : '',

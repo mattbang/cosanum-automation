@@ -44,7 +44,7 @@ function formsVerificationIsApi_(formRow) {
   return String(formRow && formRow.verified_by || '').trim().toLowerCase().indexOf(FORMS_API_ACTOR_PREFIX) === 0;
 }
 
-/** A manual inspection remains valid for historical rows; API rows require a live read-back. */
+/** Every released Form requires a current REST read-back, including older manually inspected rows. */
 function formsIdentityGate_(formRow, ownerEmail) {
   var owner = String(ownerEmail || '').trim().toLowerCase();
   if (!formRow || !formRow.form_id || !formRow.verified_at ||
@@ -52,13 +52,13 @@ function formsIdentityGate_(formRow, ownerEmail) {
       !owner || formsVerificationActor_(formRow) !== owner) {
     return { allowed: false, reason: 'Verifizierte E-Mail-Erfassung ist nicht bestätigt.' };
   }
-  if (formsVerificationIsApi_(formRow) && formsEmailCollectionType_(formRow.form_id) !== 'VERIFIED') {
+  if (formsEmailCollectionType_(formRow.form_id) !== 'VERIFIED') {
     return { allowed: false, reason: 'Formular sammelt keine verifizierte Google-Konto-Adresse mehr.' };
   }
   return { allowed: true, reason: '' };
 }
 
-/** A REST failure leaves the existing Form pending for the owner-reviewed fallback. */
+/** A REST failure leaves the existing Form pending until a later verified read-back. */
 function tryAutomatedFormVerification_(sheet, formRow, ownerEmail) {
   if (formRow.verified_at || formRow.verified_by) return formRow;
   try { if (!ensureFormsVerifiedEmail_(formRow.form_id)) return formRow; }

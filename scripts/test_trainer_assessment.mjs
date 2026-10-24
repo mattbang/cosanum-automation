@@ -11,6 +11,10 @@ const ctx = vm.createContext({
   }
 });
 for (const file of ['FormsIdentity.gs', 'TrainerAssessment.gs']) vm.runInContext(fs.readFileSync('apps-script/' + file, 'utf8'), ctx);
+let verifiedMode='VERIFIED';
+ctx.ScriptApp={getOAuthToken:()=> 'test-token',getProjectTriggers:()=>[]};
+ctx.UrlFetchApp={fetch:(url,options)=>({getResponseCode:()=>200,getContentText:()=>JSON.stringify(options.method==='get'?
+  {formId:decodeURIComponent(url.split('/').at(-1)),settings:{emailCollectionType:verifiedMode}}:{replies:[{}]})})};
 const now = '2026-10-23T12:00:00Z';
 const session = {session_id:'SES-TRAINER',request_id:'REQ-TRAINER',phase:'theory',mode:'group',
   trainer_key:'MATT',status:'invited',calendar_event_id:'event-SES-TRAINER',
@@ -33,6 +37,7 @@ const formRow = {form_id:'FORM-ONE',session_id:session.session_id,case_id:cases[
   person_key:'WOHNUNG',trainer_key:'MATT',trainer_email:'trainer@example.com',
   verified_at:'2026-10-22T09:05:00Z',verified_by:'trainer@example.com',demo_marker:'[DEMO]'};
 tables.TrainerForms.push(formRow);
+tables.TrainerForms.push({...formRow,form_id:'FORM-TWO',case_id:cases[1].case_id,person_key:'SUMNER'});
 const context = ctx.trainerCaseContext_(tables,session.session_id,cases[0].case_id);
 assert.equal(context.trainer.email,'trainer@example.com');
 assert.equal(ctx.verifyTrainerCalendar_(context,()=>event),event);
@@ -82,6 +87,9 @@ assert.equal(queue.length,2);
 assert.equal(queue[0].status,'awaiting_acknowledgement');
 assert.equal(queue[1].status,'open');
 assert.equal(queue[1].note,'Ersatztermin planen.');
+verifiedMode='RESPONDER_INPUT';
+assert.equal(ctx.trainerAssessmentQueue_()[0].status,'identity_blocked');
+verifiedMode='VERIFIED';
 
 const header=['response_id','form_id','session_id','case_id','person_key','reporter_email','submitted_at','attendance','assessment','note','attestation','disposition','reason','demo_marker'];
 let sheetRows=[header];
@@ -111,8 +119,8 @@ ctx.findDemoSpreadsheet_=()=>({getSheetByName:()=>({
 })});
 assert.throws(()=>ctx.confirmTrainerVerifiedEmail({sessionId:session.session_id,caseId:cases[0].case_id}),/prüfen und bestätigen/);
 const confirmed=ctx.confirmTrainerVerifiedEmail({sessionId:session.session_id,caseId:cases[0].case_id,confirmation:true});
-assert.equal(confirmed.verifiedBy,'trainer@example.com');
-assert.equal(formRows[1][10],'trainer@example.com');
+assert.equal(confirmed.verifiedBy,'forms-api:trainer@example.com');
+assert.equal(formRows[1][10],'forms-api:trainer@example.com');
 assert.equal(ctx.trainerAssessmentDecision_(context,{...formRow,verified_at:'',verified_by:''},response('R-20'),[],()=>event).disposition,'rejected');
 ctx.Session={getEffectiveUser:()=>({getEmail:()=> 'wrong@example.com'})};
 assert.throws(()=>ctx.confirmTrainerVerifiedEmail({sessionId:session.session_id,caseId:cases[0].case_id,confirmation:true}),/Nur Process & Quality/);
