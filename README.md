@@ -14,6 +14,10 @@ This project tests an end-to-end logistics training workflow with synthetic peop
 
 The governing prototype specification and detailed roadmap stay local. They retain original decisions; the dedicated-account cutover and current checks are recorded in the private handoffs. Google Drive holds demo assets and the duplicate evidence archive, not the specification.
 
+The [status update templates](docs/status-updates/README.md) define the daily, weekly, and monthly group reports and their GitHub archive and Teams publication workflow.
+
+The [GUI design baseline](docs/GUI_DESIGN_BASELINE.md) records the agreed starting direction from the [Figma mockup](https://www.figma.com/design/z4Nppuwp1uSg7XTdWEY2b5/Cosanum-%C2%B7-Schulungsverwaltung-%E2%80%94-GUI-Konzept?node-id=0-1) and maps its nine screen concepts to the planned workflow.
+
 ## Release boundary
 
 The private training web app remains owner-only. A source commit, Apps Script editor `@HEAD`, and a numbered `/exec` deployment are separate states. The current candidate has no mail scope; reminders and completion messages still require a reviewed permission grant and connected delivery test. The public synthetic role tour and its proposed mail sender are separate from the training app.
