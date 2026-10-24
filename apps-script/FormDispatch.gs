@@ -108,6 +108,8 @@ function formDispatchPrepareOne_(sessionId, caseId, now) {
   var tables = readDemoTables_();
   var context = trainerCaseContext_(tables, sessionId, caseId);
   if (now.getTime() < Date.parse(context.session.end_utc)) return;
+  followUpAllowlisted_(context);
+  formDispatchRecipient_({ purpose: 'trainer_assessment_request', context: context });
   var reports = tables.TrainerAssessments.filter(function (row) {
     return row.session_id === sessionId && row.case_id === caseId && row.demo_marker === '[DEMO]' && row.disposition === 'accepted';
   });
@@ -126,8 +128,11 @@ function formDispatchPrepareOne_(sessionId, caseId, now) {
   });
 }
 
-function processFormRequestsCore_(clock, gateway) {
+function processFormRequestsCore_(clock, gateway, options) {
   var now = followUpNow_(clock);
+  options = options || {};
+  var cutoff = options.notBeforeUtc ? Date.parse(options.notBeforeUtc) : NaN;
+  if (options.notBeforeUtc && !Number.isFinite(cutoff)) throw new Error('Ungültiger Startzeitpunkt für Formularversand.');
   var spreadsheet = findDemoSpreadsheet_();
   gateway = gateway || { sheet: spreadsheet.getSheetByName('MessageLedger'),
     remainingQuota: function () { return MailApp.getRemainingDailyQuota(); },
@@ -139,7 +144,8 @@ function processFormRequestsCore_(clock, gateway) {
   try {
     readDemoTables_().MessageLedger.filter(function (row) {
       return row.demo_marker === '[DEMO]' && row.state === 'reserved' &&
-        (row.purpose === 'trainer_assessment_request' || row.purpose === 'acknowledgement_request');
+        (row.purpose === 'trainer_assessment_request' || row.purpose === 'acknowledgement_request') &&
+        (!options.target || (row.session_id === options.target.sessionId && row.case_id === options.target.caseId));
     }).forEach(function (row) {
       followUpSetState_(gateway.sheet, row.send_key, 'unknown', '', 'Vorherige Reservierung ohne bestätigten Versand; manuell prüfen.');
       recoveredUnknown.push(String(row.send_key));
@@ -149,10 +155,13 @@ function processFormRequestsCore_(clock, gateway) {
   var tables = readDemoTables_();
   tables.Sessions.filter(function (session) {
     return session.demo_marker === '[DEMO]' && session.status === 'invited' &&
-      Number.isFinite(Date.parse(session.end_utc)) && now.getTime() >= Date.parse(session.end_utc);
+      Number.isFinite(Date.parse(session.end_utc)) && now.getTime() >= Date.parse(session.end_utc) &&
+      (!options.notBeforeUtc || Date.parse(session.end_utc) >= cutoff) &&
+      (!options.target || session.session_id === options.target.sessionId);
   }).forEach(function (session) {
     tables.SessionCases.filter(function (link) {
-      return link.session_id === session.session_id && link.demo_marker === '[DEMO]';
+      return link.session_id === session.session_id && link.demo_marker === '[DEMO]' &&
+        (!options.target || link.case_id === options.target.caseId);
     }).forEach(function (link) {
       var key = link.case_id + ':' + session.session_id;
       try {
@@ -170,12 +179,55 @@ function processFormRequestsCore_(clock, gateway) {
   return { checkedAt: now.toISOString(), recoveredUnknown: recoveredUnknown, results: results };
 }
 
-function processFormRequests() { return processFormRequestsCore_(); }
+var FORM_DISPATCH_ACTIVATED_AT_KEY = 'COSANUM_FORM_DISPATCH_ACTIVATED_AT';
+
+/** The scheduled path excludes sessions that had already ended when it was installed. */
+function processFormRequests() {
+  var activatedAt = PropertiesService.getScriptProperties().getProperty(FORM_DISPATCH_ACTIVATED_AT_KEY);
+  if (!activatedAt) throw new Error('Formularversand ist noch nicht aktiviert.');
+  return processFormRequestsCore_(undefined, undefined, { notBeforeUtc: activatedAt });
+}
+
+/** Explicit single-case replay; inspect preview before calling this on historical demo cases. */
+function processFormRequestFor(input) {
+  if (!input || typeof input.sessionId !== 'string' || typeof input.caseId !== 'string' ||
+      !input.sessionId.trim() || !input.caseId.trim()) throw new Error('Session und Personenfall fehlen.');
+  return processFormRequestsCore_(undefined, undefined, { target: { sessionId: input.sessionId, caseId: input.caseId } });
+}
+
+/** Read-only list of ended sessions that a manually initiated run could touch. */
+function previewFormRequestBacklog() {
+  var now = new Date(), tables = readDemoTables_();
+  var activatedAt = PropertiesService.getScriptProperties().getProperty(FORM_DISPATCH_ACTIVATED_AT_KEY);
+  return tables.Sessions.filter(function (session) {
+    return session.demo_marker === '[DEMO]' && session.status === 'invited' &&
+      Number.isFinite(Date.parse(session.end_utc)) && now.getTime() >= Date.parse(session.end_utc);
+  }).flatMap(function (session) {
+    return tables.SessionCases.filter(function (link) {
+      return link.session_id === session.session_id && link.demo_marker === '[DEMO]';
+    }).map(function (link) {
+      var context = trainerCaseContext_(tables, session.session_id, link.case_id);
+      var participant = followUpAllowlisted_(context).to;
+      var trainer = formDispatchRecipient_({ purpose: 'trainer_assessment_request', context: context }).to;
+      var trainerRow = followUpLedgerRow_(tables, 'trainer_report:' + link.case_id + ':' + session.session_id);
+      var ackRow = followUpLedgerRow_(tables, 'ack_request:' + link.case_id + ':' + session.session_id);
+      return { sessionId: session.session_id, caseId: link.case_id, endUtc: session.end_utc,
+        trainerEmail: trainer, participantEmail: participant,
+        trainerRequestState: trainerRow ? trainerRow.state : '', acknowledgementRequestState: ackRow ? ackRow.state : '',
+        includedByDailyTrigger: !!activatedAt && Date.parse(session.end_utc) >= Date.parse(activatedAt) };
+    });
+  });
+}
 
 function installFormRequestProcessor() {
   var found = ScriptApp.getProjectTriggers().filter(function (trigger) { return trigger.getHandlerFunction() === 'processFormRequests'; });
   if (found.length > 1) throw new Error('Mehrere Formularversand-Trigger gefunden.');
-  if (found.length) return { installed: false, count: 1 };
+  var properties = PropertiesService.getScriptProperties();
+  if (found.length) {
+    if (!properties.getProperty(FORM_DISPATCH_ACTIVATED_AT_KEY)) throw new Error('Formularversand-Trigger ohne Startzeitpunkt: manuell prüfen.');
+    return { installed: false, count: 1 };
+  }
+  if (!properties.getProperty(FORM_DISPATCH_ACTIVATED_AT_KEY)) properties.setProperty(FORM_DISPATCH_ACTIVATED_AT_KEY, new Date().toISOString());
   ScriptApp.newTrigger('processFormRequests').timeBased().atHour(9).everyDays(1).inTimezone(SLOT_TIME_ZONE).create();
   return { installed: true, count: 1 };
 }

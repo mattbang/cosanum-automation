@@ -52,6 +52,9 @@ const before = new Date('2026-10-24T11:59:59Z'), after = new Date('2026-10-24T12
 {
   const { ctx, tables, sent, ledger, gateway } = setup();
   assert.equal(ctx.processFormRequestsCore_(before, gateway).results.length, 0);
+  assert.equal(ctx.processFormRequestsCore_(after, gateway, { notBeforeUtc: '2026-10-25T00:00:00Z' }).results.length, 0);
+  assert.equal(ctx.processFormRequestsCore_(after, gateway, { target: { sessionId: 'OTHER', caseId: 'CASE-1' } }).results.length, 0);
+  assert.equal(ctx.processFormRequestsCore_(after, gateway, { target: { sessionId: 'SES-1', caseId: 'OTHER' } }).results.length, 0);
   assert.equal(sent.length, 0);
   const first = ctx.processFormRequestsCore_(after, gateway);
   assert.equal(first.results[0].state, 'sent');
@@ -68,6 +71,14 @@ const before = new Date('2026-10-24T11:59:59Z'), after = new Date('2026-10-24T12
   assert.equal(sent.length, 2); assert.equal(ledger.rows.length, 3);
   tables.ParticipantAcknowledgements.push({ session_id: 'SES-1', case_id: 'CASE-1', disposition: 'accepted', demo_marker: '[DEMO]' });
   assert.equal(ctx.processFormRequestsCore_(after, gateway).results.length, 0);
+}
+{
+  const { ctx, sent, ledger, gateway } = setup();
+  ctx.PropertiesService = { getScriptProperties: () => ({ getProperty: () => null }) };
+  ctx.readDemoTables_ = () => ({ Sessions: [], SessionCases: [], MessageLedger: [] });
+  assert.deepEqual(Array.from(ctx.previewFormRequestBacklog()), []);
+  assert.equal(sent.length, 0); assert.equal(ledger.rows.length, 1);
+  assert.throws(() => ctx.processFormRequests(), /nicht aktiviert/);
 }
 {
   const { ctx, tables, session, trainerForm, sent, gateway } = setup();
@@ -107,6 +118,13 @@ const before = new Date('2026-10-24T11:59:59Z'), after = new Date('2026-10-24T12
     'trainer@example.test', end, after.toISOString(), '', 'reserved', '', '[DEMO]']);
   assert.equal(ctx.processFormRequestsCore_(after, gateway).results[0].state, 'unknown');
   assert.equal(ledger.rows[1][10], 'unknown'); assert.equal(sent.length, 0);
+}
+{
+  const { ctx, ledger, gateway } = setup();
+  ledger.rows.push(['trainer_report:OTHER:OTHER', 'trainer_assessment_request', 3, 'OTHER', 'OTHER', 'OTHER',
+    'trainer@example.test', end, after.toISOString(), '', 'reserved', '', '[DEMO]']);
+  ctx.processFormRequestsCore_(after, gateway, { target: { sessionId: 'SES-1', caseId: 'CASE-1' } });
+  assert.equal(ledger.rows[1][10], 'reserved', 'single-case replay leaves other reservations untouched');
 }
 {
   const { ctx, tables, sent, gateway, prepare } = setup();
