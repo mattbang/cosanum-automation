@@ -84,11 +84,13 @@ function saveDraftRequest(input) {
       if (saved.topic_id !== input.topicId || Number(saved.target_level) !== Number(input.targetLevel) || submitted !== stored) {
         throw new Error('Diese Aktions-ID gehört bereits zu einem anderen Entwurf. Bitte die Seite neu laden.');
       }
-      return draftResult_(saved, savedCases, true);
+      return draftResult_(saved, savedCases, true, tables.Requests.indexOf(saved) + 1);
     }
     var preview = intakeSelection_(input, tables);
     if (!preview.allAllowed) throw new Error('Mindestens eine Person ist gesperrt. Matrix prüfen und Auswahl erneut laden.');
     var spreadsheet = findDemoSpreadsheet_();
+    var requestNo = tables.Requests.length + 1;
+    if (requestNo > 9999) throw new Error('Der vierstellige Auftragsnummernraum ist voll. Bitte die Nummerierung erweitern.');
     var requestId = 'REQ-' + input.actionId.toUpperCase();
     var now = new Date().toISOString();
     var request = [requestId, input.actionId, preview.topicId, preview.targetLevel, 'draft', now, '[DEMO]', ''];
@@ -112,13 +114,14 @@ function saveDraftRequest(input) {
     }
     requestsSheet.appendRow(request);
     SpreadsheetApp.flush();
-    return draftResult_({request_id: requestId, status: 'draft', mode: ''}, cases.map(function (c) { return {case_id: c[0], person_key: c[2]}; }), false);
+    return draftResult_({request_id: requestId, status: 'draft', mode: ''}, cases.map(function (c) { return {case_id: c[0], person_key: c[2]}; }), false, requestNo);
   } finally {
     lock.releaseLock();
   }
 }
 
-function draftResult_(request, cases, reused) {
-  return { requestId: String(request.request_id), status: String(request.status), mode: String(request.mode || ''), reused: reused,
+function draftResult_(request, cases, reused, requestNo) {
+  if (!Number.isInteger(requestNo) || requestNo < 1 || requestNo > 9999) throw new Error('Ungültige vierstellige Auftragsnummer.');
+  return { requestId: String(request.request_id), requestNo: requestNo, status: String(request.status), mode: String(request.mode || ''), reused: reused,
     cases: cases.map(function (c) { return { caseId: String(c.case_id), personKey: String(c.person_key) }; }) };
 }

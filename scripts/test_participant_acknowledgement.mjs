@@ -4,6 +4,11 @@ import vm from 'node:vm';
 
 const ctx = vm.createContext({Date, Set, Object, Array, Number, String});
 for (const file of ['FormsIdentity.gs', 'ParticipantAcknowledgement.gs']) vm.runInContext(fs.readFileSync('apps-script/' + file, 'utf8'), ctx);
+let restFailure=false, participantRestFailure=false, verifiedMode='VERIFIED', theoryMode='VERIFIED';
+ctx.ScriptApp={getOAuthToken:()=> 'test-token'};
+ctx.UrlFetchApp={fetch:(url,options)=>({getResponseCode:()=>restFailure||participantRestFailure&&url.includes('FORM-ONE')?503:200,getContentText:()=>JSON.stringify(options.method==='get'?
+  {formId:decodeURIComponent(url.split('/').at(-1)),settings:{emailCollectionType:url.includes('FORM-TRAINER')?theoryMode:verifiedMode}}:{replies:[{}]})})};
+ctx.trainerFormRow_=()=>({form_id:'FORM-TRAINER',verified_at:'2026-10-22T09:05:00Z',verified_by:'owner@example.com',demo_marker:'[DEMO]'});
 
 const end = '2026-10-22T09:00:00Z';
 const review = '2026-10-22T09:20:00Z';
@@ -19,7 +24,7 @@ const formRow = {session_id:'SES-THEORY',case_id:'CASE-ONE',request_id:'REQ-ONE'
   person_key:'SUMNER',participant_email:'participant@example.com',form_id:'FORM-ONE',
   form_url:'https://docs.google.com/forms/d/e/example/viewform',demo_marker:'[DEMO]',
   verified_at:review,verified_by:'owner@example.com'};
-const pass = {session_id:'SES-THEORY',case_id:'CASE-ONE',disposition:'accepted',
+const pass = {session_id:'SES-THEORY',case_id:'CASE-ONE',form_id:'FORM-TRAINER',disposition:'accepted',
   attendance:'attended',assessment:'passed',submitted_at:'2026-10-22T09:10:00Z',demo_marker:'[DEMO]'};
 const tables = {TrainerAssessments:[],Sessions:[],SessionCases:[],ParticipantForms:[formRow],ParticipantAcknowledgements:[]};
 assert.equal(ctx.participantAcknowledgementGate_(tables,context).allowed,false);
@@ -27,6 +32,15 @@ tables.TrainerAssessments=[pass];
 const gate=ctx.participantAcknowledgementGate_(tables,context);
 assert.equal(gate.allowed,true);
 assert.equal(gate.releasedAt,pass.submitted_at);
+theoryMode='RESPONDER_INPUT';
+assert.equal(ctx.participantAcknowledgementGate_(tables,context).identityBlocked,true,'downgraded trainer Form blocks participant release');
+assert.equal(ctx.participantAcknowledgementDecision_(context,formRow,{
+  getId:()=> 'TEST',getTimestamp:()=>new Date(sent),getRespondentEmail:()=> 'participant@example.com',getItemResponses:()=>[]
+},[],ctx.participantAcknowledgementGate_(tables,context)).disposition,'rejected');
+theoryMode='VERIFIED';
+restFailure=true;
+assert.throws(()=>ctx.participantAcknowledgementGate_(tables,context),/Forms API GET fehlgeschlagen/);
+restFailure=false;
 assert.throws(()=>ctx.assertParticipantFormAssignment_({...formRow,request_id:'REQ-OTHER'},context),/stimmen nicht überein/);
 assert.throws(()=>ctx.assertParticipantFormAssignment_({...formRow,participant_email:'wrong@example.com'},context),/stimmen nicht überein/);
 
@@ -39,6 +53,20 @@ assert.equal(ctx.participantAcknowledgementGate_(tables,practiceContext).allowed
 tables.TrainerAssessments[0]={...pass,assessment:'needs_follow_up'};
 assert.equal(ctx.participantAcknowledgementGate_(tables,practiceContext).allowed,false,'failed theory blocks practice');
 tables.TrainerAssessments[0]=pass;
+const originalTrainerFormRow=ctx.trainerFormRow_;
+tables.TrainerAssessments[1]={...tables.TrainerAssessments[1],form_id:'FORM-PRACTICE'};
+ctx.trainerFormRow_=(_tables,sessionId)=>sessionId==='SES-PRACTICE'
+  ? {form_id:'FORM-PRACTICE',verified_at:review,verified_by:'owner@example.com',demo_marker:'[DEMO]'}
+  : originalTrainerFormRow();
+theoryMode='RESPONDER_INPUT';
+assert.equal(ctx.participantAcknowledgementGate_(tables,practiceContext).identityBlocked,true,
+  'downgraded linked theory Form blocks practice release');
+theoryMode='VERIFIED';
+restFailure=true;
+assert.throws(()=>ctx.participantAcknowledgementGate_(tables,practiceContext),/Forms API GET fehlgeschlagen/);
+restFailure=false;
+assert.equal(ctx.participantAcknowledgementGate_(tables,practiceContext).allowed,true);
+ctx.trainerFormRow_=originalTrainerFormRow;
 
 const titles=ctx.PARTICIPANT_QUESTIONS;
 function response(id,{email='participant@example.com',at=sent,affirmation=[ctx.PARTICIPANT_AFFIRMATION],name='Sam Test'}={}){
@@ -86,6 +114,9 @@ assert.equal(ctx.participantAcknowledgementQueue_()[0].status,'awaiting_acknowle
 tables.ParticipantAcknowledgements=[{session_id:'SES-THEORY',case_id:'CASE-ONE',disposition:'accepted',
   respondent_email:'participant@example.com',submitted_at:sent,response_id:'R-ONE',typed_name:'Sam Test',demo_marker:'[DEMO]'}];
 assert.equal(ctx.participantAcknowledgementQueue_()[0].status,'acknowledged');
+verifiedMode='RESPONDER_INPUT';
+assert.equal(ctx.participantAcknowledgementQueue_()[0].status,'identity_blocked');
+verifiedMode='VERIFIED';
 
 const savedRows=[ctx.DEMO_SCHEMA.sheets.ParticipantForms ||
   ['session_id','case_id','request_id','person_key','participant_email','form_id','form_url','created_at','demo_marker','verified_at','verified_by'],
@@ -99,7 +130,7 @@ ctx.calendarBookingGet_=()=>({});
 ctx.Session={getEffectiveUser:()=>({getEmail:()=> 'owner@example.com'})};
 ctx.LockService={getScriptLock:()=>({waitLock:()=>{},releaseLock:()=>{}})};
 ctx.FormApp={openById:()=>({collectsEmail:()=>true})};
-ctx.ScriptApp={getProjectTriggers:()=>[{
+ctx.ScriptApp={...ctx.ScriptApp,getProjectTriggers:()=>[{
   getHandlerFunction:()=> 'onParticipantFormSubmit',getTriggerSourceId:()=> 'FORM-ONE'
 }]};
 ctx.findDemoSpreadsheet_=()=>({getSheetByName:()=>({getDataRange:()=>({getValues:()=>savedRows}),
@@ -107,13 +138,16 @@ ctx.findDemoSpreadsheet_=()=>({getSheetByName:()=>({getDataRange:()=>({getValues
     assert.deepEqual([row,col,count,width],[2,10,1,2]);
     savedRows[1][9]=values[0][0];savedRows[1][10]=values[0][1];
   }})})});
+participantRestFailure=true;
 const pendingPreparation=ctx.prepareParticipantForm({sessionId:'SES-THEORY',caseId:'CASE-ONE'});
 assert.equal(pendingPreparation.reused,true);
 assert.equal(pendingPreparation.formUrl,'','pending Form must not expose responder link');
 assert.equal(pendingPreparation.needsVerifiedReview,true);
 assert.throws(()=>ctx.confirmParticipantVerifiedEmail({sessionId:'SES-THEORY',caseId:'CASE-ONE'}),/prüfen und bestätigen/);
-assert.equal(ctx.confirmParticipantVerifiedEmail({sessionId:'SES-THEORY',caseId:'CASE-ONE',confirmation:true}).verifiedBy,'owner@example.com');
-assert.equal(savedRows[1][10],'owner@example.com');
+assert.throws(()=>ctx.confirmParticipantVerifiedEmail({sessionId:'SES-THEORY',caseId:'CASE-ONE',confirmation:true}),/Forms API GET fehlgeschlagen/);
+participantRestFailure=false;
+assert.equal(ctx.confirmParticipantVerifiedEmail({sessionId:'SES-THEORY',caseId:'CASE-ONE',confirmation:true}).verifiedBy,'forms-api:owner@example.com');
+assert.equal(savedRows[1][10],'forms-api:owner@example.com');
 tables.ParticipantForms=[formRow];
 const reviewedPreparation=ctx.prepareParticipantForm({sessionId:'SES-THEORY',caseId:'CASE-ONE'});
 assert.equal(reviewedPreparation.reused,true);

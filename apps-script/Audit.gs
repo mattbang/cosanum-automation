@@ -108,6 +108,7 @@ function auditView_(tables, now, spreadsheetUrl) {
   auditOwner_(tables);
   var requestIds = tables.Requests.filter(function (row) { return row.demo_marker === '[DEMO]'; }).map(function (row) { return row.request_id; });
   if (new Set(requestIds).size !== requestIds.length) throw new Error('Doppelte Demo-Auftrags-ID im Register.');
+  if (tables.Requests.length > 9999) throw new Error('Der vierstellige Auftragsnummernraum ist voll. Bitte die Nummerierung erweitern.');
   var caseIds = tables.ParticipantCases.filter(function (row) { return row.demo_marker === '[DEMO]'; }).map(function (row) { return row.case_id; });
   if (new Set(caseIds).size !== caseIds.length) throw new Error('Doppelte Demo-Personenfall-ID im Register.');
   return tables.Requests.filter(function (request) { return request.demo_marker === '[DEMO]'; }).map(function (request) {
@@ -121,7 +122,7 @@ function auditView_(tables, now, spreadsheetUrl) {
     var notices = tables.MessageLedger.filter(function (row) { return row.request_id === request.request_id && row.demo_marker === '[DEMO]' &&
       (row.purpose === 'completion_notice' || row.purpose === 'exception_notice'); });
     var sessions = tables.Sessions.filter(function (row) { return row.request_id === request.request_id && row.demo_marker === '[DEMO]'; });
-    return { requestId: request.request_id, topicId: request.topic_id, topicName: String(topic.display_name),
+    return { requestId: request.request_id, requestNo: tables.Requests.indexOf(request) + 1, topicId: request.topic_id, topicName: String(topic.display_name),
       mode: String(request.mode), createdAt: String(request.created_at), state: complete ? 'complete' :
         caseRows.some(function (row) { return row.state === 'open'; }) ? 'open' : 'waiting',
       plannedSessions: sessions.length, bookedSessions: sessions.filter(function (row) { return !!row.calendar_event_id; }).length,
