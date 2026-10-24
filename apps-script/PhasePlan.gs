@@ -40,13 +40,16 @@ function phasePlanModel_(requestId, mode, tables) {
 function planSession_(phase, order, mode, cases, requestId, minutes, theorySessionId, tables, processQualityTrainer) {
   var suffix = cases.length === 1 ? '-' + cases[0].person_key : '-GROUP';
   var sessionId = 'SES-' + requestId.slice(4) + '-' + phase.toUpperCase() + suffix;
-  var choices = mode === 'group' ? [{ key: 'MATT', label: String(processQualityTrainer.display_alias) + ' (Process & Quality)' }] :
-    tables.People.filter(function (p) {
+  var singlePersonGroup = mode === 'group' && cases.length === 1;
+  var choices = mode === 'group' ? [{ key: 'MATT', label: String(processQualityTrainer.display_alias) + ' (Process & Quality)' }] : [];
+  if (mode === 'individual' || singlePersonGroup) {
+    choices = choices.concat(tables.People.filter(function (p) {
       if (!/Einzeltraining|Coach|Supervisor|HCM/i.test(String(p.demo_role))) return false;
       if (cases.some(function (c) { return c.person_key === p.person_key; })) return false;
       var skill = tables.Skills.filter(function (s) { return s.person_key === p.person_key && s.topic_id === tables.Requests.filter(function (r) { return r.request_id === requestId; })[0].topic_id; });
       return skill.length === 1 && Number(skill[0].skill_level) === 4;
-    }).map(function (p) { return { key: String(p.person_key), label: String(p.display_alias) + ' (' + p.person_key + ')' }; });
+    }).map(function (p) { return { key: String(p.person_key), label: String(p.display_alias) + ' (' + p.person_key + ', Stufe 4)' }; }));
+  }
   return { sessionId: sessionId, phase: phase, order: order, mode: mode, caseIds: cases.map(function (c) { return c.case_id; }),
     personKeys: cases.map(function (c) { return c.person_key; }), durationMinutes: minutes, theorySessionId: theorySessionId,
     trainerChoices: choices, trainerKey: mode === 'group' ? 'MATT' : '' };
@@ -95,11 +98,14 @@ function savePhasePlan(input) {
     var tables = readDemoTables_();
     var plan = phasePlanModel_(input && input.requestId, input && input.mode, tables);
     var selected = input.trainers || {};
-    var expectedKeys = plan.phases.filter(function (p) { return p.mode === 'individual'; }).map(function (p) { return p.sessionId; });
+    var expectedKeys = plan.phases.filter(function (p) { return p.mode === 'individual' || (p.mode === 'group' && p.caseIds.length === 1); }).map(function (p) { return p.sessionId; });
     if (Object.keys(selected).some(function (key) { return expectedKeys.indexOf(key) < 0; })) throw new Error('Unbekannte Trainerzuordnung.');
     plan.phases.forEach(function (p) {
       if (p.mode === 'individual') {
         if (!p.trainerChoices.some(function (t) { return t.key === selected[p.sessionId]; })) throw new Error('Kein qualifizierter Einzeltrainer für ' + p.sessionId + ' gewählt.');
+        p.trainerKey = selected[p.sessionId];
+      } else if (p.caseIds.length === 1 && selected[p.sessionId]) {
+        if (!p.trainerChoices.some(function (t) { return t.key === selected[p.sessionId]; })) throw new Error('Kein zulässiger Trainer für ' + p.sessionId + ' gewählt.');
         p.trainerKey = selected[p.sessionId];
       }
     });
