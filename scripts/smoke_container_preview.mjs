@@ -9,9 +9,10 @@ const address = Object.values(networkInterfaces()).flat()
   .find(entry => entry?.family === 'IPv4' && !entry.internal)?.address;
 if (!address) throw new Error('No non-loopback IPv4 interface is available for the container preview smoke check.');
 
-const child = spawn(process.execPath, ['scripts/local_preview.mjs'], {
+const child = spawn('npm', ['run', 'dev'], {
   cwd: resolve(import.meta.dirname, '..'),
   env: { ...process.env, PORT: '0', PREVIEW_HOST: '0.0.0.0' },
+  detached: true,
   stdio: ['ignore', 'pipe', 'pipe']
 });
 let errorOutput = '';
@@ -37,5 +38,10 @@ try {
   assert.equal((await fetch(`${origin}/.clasp.json`, { signal: AbortSignal.timeout(10000) })).status, 404);
   console.log('PASS dev command serves the read-only preview on the container network interface');
 } finally {
-  child.kill();
+  // npm starts Node as a child. Terminate its process group so no preview remains.
+  if (child.pid) {
+    try { process.kill(-child.pid, 'SIGTERM'); } catch (error) {
+      if (error.code !== 'ESRCH') throw error;
+    }
+  }
 }
