@@ -81,6 +81,20 @@ const before = new Date('2026-10-24T11:59:59Z'), after = new Date('2026-10-24T12
   assert.throws(() => ctx.processFormRequests(), /nicht aktiviert/);
 }
 {
+  const { ctx } = setup();
+  const writes = [];
+  ctx.PropertiesService = { getScriptProperties: () => ({
+    getProperty: () => '2026-01-01T00:00:00Z',
+    setProperty: (key, value) => writes.push([key, value])
+  }) };
+  let created = 0;
+  ctx.ScriptApp = { getProjectTriggers: () => [], newTrigger: () => ({ timeBased: () => ({ atHour: () => ({ everyDays: () => ({ inTimezone: () => ({ create: () => { created++; } }) }) }) }) }) };
+  ctx.installFormRequestProcessor();
+  assert.equal(created, 1);
+  assert.equal(writes.length, 1, 'reinstallation replaces any old activation cutoff');
+  assert.match(writes[0][1], /^20\d\d-/);
+}
+{
   const { ctx, tables, session, trainerForm, sent, gateway } = setup();
   trainerForm.verified_at = '';
   assert.equal(ctx.processFormRequestsCore_(after, gateway).results.length, 0);

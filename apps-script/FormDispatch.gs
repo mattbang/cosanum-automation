@@ -227,7 +227,9 @@ function installFormRequestProcessor() {
     if (!properties.getProperty(FORM_DISPATCH_ACTIVATED_AT_KEY)) throw new Error('Formularversand-Trigger ohne Startzeitpunkt: manuell prüfen.');
     return { installed: false, count: 1 };
   }
-  if (!properties.getProperty(FORM_DISPATCH_ACTIVATED_AT_KEY)) properties.setProperty(FORM_DISPATCH_ACTIVATED_AT_KEY, new Date().toISOString());
+  // A removed or failed trigger leaves no active daily processor. A fresh
+  // installation starts a fresh cutoff, so the gap cannot turn into backlog mail.
+  properties.setProperty(FORM_DISPATCH_ACTIVATED_AT_KEY, new Date().toISOString());
   ScriptApp.newTrigger('processFormRequests').timeBased().atHour(9).everyDays(1).inTimezone(SLOT_TIME_ZONE).create();
   return { installed: true, count: 1 };
 }
