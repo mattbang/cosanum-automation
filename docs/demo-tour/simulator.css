@@ -1,0 +1,10 @@
+#simulator select{width:min(100%,440px)}
+.sim-toolbar,.sim-actions{display:flex;flex-wrap:wrap;gap:9px;margin:14px 0}
+.sim-booking{border-left:4px solid var(--plum);background:#f7f0f7;padding:12px 14px;margin:16px 0;border-radius:0 9px 9px 0}
+.sim-people{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:12px}
+.sim-person{border:1px solid var(--line);background:#fcfafc;border-radius:12px;padding:15px;min-width:0}
+.sim-person h4{color:var(--plum);font-size:1rem;margin:0 0 5px}
+.sim-state{margin:0;overflow-wrap:anywhere}
+.sim-actions button{flex:1 1 170px;background:var(--plum)}
+.sim-actions button+button{background:#f0e4f1;color:var(--plum)}
+@media(max-width:650px){.sim-toolbar button,.sim-actions button{width:100%}.sim-people{grid-template-columns:1fr}}
