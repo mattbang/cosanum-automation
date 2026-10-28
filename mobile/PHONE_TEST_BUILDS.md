@@ -1,0 +1,38 @@
+# Standalone phone test builds
+
+The phone test app uses only local synthetic cases, matrix entries, and demo slots. It has no backend URL, Google account connection, or push delivery. The current workflow covers one session phase at a time; separate group theory and individual practice still need the full connected phase plan.
+
+## Android APK on this Mac
+
+Use JDK 17 and the installed Android SDK. From `mobile/`:
+
+```sh
+export JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home
+export ANDROID_HOME=/Users/Matt/Library/Android/sdk
+npm ci
+npx expo prebuild --platform android --no-install
+cd android
+./gradlew :app:assembleRelease --no-daemon
+```
+
+The file is `android/app/build/outputs/apk/release/app-release.apk`. This local Gradle template signs its release variant with the Android debug key, so it is an **internal test APK**, not a production-signed build. Do not use it for Play Store delivery. Install it with `adb install -r .../app-release.apk`, or download the APK link on an Android phone and allow installation from that source. The JavaScript bundle is embedded: Metro and the laptop are not needed after installation. The package ID is `com.mattbang.cosanumtrainingdemo`.
+
+The standalone app accepts `cosanum-training-demo://participant/CASE-S-1` as a local demo link. It selects a synthetic case; it does not authenticate a participant or authorize a real response. A phone can open the link after the app is installed. The **Hinweise** screen offers an opt-in, device-local reminder for visible attention items about 30 seconds later. It requests notification permission on tap, schedules no remote push, and includes no person details in the notification.
+
+## iPhone device build handoff
+
+`eas.json` defines an internal `preview` build with an embedded JavaScript bundle and an iOS device target. An authorized operator can use:
+
+```sh
+cd mobile
+npm ci
+npm install -g eas-cli
+eas login
+eas build:configure
+eas device:create
+eas build --platform ios --profile preview
+```
+
+The gate is Apple signing, not Expo SDK compatibility: a paid Apple Developer Program team with permission to create certificates, identifiers, and provisioning profiles must sign `com.mattbang.cosanumtrainingdemo`. Each test iPhone UDID must be in the Ad Hoc provisioning profile used for the build. EAS can manage the certificate/profile after an authorized operator signs in, or use credentials uploaded by that operator. An iPhone on iOS 16+ must enable Developer Mode to run an internal build. This Mac has Xcode 27.1, but currently has **zero valid code-signing identities**; no iPhone device `.ipa` was produced. No account login or signing consent was attempted here.
+
+For an updated iPhone tester, register the device before building or re-sign the existing build with a refreshed profile. An internal distribution link can then be shared from the EAS build page. A simulator export or Expo Go preview does not establish device-install acceptance.

@@ -1,10 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { Linking, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View, type ScrollViewInstance } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import * as Notifications from 'expo-notifications';
+import { participantCaseFromLink, participantDemoLink } from './src/deepLink';
 import { attentionCases, catalogue, createRequest, currentTask, deadlineLabel, demoWeekSlots, eligibility, initialState, learners, matrixEntry, matrixPeople, planningSessions, requestForCase, requestReasonLabels, selectionAvailability, sessionCases, slotAvailable, trainerChoices, transition, upcomingSessions, type DemoState, type RequestReason, type TrainingCase } from './src/workflow';
 
 const plum = '#452347';
 const coral = '#b94355';
+const attentionChannel = 'demo-attention';
+if (Platform.OS !== 'web') Notifications.setNotificationHandler({ handleNotification: async () => ({ shouldShowBanner: false, shouldShowList: true, shouldPlaySound: false, shouldSetBadge: false }) });
 type Screen = 'home' | 'matrix' | 'calendar' | 'catalogue' | 'requests' | 'sessions' | 'attention' | 'create' | 'case';
 function statusText(entry: TrainingCase) {
   if (entry.declined) return 'Einladung abgelehnt';
@@ -116,8 +120,17 @@ export default function App() {
   const [calendarTrainer, setCalendarTrainer] = useState('MATT');
   const [calendarSlot, setCalendarSlot] = useState('');
   const [participantId, setParticipant] = useState<string | null>(() => Platform.OS === 'web' && typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('participant') : null);
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+    let mounted = true;
+    const openLink = (url: string) => { const caseId = participantCaseFromLink(url); if (mounted && caseId) setParticipant(caseId); };
+    void Linking.getInitialURL().then(url => { if (url) openLink(url); });
+    const subscription = Linking.addEventListener('url', event => openLink(event.url));
+    return () => { mounted = false; subscription.remove(); };
+  }, []);
   useEffect(() => { scrollRef.current?.scrollTo({ y: 0, animated: false }); }, [screen, participantId]);
   const [error, setError] = useState('');
+  const [reminderStatus, setReminderStatus] = useState('');
   const { width } = useWindowDimensions(); const wide = width >= 800;
   const selected = state.cases.find(item => item.id === selectedId);
   const selectedRequest = selected ? requestForCase(state, selected) : undefined;
@@ -126,6 +139,18 @@ export default function App() {
   const requests = planningSessions(state);
   const upcoming = upcomingSessions(state);
   const attention = attentionCases(state);
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+    const openAttention = (response: Notifications.NotificationResponse) => {
+      if (response.notification.request.content.data?.kind !== 'demo-attention') return;
+      setParticipant(null); setScreen('attention');
+      setReminderStatus('Lokale Demo-Erinnerung geöffnet.');
+      void Notifications.clearLastNotificationResponseAsync().catch(() => {});
+    };
+    const subscription = Notifications.addNotificationResponseReceivedListener(openAttention);
+    void Notifications.getLastNotificationResponseAsync().then(response => { if (response) openAttention(response); }).catch(() => {});
+    return () => subscription.remove();
+  }, []);
   function act(id: string, action: Parameters<typeof transition>[2], slot?: string) {
     try { setState(transition(state, id, action, slot)); setError(''); }
     catch (cause) { setError(cause instanceof Error ? cause.message : 'Aktion fehlgeschlagen'); }
@@ -143,6 +168,21 @@ export default function App() {
     const url = participantUrl(entry.id); if (url) void Linking.openURL(url); else setParticipant(entry.id);
   }
   function resetDemo() { setState(initialState()); setScreen('home'); select(null); setPeople([]); setRequesterName(''); setSourceTeam(''); setRequestReason(''); setDeadlineDate(''); setSlot(''); setCalendarSlot(''); setError(''); }
+  async function scheduleAttentionReminder() {
+    if (!attention.length) return;
+    try {
+      if (Platform.OS === 'android') await Notifications.setNotificationChannelAsync(attentionChannel, { name: 'Lokale Demo-Hinweise', importance: Notifications.AndroidImportance.DEFAULT });
+      const permission = await Notifications.requestPermissionsAsync();
+      if (!permission.granted && permission.ios?.status !== Notifications.IosAuthorizationStatus.PROVISIONAL) { setReminderStatus('Benachrichtigungen sind auf diesem Gerät nicht erlaubt.'); return; }
+      const pending = await Notifications.getAllScheduledNotificationsAsync();
+      for (const item of pending.filter(item => item.content.data?.kind === 'demo-attention')) await Notifications.cancelScheduledNotificationAsync(item.identifier);
+      await Notifications.scheduleNotificationAsync({
+        content: { title: 'Daniel · Demo-Hinweis', body: `${attention.length} ${attention.length === 1 ? 'Fall braucht' : 'Fälle brauchen'} deine Prüfung. Öffne Hinweise.`, data: { kind: 'demo-attention' } },
+        trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 30, repeats: false, channelId: attentionChannel },
+      });
+      setReminderStatus('Eine lokale Demo-Erinnerung ist für etwa 30 Sekunden später geplant.');
+    } catch (cause) { setReminderStatus(cause instanceof Error ? cause.message : 'Lokale Erinnerung konnte nicht geplant werden.'); }
+  }
   function sessionCard(group: TrainingCase[], kind: 'planning' | 'upcoming') {
     const first = group[0]; const slot = state.slots.find(item => item.id === first.slotId); const request = requestForCase(state, first);
     return <Card key={first.sessionId}>
@@ -200,7 +240,9 @@ export default function App() {
       {screen === 'requests' ? <>{requests.length ? requests.map(group => sessionCard(group, 'planning')) : <Text style={styles.note}>Keine Anfrage wartet auf einen Termin.</Text>}</> : null}
       {screen === 'catalogue' ? <>{catalogue.map(item => <Card key={item.id}><Text style={styles.cardTitle}>{item.name}</Text><Text style={styles.meta}>{item.id} · {item.material} · {item.practiceIndividual ? 'Praxisphase einzeln' : 'Gruppe oder einzeln wählbar'}</Text><Button title="Schulungsbedarf erstellen" onPress={() => openTopic(item.id)} /></Card>)}</> : null}
       {screen === 'sessions' ? <>{upcoming.length ? upcoming.map(group => sessionCard(group, 'upcoming')) : <Text style={styles.note}>Keine kommenden Sitzungen.</Text>}</> : null}
-      {screen === 'attention' ? <>{attention.length ? attention.map(attentionCard) : <Text style={styles.note}>Keine offenen Hinweise.</Text>}</> : null}
+      {screen === 'attention' ? <>{attention.length ? attention.map(attentionCard) : <Text style={styles.note}>Keine offenen Hinweise.</Text>}
+        {Platform.OS !== 'web' && attention.length ? <Card><Text style={styles.cardTitle}>Lokale Demo-Erinnerung</Text><Text style={styles.body}>Nur für die aktuell sichtbaren Hinweise auf diesem Gerät. Keine Push-Zustellung und kein Serverabruf.</Text><Button title="In 30 Sekunden erinnern" secondary onPress={() => { void scheduleAttentionReminder(); }} />{reminderStatus ? <Text style={styles.meta}>{reminderStatus}</Text> : null}</Card> : null}
+      </> : null}
       {screen === 'create' ? <>
         <Button title="Zurück zum Material" secondary onPress={() => setScreen('catalogue')} />
         <Card><Text style={styles.cardTitle}>{topic.name}</Text><Text style={styles.meta}>{topic.material} · {topic.practiceIndividual ? 'Praxisphase im vollständigen Workflow einzeln' : 'Demo-Material'}</Text>
@@ -248,7 +290,7 @@ export default function App() {
           {selected.declined ? <Text style={styles.warning}>Diese Person hat abgesagt. Andere Fälle und das Gruppenereignis bleiben bestehen.</Text> : <><Button title="Bestanden (Trainer-Demo)" onPress={() => act(selected.id, 'pass')} /><Button title="Nicht bestanden" secondary onPress={() => act(selected.id, 'fail')} /><Button title="Absage dieser Person simulieren" secondary onPress={() => act(selected.id, 'decline')} /></>}
         </Card> : null}
         {!selected.supersededByCaseId && (selected.declined || (selected.status === 'assessed' && !selected.trainerPassed)) ? <Card><Text style={styles.cardTitle}>Ersatz / Nachschulung</Text><Text style={styles.body}>Ein neuer Einzeltermin wird nur für diese Person angelegt. Der vorige Versuch bleibt sichtbar.</Text><Button title="Neuen Einzeltermin planen" onPress={() => { act(selected.id, 'retry'); setScreen('requests'); }} /></Card> : null}
-        {selected.status === 'assessed' && selected.trainerPassed ? <Card><Text style={styles.cardTitle}>Persönliche Bestätigung</Text><Text style={styles.body}>Bestanden. Die Person kann ihren Demo-Link öffnen.</Text><Button title="Teilnehmeransicht öffnen" secondary onPress={() => openParticipant(selected)} />{Platform.OS === 'web' ? <Text selectable style={styles.meta}>{participantUrl(selected.id)}</Text> : null}</Card> : null}
+        {selected.status === 'assessed' && selected.trainerPassed ? <Card><Text style={styles.cardTitle}>Persönliche Bestätigung</Text><Text style={styles.body}>Bestanden. Die Person kann ihren Demo-Link öffnen.</Text><Button title="Teilnehmeransicht öffnen" secondary onPress={() => openParticipant(selected)} /><Text selectable style={styles.meta}>Synthetischer Demo-Link ohne Identitätsprüfung: {Platform.OS === 'web' ? participantUrl(selected.id) : participantDemoLink(selected.id)}</Text></Card> : null}
         {selected.status === 'acknowledged' ? <Card><Text style={styles.cardTitle}>Individueller Nachweis</Text><Button title="Demo-Nachweis erstellen" onPress={() => act(selected.id, 'proof')} /></Card> : null}
         {selected.status === 'proof_ready' ? <Card><Text style={styles.cardTitle}>Archivprüfung</Text><Text style={styles.warning}>Nur simulierte Drive- und lokale PDF-Prüfung. Es wird keine Datei erzeugt.</Text><Button title="Synthetische Archivprüfung" onPress={() => act(selected.id, 'archive')} /></Card> : null}
         {selected.status === 'archived_verified' ? <Card><Text style={styles.cardTitle}>Kompetenzstand</Text><Button title="Demo-Kompetenzstand anwenden" onPress={() => act(selected.id, 'skill')} /></Card> : null}
