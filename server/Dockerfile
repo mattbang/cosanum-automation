@@ -3,7 +3,7 @@ ENV NODE_ENV=production PORT=8080 HOST=0.0.0.0
 WORKDIR /app
 COPY server/package.json server/package-lock.json ./server/
 WORKDIR /app/server
-RUN npm ci --include=dev --no-audit --no-fund
+RUN npm ci --omit=dev --no-audit --no-fund
 WORKDIR /app
 COPY server ./server
 COPY mobile ./mobile

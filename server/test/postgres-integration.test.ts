@@ -28,6 +28,11 @@ test('PostgreSQL integration: migration, group booking, case history, link bindi
        VALUES ($1, $2, $3, true, $4, $5)`,
       [owner.issuer, owner.subject, owner.verifiedEmail, owner.actorKey, owner.role],
     );
+    await pool.query(
+      `INSERT INTO verified_identities (issuer, subject, email_normalized, email_verified, actor_key, role)
+       VALUES ($1, $2, $3, true, $4, $5)`,
+      ['https://other-issuer.example.test', 'owner-alt-subject', owner.verifiedEmail, owner.actorKey, owner.role],
+    );
     const trainer: Identity = {
       actorKey: 'TRAINER-2', role: 'assigned_trainer', verifiedEmail: 'trainer2@example.test',
       issuer: 'https://issuer.example.test', subject: 'trainer-2-subject',
@@ -98,6 +103,7 @@ test('PostgreSQL integration: migration, group booking, case history, link bindi
         session: { status: 'invited', calendarEventId: eventId },
         relatedCaseUpdates: sessionCases.filter(item => item.scope.caseId !== 'CASE-PGLITE-1').map(item => ({
           caseId: item.scope.caseId, status: 'invited', state: { calendarEventId: eventId },
+          facts: { eventVerified: true, receiptSaved: true, calendarError: false, slotConflict: false, changedEvent: false },
         })),
       };
     } });
@@ -123,7 +129,13 @@ test('PostgreSQL integration: migration, group booking, case history, link bindi
     assert.deepEqual(session.rows[0], { status: 'invited', calendar_event_id: 'EVENT-PGLITE-1', revision: '2' });
     assert.equal((await pool.query('SELECT count(*)::int AS count FROM workflow_events WHERE request_id = $1', ['REQ-PGLITE'])).rows[0].count, 2);
     assert.equal((await pool.query('SELECT count(*)::int AS count FROM audit_events WHERE request_id = $1', ['REQ-PGLITE'])).rows[0].count, 3);
-    assert.ok((await pool.query('SELECT count(*)::int AS count FROM case_evidence WHERE case_id IN ($1, $2)', ['CASE-PGLITE-1', 'CASE-PGLITE-2'])).rows[0].count > 0);
+    const evidence = await pool.query<{ case_id: string; facts: string[]; count: number }>(
+      `SELECT case_id, array_agg(fact_key ORDER BY fact_key) AS facts, count(*)::int AS count
+         FROM case_evidence WHERE case_id IN ($1, $2) GROUP BY case_id ORDER BY case_id`,
+      ['CASE-PGLITE-1', 'CASE-PGLITE-2'],
+    );
+    assert.equal(evidence.rows.length, 2);
+    assert.ok(evidence.rows.every(row => row.count === 5 && row.facts.includes('eventVerified') && row.facts.includes('receiptSaved')));
     const latest = await gateway.load('CASE-PGLITE-1');
     await assert.rejects(gateway.execute('bookSession', latest!, {}, owner, 'booking-pglite-2'),
       (error: unknown) => error instanceof ActionError && error.status === 409);

@@ -16,9 +16,10 @@ export class HostedParticipantLinks {
 
   async issue(input: {
     caseId: string; assignmentId: number; email: string; expiresAt: Date;
-    createdBy: Pick<Identity, 'actorKey' | 'role' | 'verifiedEmail'>;
+    createdBy: Pick<Identity, 'actorKey' | 'role' | 'verifiedEmail' | 'issuer' | 'subject'>;
   }): Promise<{ token: string; expiresAt: Date }> {
     if (input.createdBy.role !== 'process_quality') throw new ParticipantLinkError(403, 'Process & Quality authorization required');
+    if (!input.createdBy.issuer || !input.createdBy.subject) throw new ParticipantLinkError(403, 'Verified owner identity required');
     if (!input.caseId || !Number.isInteger(input.assignmentId) || Number.isNaN(input.expiresAt.getTime()) || input.expiresAt.getTime() <= Date.now())
       throw new ParticipantLinkError(400, 'Invalid case, assignment, or link expiry');
     const email = normalizeEmail(input.email);
@@ -34,14 +35,16 @@ export class HostedParticipantLinks {
             AND owner_assignment.actor_key = c.owner_key AND owner_assignment.active
            JOIN verified_identities owner_identity
              ON owner_identity.actor_key = c.owner_key AND owner_identity.role = 'process_quality'
-            AND owner_identity.email_normalized = $5 AND owner_identity.active
+            AND owner_identity.issuer = $5 AND owner_identity.subject = $6
+            AND owner_identity.email_normalized = $7 AND owner_identity.active
           WHERE a.assignment_id = $1 AND a.case_id = $2 AND c.case_id = $2
             AND a.role = 'assigned_participant' AND a.active
             AND a.actor_key = c.participant_key
             AND c.owner_key = $4
             AND a.email_normalized = $3
           FOR UPDATE OF a, owner_assignment, owner_identity`,
-        [input.assignmentId, input.caseId, email, input.createdBy.actorKey, normalizeEmail(input.createdBy.verifiedEmail)],
+        [input.assignmentId, input.caseId, email, input.createdBy.actorKey, input.createdBy.issuer, input.createdBy.subject,
+          normalizeEmail(input.createdBy.verifiedEmail)],
       );
       if (!assignment.rowCount) throw new ParticipantLinkError(409, 'Active participant assignment does not match this case and email');
       await db.query(
@@ -60,8 +63,9 @@ export class HostedParticipantLinks {
     return { token, expiresAt: input.expiresAt };
   }
 
-  async revoke(linkId: string, actor: Pick<Identity, 'actorKey' | 'role' | 'verifiedEmail'>): Promise<boolean> {
+  async revoke(linkId: string, actor: Pick<Identity, 'actorKey' | 'role' | 'verifiedEmail' | 'issuer' | 'subject'>): Promise<boolean> {
     if (actor.role !== 'process_quality') throw new ParticipantLinkError(403, 'Process & Quality authorization required');
+    if (!actor.issuer || !actor.subject) throw new ParticipantLinkError(403, 'Verified owner identity required');
     return inTransaction(this.pool, async db => {
       const owner = await db.query<{ link_id: string }>(
         `SELECT l.link_id
@@ -70,10 +74,10 @@ export class HostedParticipantLinks {
            JOIN workflow_assignments a ON a.case_id = c.case_id AND a.role = 'process_quality'
             AND a.actor_key = c.owner_key AND a.active
            JOIN verified_identities i ON i.actor_key = c.owner_key AND i.role = 'process_quality'
-            AND i.email_normalized = $3 AND i.active
+            AND i.issuer = $3 AND i.subject = $4 AND i.email_normalized = $5 AND i.active
           WHERE l.link_id = $1 AND l.revoked_at IS NULL
           FOR UPDATE OF l, a, i`,
-        [linkId, actor.actorKey, normalizeEmail(actor.verifiedEmail)],
+        [linkId, actor.actorKey, actor.issuer, actor.subject, normalizeEmail(actor.verifiedEmail)],
       );
       if (!owner.rowCount) return false;
       const revoked = await db.query<{ case_id: string }>(
