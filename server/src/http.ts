@@ -19,6 +19,13 @@ const server = createServer(async (request, response) => {
   await api(request, response);
 });
 
+async function shutdown() {
+  await new Promise<void>(resolve => server.close(() => resolve()));
+  await database?.end();
+}
+process.once('SIGTERM', () => { void shutdown(); });
+process.once('SIGINT', () => { void shutdown(); });
+
 async function start() {
   if (database) {
     await database.query('SELECT 1');

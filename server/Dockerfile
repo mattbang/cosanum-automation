@@ -11,4 +11,4 @@ COPY contracts ./contracts
 COPY fixtures ./fixtures
 WORKDIR /app/server
 EXPOSE 8080
-CMD ["npm", "run", "dev"]
+CMD ["node", "--import", "tsx", "src/http.ts"]
