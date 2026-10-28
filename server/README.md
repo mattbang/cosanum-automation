@@ -14,7 +14,7 @@ npm run dev
 
 `npm test` includes a disposable PGlite integration test that executes the migration and repository SQL in an embedded PostgreSQL engine. Its single-connection setup covers transactional persistence and stale-revision arbitration; it does not replace multi-connection race testing against the target PostgreSQL service.
 
-With a disposable PostgreSQL database, set `DATABASE_URL` and run `npm run migrate`. Migration files are checksum-recorded; changing an already applied migration is rejected. `server/migrations/001_backend_foundation.sql` installs append-only triggers for events, audit records, and evidence. Use a database role for the application that cannot update or delete those history tables. The app does not run migrations on startup.
+With a disposable PostgreSQL database, set `DATABASE_URL` and run `npm run migrate`. Migration files are checksum-recorded; changing an already applied migration is rejected. Migrations are forward-only: use expand/backfill/contract changes, roll the service back to a prior Cloud Run revision when needed, and restore a database backup to a separate instance for recovery. Do not down-migrate or rewrite append-only evidence, event, or audit history. `server/migrations/001_backend_foundation.sql` installs append-only triggers for events, audit records, and evidence. Use a database role for the application that cannot update or delete those history tables. The app does not run migrations on startup.
 
 ## HTTP and persistence contracts
 

@@ -29,6 +29,8 @@ Before applying migration `001_backend_foundation.sql`, record:
 
 Run migrations as an explicit one-off release step. The API intentionally does not migrate the schema at startup.
 
+Migrations are forward-only; there is no down-migration for the append-only history tables. Use expand/backfill/contract releases, and roll application traffic back to a prior Cloud Run revision if a release fails. For data recovery, restore a verified backup to a separate instance and review the cutover; do not delete or rewrite evidence, workflow events, or audit history.
+
 ## 3. Hosting and access boundary
 
 Complete and review the placeholders in `deploy/cloud-run-service.yaml`: project, region, Cloud SQL instance, Artifact Registry repository, immutable image tag, runtime service account, and secret name/version. The template permits ingress at the network layer but does not grant Cloud Run invocation to the public.
