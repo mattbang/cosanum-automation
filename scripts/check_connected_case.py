@@ -93,6 +93,9 @@ class CachedSource:
     def list_files(self, query: str) -> list[dict]:
         return self.source.list_files(query)
 
+    def metadata_files(self, proof_id: str) -> list[dict]:
+        return self.source.metadata_files(proof_id)
+
     def pdf(self, file_id: str) -> bytes:
         return self.source.pdf(file_id)
 
@@ -146,11 +149,14 @@ def snapshot(source: archive.Source, case_id: str, archive_root: Path) -> dict:
                            and r['session_id'] == sid and r['disposition'] == 'accepted'], 'accepted trainer report')
         participant = exactly([r for r in tables['ParticipantAcknowledgements'] if r['case_id'] == case_id
                                and r['session_id'] == sid and r['disposition'] == 'accepted'], 'accepted acknowledgement')
-        require(trainer['form_id'] == trainer_form['form_id'] and
+        require(trainer['person_key'] == case['person_key'] and
+                trainer['form_id'] == trainer_form['form_id'] and
                 trainer['reporter_email'].lower() == trainer_form['trainer_email'].lower() and
                 trainer['attendance'] == 'attended' and trainer['assessment'] == 'passed' and
                 trainer['attestation'] == 'yes', 'Trainer report does not match the assigned passing Form.')
-        require(participant['form_id'] == participant_form['form_id'] and
+        require(participant['person_key'] == case['person_key'] and
+                participant['request_id'] == request['request_id'] and
+                participant['form_id'] == participant_form['form_id'] and
                 participant['respondent_email'].lower() == person['email'].lower() and
                 participant['affirmative'] == 'yes', 'Acknowledgement does not match the assigned person/Form.')
         require(as_time(trainer['submitted_at']) >= as_time(session['end_utc']) and

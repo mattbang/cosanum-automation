@@ -40,12 +40,17 @@ for (const [row, action, actor] of cases) {
 }
 const missingTrainer = ctx.currentCaseTask_({ Sessions: [] }, request, cases[0][0]);
 assert.equal(missingTrainer.state, 'blocked');
-assert.equal(missingTrainer.actorKey, '');
+assert.equal(missingTrainer.action, 'audit_review');
+const duplicateTrainer = ctx.currentCaseTask_({ Sessions: [...tables.Sessions, ...tables.Sessions] }, request, cases[0][0]);
+assert.equal(duplicateTrainer.state, 'blocked', 'duplicate trainer assignments do not select the first row');
 const divergent = [cases[6][0], { ...cases[0][0], caseId: 'CASE-2', personKey: 'OTHER' }];
 assert.equal(ctx.currentCaseTask_(tables, request, divergent[0]).state, 'complete');
 assert.equal(ctx.currentCaseTask_(tables, request, divergent[1]).action, 'trainer_assessment');
 const conflictingBooking = ctx.currentCaseTask_(tables, { ...request, bookedSessions: 1 }, person({ phases: [phase({ eventUrl: '' })] }));
 assert.equal(conflictingBooking.state, 'blocked', 'booked row with missing event link needs review');
+const invalidProof = ctx.currentCaseTask_(tables, request, person({ skillStatus: '', reason: 'Originalbelege weichen vom archivierten Nachweis ab.' }));
+assert.equal(invalidProof.action, 'audit_review', 'uncategorized source mismatch blocks skill suggestion');
+assert.equal(invalidProof.state, 'blocked');
 const html = fs.readFileSync('apps-script/Index.html', 'utf8');
 assert.match(html, /currentTaskLabel\(row\.currentTask\)/, 'Hub displays person-level task');
 console.log('Current task projection: synthetic cases passed');

@@ -128,13 +128,14 @@ function currentCaseTask_(tables, request, personCase) {
   if (awaitingRsvp) return result('rsvp_review', 'MATT', awaitingRsvp);
   var awaitingTrainer = phases.filter(function (phase) { return !phase.trainerResponseId; })[0];
   if (awaitingTrainer) {
-    var session = (tables.Sessions || []).filter(function (row) { return row.session_id === awaitingTrainer.sessionId && row.request_id === request.requestId && row.demo_marker === '[DEMO]'; })[0];
-    return result('trainer_assessment', session ? session.trainer_key : '', awaitingTrainer, session && session.trainer_key ? 'suggested' : 'blocked');
+    var sessions = (tables.Sessions || []).filter(function (row) { return row.session_id === awaitingTrainer.sessionId && row.request_id === request.requestId && row.demo_marker === '[DEMO]'; });
+    return sessions.length === 1 && sessions[0].trainer_key ? result('trainer_assessment', sessions[0].trainer_key, awaitingTrainer) : result('audit_review', 'MATT', awaitingTrainer, 'blocked');
   }
   var awaitingParticipant = phases.filter(function (phase) { return !phase.acknowledgementResponseId; })[0];
   if (awaitingParticipant) return result('participant_acknowledgement', personCase.personKey, awaitingParticipant);
   if (!personCase.proofId) return result('create_proof');
   if (personCase.archiveStatus !== 'archived_verified' || !personCase.archiveVerifiedAt) return result('archive_review');
+  if (personCase.reason && personCase.reason !== 'Skillübernahme ist noch nicht angewendet.') return result('audit_review', 'MATT', null, 'blocked');
   if (personCase.skillStatus !== 'applied') return result('skill_update');
   return result('audit_review', 'MATT', null, 'blocked');
 }

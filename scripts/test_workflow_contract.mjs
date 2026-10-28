@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { evaluateAction } from '../contracts/evaluate.mjs';
+import { evaluateAction, finalizeAction } from '../contracts/evaluate.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const contract = JSON.parse(fs.readFileSync(path.join(root, 'contracts/workflow.v1.json'), 'utf8'));
@@ -20,6 +20,12 @@ for (const action of contract.actions) {
   const values = { ...action.equals };
   const input = { actor: action.actor, scope, facts, values };
   assert.equal(evaluateAction(contract, action.id, input).allowed, true, `${action.id} happy path`);
+  assert.equal(evaluateAction(contract, action.id, input).result, null, `${action.id} preflight is not committed success`);
+  for (const fact of action.postconditions || []) {
+    assert.equal(finalizeAction(contract, action.id, input).allowed, false, `${action.id} missing readback ${fact}`);
+  }
+  const complete = { ...input, facts: { ...facts, ...Object.fromEntries((action.postconditions || []).map(key => [key, true])) } };
+  assert.equal(finalizeAction(contract, action.id, complete).allowed, true, `${action.id} verified postconditions`);
   assert.equal(evaluateAction(contract, action.id, { ...input, actor: 'wrong_role' }).allowed, false, `${action.id} role`);
   for (const key of action.scopeKey) {
     assert.equal(evaluateAction(contract, action.id, { ...input, scope: { ...scope, [key]: '' } }).allowed, false, `${action.id} missing ${key}`);
