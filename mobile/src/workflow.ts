@@ -19,10 +19,19 @@ export type CurrentTask = { action: string; state: 'suggested' | 'blocked' | 'co
 
 const demoTitles: Record<string, string> = { TC_R030: 'Wareneingang · Demo', TC_R052: 'Hochregallager · Demo' };
 export const catalogue = fixture.Topics.map(row => ({ id: String(row[0]), name: demoTitles[String(row[0])] || `Demo-Schulungsmodul ${row[0]}`, material: 'Übungsmaterial', practiceIndividual: String(row[7]) === 'Praxis einzeln', fixedTarget: String(row[8]) === 'fixed' ? Number(row[10]) : undefined }));
-const people = new Map(fixture.People.map(row => [String(row[0]), ({ WOHNUNG: 'Person A', SUMNER: 'Person B' } as Record<string, string>)[String(row[0])] || String(row[5])]));
+const people = new Map(fixture.People.map(row => [String(row[0]), ({ MATT: 'Daniel / P&Q', MARIE: 'Marie / HCM4', WOHNUNG: 'Person A', SUMNER: 'Person B' } as Record<string, string>)[String(row[0])] || String(row[5])]));
 const topics = new Map(catalogue.map(topic => [topic.id, topic]));
 const levels = new Map(fixture.Skills.map(row => [`${row[0]}:${row[1]}`, row[2]]));
 export const learners = fixture.People.filter(row => String(row[2]) === 'Mitarbeiter').map(row => ({ key: String(row[0]), name: people.get(String(row[0]))! }));
+export const matrixPeople = fixture.People.map(row => ({ key: String(row[0]), name: people.get(String(row[0]))!, role: String(row[2]) }));
+
+export function matrixEntry(topicId: string, personKey: string): { kind: 'level' | 'not_planned' | 'missing' | 'invalid'; level: number | null; label: string } {
+  const raw = levels.get(`${personKey}:${topicId}`);
+  if (raw === '-') return { kind: 'not_planned', level: null, label: '– · nicht vorgesehen' };
+  if (raw === '' || raw === undefined) return { kind: 'missing', level: null, label: 'Kein Matrixeintrag' };
+  if (typeof raw === 'number' && Number.isInteger(raw) && raw >= 0 && raw <= 4) return { kind: 'level', level: raw, label: raw === 4 ? 'Stufe 4 · Trainerqualifikation' : `Stufe ${raw}` };
+  return { kind: 'invalid', level: null, label: 'Ungültiger Matrixwert' };
+}
 
 export function trainerChoices(topicId: string, mode: 'group' | 'single', participantCount: number): string[] {
   if (!topics.has(topicId) || participantCount < 1 || (mode === 'single' && participantCount !== 1)) return [];
@@ -31,10 +40,10 @@ export function trainerChoices(topicId: string, mode: 'group' | 'single', partic
 
 export function eligibility(topicId: string, personKey: string, targetLevel: number): { eligible: boolean; level: number | null; reason: string } {
   const topic = topics.get(topicId);
-  const raw = levels.get(`${personKey}:${topicId}`);
-  const level = typeof raw === 'number' && Number.isInteger(raw) ? raw : null;
+  const cell = matrixEntry(topicId, personKey);
+  const level = cell.level;
   if (!topic || !learners.some(person => person.key === personKey)) return { eligible: false, level, reason: 'Thema oder Person unbekannt' };
-  if (level === null) return { eligible: false, level, reason: 'Keine gültige Ausgangsstufe in der Demo-Matrix' };
+  if (level === null) return { eligible: false, level, reason: cell.label };
   if (level === 4) return { eligible: false, level, reason: 'Bereits Trainerstufe 4' };
   if (level < 0 || level > 3) return { eligible: false, level, reason: 'Ungültige Ausgangsstufe' };
   if (!Number.isInteger(targetLevel) || targetLevel < 1 || targetLevel > 3 || (topic.fixedTarget && targetLevel !== topic.fixedTarget)) return { eligible: false, level, reason: 'Ungültige Zielstufe' };
@@ -117,12 +126,22 @@ export function sessionCases(state: DemoState, entry: TrainingCase): TrainingCas
   return state.cases.filter(item => item.sessionId === entry.sessionId);
 }
 
+export function demoWeekSlots(state: DemoState): Slot[] {
+  return state.slots.filter(slot => slot.id !== 'SLOT-OLD').sort((a, b) => a.start.localeCompare(b.start));
+}
+
+export function selectionAvailability(state: DemoState, personKeys: string[], trainerKey: string, slotId: string, excludeSessionId?: string) {
+  const slot = demoWeekSlots(state).find(item => item.id === slotId);
+  const actors = [...new Set([trainerKey, ...personKeys].filter(Boolean))];
+  if (!slot) return { available: false, actors: [], reason: 'Demo-Zeitfenster unbekannt' };
+  const booked = new Set(state.cases.filter(item => item.slotId === slotId && item.eventId && item.sessionId !== excludeSessionId).flatMap(item => [item.personKey, item.trainerKey]));
+  const actorStates = actors.map(key => ({ key, name: people.get(key) || key, busy: slot.busy.includes(key) || booked.has(key), unknown: !people.has(key) }));
+  return { available: personKeys.length > 0 && Boolean(trainerKey) && actorStates.every(item => !item.busy && !item.unknown), actors: actorStates, reason: !personKeys.length ? 'Teilnehmende auswählen' : actorStates.some(item => item.unknown) ? 'Person nicht im Demo-Kalender' : actorStates.some(item => item.busy) ? 'Mindestens eine Person ist belegt' : 'Alle ausgewählten Personen frei' };
+}
+
 export function slotAvailable(state: DemoState, entry: TrainingCase, slotId: string): boolean {
-  const slot = state.slots.find(item => item.id === slotId);
-  if (!slot || slot.id === 'SLOT-OLD') return false;
   const linked = sessionCases(state, entry);
-  return !slot.busy.some(key => key === entry.trainerKey || linked.some(item => item.personKey === key)) &&
-    !state.cases.some(item => item.sessionId !== entry.sessionId && item.slotId === slotId && item.eventId);
+  return selectionAvailability(state, linked.map(item => item.personKey), entry.trainerKey, slotId, entry.sessionId).available;
 }
 
 export function evaluate(actionId: ActionId, role: Role, scope: Record<string, string>, facts: Record<string, boolean>, values: Record<string, string> = {}) {

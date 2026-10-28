@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
-import { Linking, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Linking, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View, type ScrollViewInstance } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { attentionCases, catalogue, createRequest, currentTask, eligibility, initialState, learners, planningSessions, sessionCases, slotAvailable, trainerChoices, transition, upcomingSessions, type DemoState, type TrainingCase } from './src/workflow';
+import { attentionCases, catalogue, createRequest, currentTask, demoWeekSlots, eligibility, initialState, learners, matrixEntry, matrixPeople, planningSessions, selectionAvailability, sessionCases, slotAvailable, trainerChoices, transition, upcomingSessions, type DemoState, type TrainingCase } from './src/workflow';
 
 const plum = '#452347';
 const coral = '#b94355';
-type Screen = 'home' | 'catalogue' | 'requests' | 'sessions' | 'attention' | 'create' | 'case';
+type Screen = 'home' | 'matrix' | 'calendar' | 'catalogue' | 'requests' | 'sessions' | 'attention' | 'create' | 'case';
 function statusText(entry: TrainingCase) {
   if (entry.declined) return 'Einladung abgelehnt';
   if (entry.status === 'planning') return 'Termin offen';
@@ -18,6 +18,54 @@ function Button({ title, onPress, secondary, disabled }: { title: string; onPres
   return <Pressable accessibilityRole="button" disabled={disabled} onPress={onPress} style={[styles.button, secondary && styles.secondary, disabled && styles.disabled]}><Text style={[styles.buttonText, secondary && styles.secondaryText]}>{title}</Text></Pressable>;
 }
 function Card({ children }: { children: React.ReactNode }) { return <View style={styles.card}>{children}</View>; }
+function MatrixView({ onCreate }: { onCreate: (topicId: string) => void }) {
+  const [axis, setAxis] = useState<'topic' | 'person'>('topic');
+  const [topicId, setTopic] = useState(catalogue[0].id);
+  const [personKey, setPerson] = useState(matrixPeople[0].key);
+  const [detail, setDetail] = useState('');
+  const rows = axis === 'topic' ? matrixPeople.map(person => ({ personKey: person.key, topicId, title: person.name, role: person.role }))
+    : catalogue.map(topic => ({ personKey, topicId: topic.id, title: topic.name, role: matrixPeople.find(person => person.key === personKey)?.role || '' }));
+  return <>
+    <Text style={styles.note}>Synthetischer Matrixstand. Stufen 0–3 sind Lernendenstufen; Stufe 4 markiert hier eine Trainerqualifikation. „–“ bedeutet nicht vorgesehen; leer bedeutet fehlender Eintrag.</Text>
+    <View style={styles.row}>{(['topic', 'person'] as const).map(item => <Pressable key={item} accessibilityRole="radio" accessibilityState={{ checked: axis === item }} onPress={() => { setAxis(item); setDetail(''); }} style={[styles.choice, axis === item && styles.choiceActive]}><Text>{item === 'topic' ? 'Nach Thema' : 'Nach Person'}</Text></Pressable>)}</View>
+    <View style={styles.nav}>{axis === 'topic' ? catalogue.map(topic => <Pressable key={topic.id} accessibilityRole="button" onPress={() => { setTopic(topic.id); setDetail(''); }} style={[styles.navItem, topicId === topic.id && styles.navActive]}><Text style={[styles.navText, topicId === topic.id && styles.navActiveText]}>{topic.name}</Text></Pressable>) : matrixPeople.map(person => <Pressable key={person.key} accessibilityRole="button" onPress={() => { setPerson(person.key); setDetail(''); }} style={[styles.navItem, personKey === person.key && styles.navActive]}><Text style={[styles.navText, personKey === person.key && styles.navActiveText]}>{person.name}</Text></Pressable>)}</View>
+    <Card><Text style={styles.cardTitle}>{axis === 'topic' ? catalogue.find(topic => topic.id === topicId)?.name : matrixPeople.find(person => person.key === personKey)?.name}</Text>
+      {rows.map(row => { const cell = matrixEntry(row.topicId, row.personKey); const key = `${row.topicId}:${row.personKey}`; const topic = catalogue.find(item => item.id === row.topicId)!;
+        const target = topic.fixedTarget || (cell.level !== null ? Math.min(cell.level + 1, 3) : 1);
+        const training = row.role === 'Mitarbeiter' ? eligibility(row.topicId, row.personKey, target) : null;
+        const reason = row.role !== 'Mitarbeiter' ? cell.level === 4 ? 'Für dieses Thema als Trainer qualifiziert' : 'Keine Trainerstufe 4 für dieses Thema'
+          : topic.fixedTarget && cell.level !== null && cell.level >= topic.fixedTarget ? `Zielstufe ${topic.fixedTarget} bereits erreicht` : training!.reason;
+        return <Pressable key={key} accessibilityRole="button" onPress={() => setDetail(detail === key ? '' : key)} style={styles.matrixRow}>
+          <View style={styles.rowTight}><Text style={styles.body}>{row.title}</Text><Text style={styles.matrixLevel}>{cell.label}</Text></View>
+          {detail === key ? <><Text style={styles.meta}>Person {row.personKey} · Thema {row.topicId} · {row.role}</Text><Text style={training?.eligible ? styles.meta : styles.warning}>{reason}</Text></> : null}
+        </Pressable>;
+      })}
+    </Card>
+    {axis === 'topic' ? <Button title="Bedarf für dieses Thema erfassen" onPress={() => onCreate(topicId)} /> : null}
+  </>;
+}
+function WeekAvailability({ state, personKeys, trainerKey, selectedSlot, onSelect, excludeSessionId, compact }: { state: DemoState; personKeys: string[]; trainerKey: string; selectedSlot?: string; onSelect?: (id: string) => void; excludeSessionId?: string; compact?: boolean }) {
+  const slots = demoWeekSlots(state);
+  const first = slots[0]?.start.slice(0, 10);
+  if (!first) return <Card><Text style={styles.warning}>Keine Demo-Zeitfenster verfügbar.</Text></Card>;
+  const days = Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(`${first}T12:00:00Z`); date.setUTCDate(date.getUTCDate() + index);
+    const key = date.toISOString().slice(0, 10);
+    const label = new Intl.DateTimeFormat('de-CH', { timeZone: 'UTC', weekday: 'short', day: 'numeric', month: 'short' }).format(date);
+    return { key, label, slots: slots.filter(slot => slot.start.startsWith(key)) };
+  });
+  return <Card><Text style={styles.cardTitle}>Demo-Woche · Europe/Zurich</Text><Text style={styles.note}>Nur Beispiel-Zeitfenster. Frei/belegt stammt aus der lokalen Fixture und simulierten Buchungen, nicht aus Google Calendar.</Text>
+    {(compact ? days.filter(day => day.slots.length) : days).map(day => <View key={day.key} style={styles.weekDay}><Text style={styles.weekLabel}>{day.label}</Text>
+      {day.slots.length ? day.slots.map(slot => { const check = selectionAvailability(state, personKeys, trainerKey, slot.id, excludeSessionId);
+        return <Pressable key={slot.id} accessibilityRole="radio" accessibilityState={{ checked: selectedSlot === slot.id, disabled: !check.available }} disabled={!check.available || !onSelect} onPress={() => onSelect?.(slot.id)} style={[styles.slot, selectedSlot === slot.id && styles.selectedSlot, !check.available && styles.unavailableSlot]}>
+          <Text style={styles.body}>{slot.label.split(' · ')[1]}</Text>
+          <Text style={styles.meta}>{check.actors.map(actor => `${actor.name}: ${actor.busy ? 'belegt' : 'frei'}`).join(' · ') || check.reason}</Text>
+          <Text style={styles.meta}>{check.available ? selectedSlot === slot.id ? 'Ausgewählt' : 'Für alle frei · auswählen' : check.reason}</Text>
+        </Pressable>;
+      }) : <Text style={styles.meta}>Kein Demo-Zeitfenster</Text>}
+    </View>)}
+  </Card>;
+}
 function participantUrl(caseId: string) {
   if (Platform.OS !== 'web' || typeof window === 'undefined') return '';
   const url = new URL(window.location.href); url.search = `?participant=${encodeURIComponent(caseId)}`; return url.toString();
@@ -36,10 +84,11 @@ function Participant({ entry, back, submit }: { entry: TrainingCase; back: () =>
 }
 
 export default function App() {
+  const scrollRef = useRef<ScrollViewInstance>(null);
   const [state, setState] = useState<DemoState>(() => {
     if (Platform.OS === 'web' && typeof window !== 'undefined') {
       try {
-        const saved = window.localStorage.getItem('cosanum-synthetic-mobile-v2');
+        const saved = window.localStorage.getItem('cosanum-synthetic-mobile-v3');
         if (saved) {
           const parsed = JSON.parse(saved);
           if (Array.isArray(parsed.cases) && Array.isArray(parsed.slots)) return parsed as DemoState;
@@ -49,7 +98,7 @@ export default function App() {
     return initialState();
   });
   useEffect(() => {
-    if (Platform.OS === 'web' && typeof window !== 'undefined') window.localStorage.setItem('cosanum-synthetic-mobile-v2', JSON.stringify(state));
+    if (Platform.OS === 'web' && typeof window !== 'undefined') window.localStorage.setItem('cosanum-synthetic-mobile-v3', JSON.stringify(state));
   }, [state]);
   const [screen, setScreen] = useState<Screen>('home');
   const [selectedId, select] = useState<string | null>(null);
@@ -59,7 +108,11 @@ export default function App() {
   const [targetLevel, setTargetLevel] = useState(1);
   const [personKeys, setPeople] = useState<string[]>([]);
   const [slotId, setSlot] = useState('SLOT-1');
+  const [calendarPeople, setCalendarPeople] = useState<string[]>(['WOHNUNG', 'SUMNER']);
+  const [calendarTrainer, setCalendarTrainer] = useState('MATT');
+  const [calendarSlot, setCalendarSlot] = useState('');
   const [participantId, setParticipant] = useState<string | null>(() => Platform.OS === 'web' && typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('participant') : null);
+  useEffect(() => { scrollRef.current?.scrollTo({ y: 0, animated: false }); }, [screen, participantId]);
   const [error, setError] = useState('');
   const { width } = useWindowDimensions(); const wide = width >= 800;
   const selected = state.cases.find(item => item.id === selectedId);
@@ -73,17 +126,18 @@ export default function App() {
     catch (cause) { setError(cause instanceof Error ? cause.message : 'Aktion fehlgeschlagen'); }
   }
   function openCase(id: string) { const entry = state.cases.find(item => item.id === id); if (entry?.status === 'planning') setSlot(state.slots.find(slot => slotAvailable(state, entry, slot.id))?.id || ''); select(id); setScreen('case'); setError(''); }
-  function openTopic(id: string) { setTopic(id); setMode('group'); setTrainer('MATT'); setTargetLevel(1); setPeople([]); setScreen('create'); setError(''); }
+  function openTopic(id: string) { setTopic(id); setMode('group'); setTrainer('MATT'); setTargetLevel(1); setPeople([]); setSlot(''); setScreen('create'); setError(''); }
   function saveRequest() {
     try {
       const next = createRequest(state, topicId, personKeys, targetLevel, mode, trainerKey);
       const entry = next.cases[next.cases.length - personKeys.length];
-      setState(next); setSlot(next.slots.find(slot => slotAvailable(next, entry, slot.id))?.id || ''); select(entry.id); setScreen('case'); setError('');
+      setState(next); setSlot(slotAvailable(next, entry, slotId) ? slotId : next.slots.find(slot => slotAvailable(next, entry, slot.id))?.id || ''); select(entry.id); setScreen('case'); setError('');
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Auftrag konnte nicht erstellt werden'); }
   }
   function openParticipant(entry: TrainingCase) {
     const url = participantUrl(entry.id); if (url) void Linking.openURL(url); else setParticipant(entry.id);
   }
+  function resetDemo() { setState(initialState()); setScreen('home'); select(null); setPeople([]); setSlot(''); setCalendarSlot(''); setError(''); }
   function sessionCard(group: TrainingCase[], kind: 'planning' | 'upcoming') {
     const first = group[0]; const slot = state.slots.find(item => item.id === first.slotId);
     return <Card key={first.sessionId}>
@@ -101,26 +155,40 @@ export default function App() {
     </Card>;
   }
   const nav: { key: Screen; label: string }[] = [
-    { key: 'home', label: 'Übersicht' }, { key: 'requests', label: 'Terminbedarf' }, { key: 'catalogue', label: 'Material' },
-    { key: 'sessions', label: 'Sitzungen' }, { key: 'attention', label: 'Hinweise' },
+    { key: 'home', label: 'Übersicht' }, { key: 'matrix', label: 'Matrix' }, { key: 'catalogue', label: 'Material' }, { key: 'calendar', label: 'Kalender' },
+    { key: 'requests', label: 'Terminbedarf' }, { key: 'sessions', label: 'Sitzungen' }, { key: 'attention', label: 'Hinweise' },
   ];
-  return <View style={styles.root}><StatusBar style="dark" /><ScrollView contentContainerStyle={styles.page}>
+  return <View style={styles.root}><StatusBar style="dark" /><ScrollView ref={scrollRef} contentContainerStyle={styles.page}>
     <View style={styles.row}><Text style={styles.brand}>COSANUM · SCHULUNG</Text><Text style={styles.marker}>LOKALE DEMO</Text></View>
     {participant ? <Participant key={participant.id} entry={participant} back={() => setParticipant(null)} submit={() => { act(participant.id, 'acknowledge'); setParticipant(null); }} /> : <>
-      <Text style={styles.title}>{screen === 'home' ? 'Guten Morgen, Daniel' : screen === 'catalogue' ? 'Trainingsmaterial' : screen === 'requests' ? 'Terminbedarf' : screen === 'sessions' ? 'Geplante Sitzungen' : screen === 'attention' ? 'Deine Hinweise' : screen === 'create' ? 'Schulungsbedarf erfassen' : 'Personenfall'}</Text>
+      <Text style={styles.title}>{screen === 'home' ? 'Guten Morgen, Daniel' : screen === 'matrix' ? 'Kompetenzmatrix' : screen === 'calendar' ? 'Kalenderverfügbarkeit' : screen === 'catalogue' ? 'Trainingsmaterial' : screen === 'requests' ? 'Terminbedarf' : screen === 'sessions' ? 'Geplante Sitzungen' : screen === 'attention' ? 'Deine Hinweise' : screen === 'create' ? 'Schulungsbedarf erfassen' : 'Personenfall'}</Text>
       <Text style={styles.note}>Process & Quality · synthetische Daten · keine Google-Verbindung</Text>
       <View style={styles.nav}>{nav.map(item => <Pressable key={item.key} accessibilityRole="button" onPress={() => { setScreen(item.key); setError(''); }} style={[styles.navItem, screen === item.key && styles.navActive]}><Text style={[styles.navText, screen === item.key && styles.navActiveText]}>{item.label}</Text></Pressable>)}</View>
       {error ? <Text style={styles.warning}>{error}</Text> : null}
       {screen === 'home' ? <>
+        <Text style={styles.section}>Drei Informationsquellen</Text>
+        <View style={wide ? styles.sourceGrid : undefined}>
+          <Pressable accessibilityRole="button" onPress={() => setScreen('matrix')} style={[styles.sourceRow, wide && styles.sourceCell]}><View style={styles.sourceText}><Text style={styles.cardTitle}>Kompetenzmatrix</Text><Text style={styles.meta}>5 Themen · 4 Demo-Personen · Stufen</Text></View><Text style={styles.sourceArrow}>›</Text></Pressable>
+          <Pressable accessibilityRole="button" onPress={() => setScreen('catalogue')} style={[styles.sourceRow, wide && styles.sourceCell]}><View style={styles.sourceText}><Text style={styles.cardTitle}>Trainingsmaterial</Text><Text style={styles.meta}>5 Module · Bedarf erstellen</Text></View><Text style={styles.sourceArrow}>›</Text></Pressable>
+          <Pressable accessibilityRole="button" onPress={() => setScreen('calendar')} style={[styles.sourceRow, wide && styles.sourceCell]}><View style={styles.sourceText}><Text style={styles.cardTitle}>Kalenderverfügbarkeit</Text><Text style={styles.meta}>Demo-Woche · frei/belegt</Text></View><Text style={styles.sourceArrow}>›</Text></Pressable>
+        </View>
         <Text style={styles.section}>Anfragen ohne Termin · {requests.length}</Text>
         {requests.length ? requests.map(group => sessionCard(group, 'planning')) : <Text style={styles.note}>Alle Anfragen haben einen Termin.</Text>}
-        <Text style={styles.section}>Trainingsmaterial · {catalogue.length}</Text>
-        <Card><Text style={styles.body}>Wähle ein Material und erstelle daraus einen neuen Schulungsbedarf.</Text>
-          {catalogue.map(item => <Button key={item.id} title={item.name} secondary onPress={() => openTopic(item.id)} />)}</Card>
         <Text style={styles.section}>Geplante Sitzungen · {upcoming.length}</Text>
         {upcoming.length ? upcoming.map(group => sessionCard(group, 'upcoming')) : <Text style={styles.note}>Noch keine kommenden Sitzungen.</Text>}
         <Text style={styles.section}>Braucht Aufmerksamkeit · {attention.length}</Text>
         {attention.length ? attention.map(attentionCard) : <Text style={styles.note}>Keine offenen Hinweise.</Text>}
+        <Button title="Demo zurücksetzen" secondary onPress={resetDemo} />
+      </> : null}
+      {screen === 'matrix' ? <MatrixView onCreate={openTopic} /> : null}
+      {screen === 'calendar' ? <>
+        <Text style={styles.note}>Wähle Personen und Trainer, um ihre gemeinsame freie Zeit in der synthetischen Demo-Woche zu prüfen.</Text>
+        <Card><Text style={styles.cardTitle}>Personen und Trainer</Text>
+          {learners.map(person => { const picked = calendarPeople.includes(person.key); return <Pressable key={person.key} accessibilityRole="checkbox" accessibilityState={{ checked: picked }} onPress={() => { setCalendarPeople(picked ? calendarPeople.filter(key => key !== person.key) : [...calendarPeople, person.key]); setCalendarSlot(''); }} style={styles.personChoice}><Text style={styles.body}>{picked ? '☑' : '□'} {person.name}</Text></Pressable>; })}
+          <View style={styles.row}>{(['MATT', 'MARIE'] as const).map(key => <Pressable key={key} accessibilityRole="radio" accessibilityState={{ checked: calendarTrainer === key }} onPress={() => { setCalendarTrainer(key); setCalendarSlot(''); }} style={[styles.choice, calendarTrainer === key && styles.choiceActive]}><Text>{trainerName(key)}</Text></Pressable>)}</View>
+        </Card>
+        <WeekAvailability state={state} personKeys={calendarPeople} trainerKey={calendarTrainer} selectedSlot={calendarSlot} onSelect={setCalendarSlot} />
+        <Button title="Material für neuen Bedarf wählen" onPress={() => setScreen('catalogue')} />
       </> : null}
       {screen === 'requests' ? <>{requests.length ? requests.map(group => sessionCard(group, 'planning')) : <Text style={styles.note}>Keine Anfrage wartet auf einen Termin.</Text>}</> : null}
       {screen === 'catalogue' ? <>{catalogue.map(item => <Card key={item.id}><Text style={styles.cardTitle}>{item.name}</Text><Text style={styles.meta}>{item.id} · {item.material} · {item.practiceIndividual ? 'Praxisphase einzeln' : 'Gruppe oder einzeln wählbar'}</Text><Button title="Schulungsbedarf erstellen" onPress={() => openTopic(item.id)} /></Card>)}</> : null}
@@ -129,16 +197,18 @@ export default function App() {
       {screen === 'create' ? <>
         <Button title="Zurück zum Material" secondary onPress={() => setScreen('catalogue')} />
         <Card><Text style={styles.cardTitle}>{topic.name}</Text><Text style={styles.meta}>{topic.material} · {topic.practiceIndividual ? 'Praxisphase im vollständigen Workflow einzeln' : 'Demo-Material'}</Text>
-          <Text style={styles.section}>Schulungsform</Text><View style={styles.row}>{(['group', 'single'] as const).map(choice => <Pressable key={choice} accessibilityRole="radio" accessibilityState={{ checked: mode === choice }} onPress={() => { setMode(choice); setTrainer('MATT'); setPeople([]); }} style={[styles.choice, mode === choice && styles.choiceActive]}><Text>{choice === 'group' ? 'Gruppe' : 'Einzeln'}</Text></Pressable>)}</View>
-          <Text style={styles.section}>Zielstufe wählen</Text><View style={styles.row}>{(topic.fixedTarget ? [topic.fixedTarget] : [1, 2, 3]).map(level => <Pressable key={level} accessibilityRole="radio" accessibilityState={{ checked: targetLevel === level }} onPress={() => { setTargetLevel(level); setPeople([]); }} style={[styles.choice, targetLevel === level && styles.choiceActive]}><Text>Stufe {level}</Text></Pressable>)}</View>
+          <Text style={styles.section}>Schulungsform</Text><View style={styles.row}>{(['group', 'single'] as const).map(choice => <Pressable key={choice} accessibilityRole="radio" accessibilityState={{ checked: mode === choice }} onPress={() => { setMode(choice); setTrainer('MATT'); setPeople([]); setSlot(''); }} style={[styles.choice, mode === choice && styles.choiceActive]}><Text>{choice === 'group' ? 'Gruppe' : 'Einzeln'}</Text></Pressable>)}</View>
+          <Text style={styles.section}>Zielstufe wählen</Text><View style={styles.row}>{(topic.fixedTarget ? [topic.fixedTarget] : [1, 2, 3]).map(level => <Pressable key={level} accessibilityRole="radio" accessibilityState={{ checked: targetLevel === level }} onPress={() => { setTargetLevel(level); setPeople([]); setSlot(''); }} style={[styles.choice, targetLevel === level && styles.choiceActive]}><Text>Stufe {level}</Text></Pressable>)}</View>
           <Text style={styles.section}>Teilnehmende auswählen</Text>
           {learners.map(person => { const result = eligibility(topicId, person.key, targetLevel); const picked = personKeys.includes(person.key);
-            return <Pressable key={person.key} accessibilityRole="checkbox" accessibilityState={{ checked: picked, disabled: !result.eligible }} disabled={!result.eligible} onPress={() => { setPeople(picked ? personKeys.filter(key => key !== person.key) : mode === 'single' ? [person.key] : [...personKeys, person.key]); setTrainer('MATT'); }} style={[styles.personChoice, !result.eligible && styles.disabled]}><Text style={styles.body}>{picked ? '☑' : '□'} {person.name}</Text><Text style={styles.meta}>{result.reason}</Text></Pressable>;
+            return <Pressable key={person.key} accessibilityRole="checkbox" accessibilityState={{ checked: picked, disabled: !result.eligible }} disabled={!result.eligible} onPress={() => { setPeople(picked ? personKeys.filter(key => key !== person.key) : mode === 'single' ? [person.key] : [...personKeys, person.key]); setTrainer('MATT'); setSlot(''); }} style={[styles.personChoice, !result.eligible && styles.disabled]}><Text style={styles.body}>{picked ? '☑' : '□'} {person.name}</Text><Text style={styles.meta}>{result.reason}</Text></Pressable>;
           })}
           <Text style={styles.meta}>Nur gültige nächste Stufen sind wählbar. „–“, leere Werte und Trainerstufe 4 sind ausgeschlossen.</Text>
-          {personKeys.length ? <><Text style={styles.section}>Trainer wählen</Text><View style={styles.row}>{trainerChoices(topicId, mode, personKeys.length).map(key => <Pressable key={key} accessibilityRole="radio" accessibilityState={{ checked: trainerKey === key }} onPress={() => setTrainer(key)} style={[styles.choice, trainerKey === key && styles.choiceActive]}><Text>{key === 'MATT' ? 'Daniel / P&Q' : 'Marie / HCM4'}</Text></Pressable>)}</View></> : null}
-          <Button title="Anfrage anlegen und Termin wählen" disabled={!personKeys.length || !trainerChoices(topicId, mode, personKeys.length).includes(trainerKey)} onPress={saveRequest} />
+          {personKeys.length ? <><Text style={styles.section}>Trainer wählen</Text><View style={styles.row}>{trainerChoices(topicId, mode, personKeys.length).map(key => <Pressable key={key} accessibilityRole="radio" accessibilityState={{ checked: trainerKey === key }} onPress={() => { setTrainer(key); setSlot(''); }} style={[styles.choice, trainerKey === key && styles.choiceActive]}><Text>{trainerName(key)}</Text></Pressable>)}</View></> : null}
         </Card>
+        <Text style={styles.section}>Gemeinsame Verfügbarkeit</Text>
+        <WeekAvailability state={state} personKeys={personKeys} trainerKey={trainerKey} selectedSlot={slotId} onSelect={setSlot} compact />
+        <Button title="Anfrage anlegen → Termin bestätigen" disabled={!personKeys.length || !trainerChoices(topicId, mode, personKeys.length).includes(trainerKey)} onPress={saveRequest} />
       </> : null}
       {screen === 'case' ? selected ? <>
         <Button title="Zurück zur Übersicht" secondary onPress={() => setScreen('home')} />
@@ -149,11 +219,11 @@ export default function App() {
           {selected.previousCaseId ? <Text style={styles.meta}>Neuer Versuch nach {selected.previousCaseId}; früherer Beleg bleibt erhalten.</Text> : null}
           {selected.supersededByCaseId ? <Text style={styles.meta}>Neuer Versuch: {selected.supersededByCaseId}</Text> : null}
         </Card>
-        {selected.status === 'planning' ? <Card><Text style={styles.cardTitle}>Termin und Verfügbarkeit</Text>
-          <Text style={styles.body}>Verknüpfte Personen: {sessionCases(state, selected).map(item => item.personName).join(', ')}</Text>
-          {state.slots.filter(slot => slot.id !== 'SLOT-OLD').map(slot => <Pressable key={slot.id} accessibilityRole="radio" accessibilityState={{ checked: slotId === slot.id, disabled: !slotAvailable(state, selected, slot.id) }} onPress={() => setSlot(slot.id)} disabled={!slotAvailable(state, selected, slot.id)} style={[styles.slot, slotId === slot.id && styles.selectedSlot]}><Text style={styles.body}>{slot.label}</Text><Text style={styles.meta}>{slotAvailable(state, selected, slot.id) ? 'Frei für Trainer und verknüpfte Personen' : `Belegt: ${slot.busy.map(trainerName).join(', ') || 'andere Sitzung'}`}</Text></Pressable>)}
+        {selected.status === 'planning' ? <><Card><Text style={styles.cardTitle}>Termin und Verfügbarkeit</Text>
+          <Text style={styles.body}>Verknüpfte Personen: {sessionCases(state, selected).map(item => item.personName).join(', ')}</Text></Card>
+          <WeekAvailability state={state} personKeys={sessionCases(state, selected).map(item => item.personKey)} trainerKey={selected.trainerKey} selectedSlot={slotId} onSelect={setSlot} excludeSessionId={selected.sessionId} compact />
           <Button title="Synthetische Buchung prüfen" disabled={!slotAvailable(state, selected, slotId)} onPress={() => act(selected.id, 'book', slotId)} />
-        </Card> : null}
+        </> : null}
         {selected.status === 'invited' ? <Card><Text style={styles.cardTitle}>Einladung und Beurteilung</Text><Text style={styles.body}>Kalenderereignis: {selected.eventId}. Beurteilungen gelten pro Person.</Text>
           {selected.declined ? <Text style={styles.warning}>Diese Person hat abgesagt. Andere Fälle und das Gruppenereignis bleiben bestehen.</Text> : <><Button title="Bestanden (Trainer-Demo)" onPress={() => act(selected.id, 'pass')} /><Button title="Nicht bestanden" secondary onPress={() => act(selected.id, 'fail')} /><Button title="Absage dieser Person simulieren" secondary onPress={() => act(selected.id, 'decline')} /></>}
         </Card> : null}
@@ -174,12 +244,15 @@ const styles = StyleSheet.create({
   brand: { color: plum, fontSize: 15, fontWeight: '800' }, marker: { color: '#fff', backgroundColor: plum, fontWeight: '800', fontSize: 11, padding: 7, borderRadius: 6 },
   title: { color: plum, fontSize: 30, fontWeight: '800', marginBottom: 7 }, section: { color: plum, fontSize: 19, fontWeight: '700', marginTop: 19, marginBottom: 9 },
   nav: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginBottom: 16 }, navItem: { backgroundColor: '#fff', borderColor: '#e6dce8', borderWidth: 1, paddingHorizontal: 11, paddingVertical: 9, borderRadius: 8 }, navActive: { backgroundColor: plum }, navText: { color: plum, fontSize: 12, fontWeight: '600' }, navActiveText: { color: '#fff' },
+  sourceGrid: { flexDirection: 'row', gap: 10 }, sourceCell: { flex: 1, minWidth: 0 }, sourceRow: { backgroundColor: '#fff', borderColor: '#e6dce8', borderWidth: 1, borderRadius: 12, padding: 14, marginBottom: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, minHeight: 76 }, sourceText: { flex: 1 }, sourceArrow: { color: plum, fontSize: 26, fontWeight: '700' },
   card: { backgroundColor: '#fff', borderColor: '#e6dce8', borderWidth: 1, borderRadius: 15, padding: 17, marginBottom: 12 },
   cardTitle: { color: '#302536', fontSize: 18, fontWeight: '700' }, body: { color: '#302536', fontSize: 15, lineHeight: 22, marginTop: 7 },
   note: { color: '#635669', fontSize: 14, lineHeight: 21, marginBottom: 16 }, meta: { color: '#635669', fontSize: 12, lineHeight: 18, marginTop: 6 }, task: { color: plum, fontSize: 14, fontWeight: '600', marginTop: 12 },
   button: { backgroundColor: coral, minHeight: 44, paddingHorizontal: 15, paddingVertical: 11, borderRadius: 9, alignItems: 'center', justifyContent: 'center', marginTop: 13 },
   secondary: { backgroundColor: '#efe4f1' }, buttonText: { color: '#fff', fontWeight: '700', textAlign: 'center' }, secondaryText: { color: plum }, disabled: { opacity: 0.48 },
   slot: { borderColor: '#e6dce8', borderWidth: 1, borderRadius: 9, padding: 10, marginTop: 8 }, selectedSlot: { borderColor: coral, borderWidth: 2 },
+  unavailableSlot: { backgroundColor: '#f9f6f9' }, weekDay: { borderTopColor: '#eee7ef', borderTopWidth: 1, paddingVertical: 8 }, weekLabel: { color: plum, fontWeight: '700', fontSize: 14 },
+  matrixRow: { borderTopColor: '#eee7ef', borderTopWidth: 1, paddingVertical: 12 }, rowTight: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 10 }, matrixLevel: { color: plum, fontWeight: '700', fontSize: 13, textAlign: 'right', flexShrink: 1 },
   choice: { borderColor: '#e6dce8', borderWidth: 1, borderRadius: 9, padding: 10, backgroundColor: '#fff' }, choiceActive: { borderColor: coral, backgroundColor: '#f9e9ec' }, personChoice: { borderColor: '#e6dce8', borderWidth: 1, borderRadius: 9, padding: 10, marginTop: 8 },
   warning: { color: '#8b2737', backgroundColor: '#fae9ec', padding: 11, borderRadius: 8, marginTop: 10, lineHeight: 20 },
   label: { color: '#302536', fontWeight: '700', marginTop: 17 }, input: { borderColor: '#a999ae', borderWidth: 1, borderRadius: 9, minHeight: 44, paddingHorizontal: 12, marginTop: 7, backgroundColor: '#fff' },

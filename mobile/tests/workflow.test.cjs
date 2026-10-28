@@ -11,7 +11,7 @@ const compiled = new Module(source, module);
 compiled.filename = source;
 compiled.paths = Module._nodeModulePaths(path.dirname(source));
 compiled._compile(js, source);
-const { attentionCases, catalogue, createRequest, eligibility, initialState, planningSessions, sessionCases, trainerChoices, transition, upcomingSessions } = compiled.exports;
+const { attentionCases, catalogue, createRequest, demoWeekSlots, eligibility, initialState, matrixEntry, matrixPeople, planningSessions, selectionAvailability, sessionCases, slotAvailable, trainerChoices, transition, upcomingSessions } = compiled.exports;
 
 test('home selectors group shared requests and sessions, and show actionable exceptions', () => {
   const state = initialState();
@@ -83,4 +83,29 @@ test('synthetic scheduling slots roll forward with the demo date', () => {
   const slots = initialState().slots.filter(slot => slot.id !== 'SLOT-OLD');
   assert.equal(slots.every(slot => Date.parse(slot.start) > Date.now()), true);
   assert.equal(slots.every(slot => slot.label.includes('Europe/Zurich')), true);
+});
+
+test('matrix keeps numeric levels, trainer qualification, dash and blank distinct', () => {
+  assert.equal(matrixPeople.length, 4);
+  assert.deepEqual(matrixEntry('TC_R030', 'WOHNUNG'), { kind: 'level', level: 0, label: 'Stufe 0' });
+  assert.deepEqual(matrixEntry('TC_R030', 'MATT'), { kind: 'level', level: 4, label: 'Stufe 4 · Trainerqualifikation' });
+  assert.equal(matrixEntry('TC_R052', 'WOHNUNG').kind, 'not_planned');
+  assert.equal(matrixEntry('TC_R077', 'WOHNUNG').kind, 'missing');
+  assert.match(eligibility('TC_R052', 'WOHNUNG', 1).reason, /nicht vorgesehen/);
+  assert.match(eligibility('TC_R077', 'WOHNUNG', 1).reason, /Kein Matrixeintrag/);
+});
+
+test('week availability uses fixture busy actors and synthetic booked sessions per person', () => {
+  const state = initialState();
+  assert.equal(demoWeekSlots(state).length, 3);
+  const booked = selectionAvailability(state, ['WOHNUNG'], 'MARIE', 'SLOT-1');
+  assert.equal(booked.available, false);
+  assert.equal(booked.actors.find(actor => actor.key === 'WOHNUNG').busy, true);
+  assert.equal(booked.actors.find(actor => actor.key === 'MARIE').busy, false);
+  assert.equal(selectionAvailability(state, ['WOHNUNG'], 'MATT', 'SLOT-2').available, true);
+  assert.equal(selectionAvailability(state, ['WOHNUNG'], 'MARIE', 'SLOT-2').available, false);
+  assert.equal(selectionAvailability(state, ['SUMNER'], 'MATT', 'SLOT-3').available, false);
+  assert.equal(selectionAvailability(state, ['WOHNUNG'], 'MATT', 'SLOT-3').available, true);
+  assert.equal(selectionAvailability(state, ['UNKNOWN'], 'MATT', 'SLOT-3').available, false);
+  assert.equal(slotAvailable(state, state.cases.find(item => item.id === 'CASE-S-1'), 'SLOT-3'), true);
 });
