@@ -7,14 +7,12 @@ import { ParticipantResponses } from '../src/participant-responses.ts';
 import { PostgresWorkflowGateway } from '../src/postgres-gateway.ts';
 import { PostgresWorkflowRepository } from '../src/postgres-workflows.ts';
 import { ActionError } from '../src/service.ts';
+import { assertEmptyNativeSchema, resolveNativePostgresTarget } from './native-postgres-guard.mjs';
 
 const connectionString = process.env.TEST_DATABASE_URL;
-if (!connectionString) throw new Error('Set TEST_DATABASE_URL to an empty disposable loopback PostgreSQL database');
-const databaseUrl = new URL(connectionString);
-if (!['localhost', '127.0.0.1', '::1', '[::1]'].includes(databaseUrl.hostname))
-  throw new Error('Native integration checks only accept a loopback PostgreSQL host');
+const { host, schemaName, options } = resolveNativePostgresTarget(connectionString, process.env.TEST_DATABASE_SCHEMA);
 
-const pool = new pg.Pool({ connectionString, max: 8, connectionTimeoutMillis: 5_000, statement_timeout: 10_000 });
+const pool = new pg.Pool({ connectionString, host, options, max: 8, connectionTimeoutMillis: 5_000, statement_timeout: 10_000 });
 const timeout = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
 let releasePendingExecutor = () => {};
 
@@ -64,10 +62,7 @@ function trackPoolConnections() {
 }
 
 try {
-  const existing = await pool.query(
-    `SELECT count(*)::int AS count FROM pg_tables WHERE schemaname = 'public'`,
-  );
-  assert.equal(existing.rows[0].count, 0, 'refusing to run migrations in a non-empty database');
+  await assertEmptyNativeSchema(pool, schemaName);
 
   const { rows: versionRows } = await pool.query('SELECT version() AS version');
   console.log(`PostgreSQL: ${versionRows[0].version}`);
