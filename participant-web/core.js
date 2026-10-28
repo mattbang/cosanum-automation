@@ -13,11 +13,14 @@ export function readConfig(config = {}) {
 
 export function readInvitation(url) {
   const parsed = new URL(url);
-  const caseId = parsed.searchParams.get('case') || parsed.searchParams.get('caseId') || '';
-  const linkToken = parsed.searchParams.get('link') || '';
+  const fragment = new URLSearchParams(parsed.hash.replace(/^#/, ''));
+  const caseId = parsed.searchParams.get('case') || parsed.searchParams.get('caseId') || fragment.get('case') || fragment.get('caseId') || '';
+  const insecureQueryToken = parsed.searchParams.has('link') || parsed.searchParams.has('linkToken');
+  const linkToken = insecureQueryToken ? '' : fragment.get('link') || fragment.get('linkToken') || '';
   return {
     caseId: /^[A-Za-z0-9][A-Za-z0-9._-]{0,119}$/.test(caseId) ? caseId : '',
     linkToken: /^[A-Za-z0-9_-]{32,256}$/.test(linkToken) ? linkToken : '',
+    insecureQueryToken,
   };
 }
 
@@ -30,14 +33,8 @@ export function invitationUrlWithoutSecret(url) {
   return `${parsed.pathname}${parsed.search}`;
 }
 
-export function acknowledgementReady(snapshot) {
-  const facts = snapshot?.evidence?.facts || {};
-  return ['assignedParticipant', 'participantFormVerified', 'trainerPass', 'answeredYes'].every(key => facts[key] === true);
-}
-
-export function missingAcknowledgementFacts(snapshot) {
-  const facts = snapshot?.evidence?.facts || {};
-  return ['assignedParticipant', 'participantFormVerified', 'trainerPass', 'answeredYes'].filter(key => facts[key] !== true);
+export function participantResponseReady(snapshot, verifiedParticipantClaim) {
+  return verifiedParticipantClaim === true && snapshot?.evidence?.facts?.trainerPass === true && snapshot?.status !== 'acknowledged' && snapshot?.status !== 'complete';
 }
 
 export async function apiRequest(config, path, token, options = {}, fetchImpl = fetch) {

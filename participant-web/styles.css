@@ -46,6 +46,13 @@ h2 { font-size: clamp(21px, 5vw, 27px); }
 .details dt { padding-right: 12px; color: var(--muted); font-size: 13px; }
 .details dd { overflow-wrap: anywhere; font-size: 14px; font-weight: 600; }
 .action-state { margin: 17px 0; padding: 14px 15px; border-left: 3px solid #bdcfc9; background: #f7f9f8; color: #3e5551; font-size: 14px; line-height: 1.5; }
+.response-form { display: grid; gap: 12px; margin-top: 18px; }
+.check-row { display: grid; grid-template-columns: 22px 1fr; align-items: start; gap: 10px; line-height: 1.45; }
+.check-row input { width: 20px; height: 20px; margin: 1px 0 0; accent-color: var(--green); }
+.name-label { margin-top: 4px; font-size: 14px; font-weight: 700; }
+.text-input { width: 100%; min-height: 46px; padding: 10px 12px; border: 1px solid #aebfba; border-radius: 9px; color: inherit; font: inherit; }
+.text-input:focus-visible, .check-row input:focus-visible { outline: 3px solid #85c9bd; outline-offset: 2px; }
+.text-input:disabled, .check-row input:disabled { background: #f2f5f4; color: #526463; }
 .privacy-note, .footer-note { color: var(--muted); font-size: 12px; line-height: 1.5; }
 .privacy-note { margin: 15px 0 0; }
 .footer-note { margin: 26px 0 0; }
