@@ -10,10 +10,10 @@ const snapshot: Snapshot = {
   personKey: 'PERSON-1', trainerKey: 'TRAINER-1', ownerKey: 'OWNER-1', revision: '1',
   evidence: { facts: { sessionPlanned: true, slotAvailable: true, calendarError: false, slotConflict: false, changedEvent: false }, values: {} },
 };
-const identity: Identity = { actorKey: 'OWNER-1', role: 'process_quality', verifiedEmail: 'owner@example.test' };
+const identity: Identity = { actorKey: 'OWNER-1', role: 'process_quality', verifiedEmail: 'owner@example.test', issuer: 'https://issuer.example.test', subject: 'owner-sub' };
 
 function queryResult(rows: unknown[] = []) { return { rows, rowCount: rows.length } as never; }
-function fakePool(options: { revision?: string; duplicate?: boolean } = {}) {
+function fakePool(options: { revision?: string; duplicate?: boolean; assignment?: boolean } = {}) {
   const calls: Array<{ sql: string; values?: readonly unknown[] }> = [];
   const connection = {
     async query(sql: string, values?: readonly unknown[]) {
@@ -25,6 +25,7 @@ function fakePool(options: { revision?: string; duplicate?: boolean } = {}) {
         reason: 'new_training', deadline_date: '2026-11-20',
       }]);
       if (sql.startsWith('SELECT 1 FROM workflow_events')) return options.duplicate ? queryResult([{ '?column?': 1 }]) : queryResult();
+      if (sql.includes('FROM verified_identities i')) return options.assignment === false ? queryResult() : queryResult([{ '?column?': 1 }]);
       if (sql.includes('RETURNING event_id')) return queryResult([{ event_id: '00000000-0000-0000-0000-000000000001' }]);
       if (sql.startsWith('UPDATE workflow_cases')) return { rows: [], rowCount: 1 } as never;
       return queryResult();
@@ -61,6 +62,13 @@ test('Postgres gateway rejects stale and replayed revisions before executing the
     (error: unknown) => error instanceof ActionError && error.status === 409);
   assert.equal(executions, 0);
   assert.equal(stale.calls.at(-1)!.sql, 'ROLLBACK');
+
+  const unassigned = fakePool({ assignment: false });
+  const unassignedGateway = new PostgresWorkflowGateway(unassigned.pool, executor);
+  await assert.rejects(unassignedGateway.execute('bookSession', snapshot, {}, identity, 'booking-1'),
+    (error: unknown) => error instanceof ActionError && error.status === 403);
+  assert.equal(executions, 0);
+  assert.equal(unassigned.calls.at(-1)!.sql, 'ROLLBACK');
 
   const duplicate = fakePool({ duplicate: true });
   const duplicateGateway = new PostgresWorkflowGateway(duplicate.pool, executor);

@@ -19,7 +19,7 @@ export class HostedParticipantLinks {
     createdBy: Pick<Identity, 'actorKey' | 'role' | 'verifiedEmail'>;
   }): Promise<{ token: string; expiresAt: Date }> {
     if (input.createdBy.role !== 'process_quality') throw new ParticipantLinkError(403, 'Process & Quality authorization required');
-    if (!input.caseId || !Number.isInteger(input.assignmentId) || input.expiresAt.getTime() <= Date.now())
+    if (!input.caseId || !Number.isInteger(input.assignmentId) || Number.isNaN(input.expiresAt.getTime()) || input.expiresAt.getTime() <= Date.now())
       throw new ParticipantLinkError(400, 'Invalid case, assignment, or link expiry');
     const email = normalizeEmail(input.email);
     if (!email) throw new ParticipantLinkError(400, 'Assigned email required');

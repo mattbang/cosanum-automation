@@ -1,7 +1,7 @@
 import type { QueryResultRow } from 'pg';
 import type { ActionId } from '../../mobile/src/workflow.ts';
 import { ActionError, type Evidence, type Identity, type Snapshot, type WorkflowGateway } from './service.ts';
-import { inTransaction, type SqlPool } from './database.ts';
+import { inTransaction, type SqlExecutor, type SqlPool } from './database.ts';
 
 export type ActionExecutionResult = {
   facts: Record<string, boolean>;
@@ -43,6 +43,24 @@ function snapshotFrom(row: CaseRow): Snapshot {
   };
 }
 
+async function currentAssignment(db: SqlExecutor, snapshot: Snapshot, actor: Identity, lock = false): Promise<boolean> {
+  if (!actor.issuer || !actor.subject || !actor.verifiedEmail) return false;
+  const assignmentRole = actor.role === 'system' ? 'process_quality' : actor.role;
+  const result = await db.query(
+    `SELECT 1
+       FROM verified_identities i
+       JOIN workflow_assignments a ON a.actor_key = i.actor_key
+      WHERE i.issuer = $1 AND i.subject = $2 AND i.email_normalized = $3
+        AND i.email_verified AND i.active AND i.actor_key = $4 AND i.role = $5
+        AND a.case_id = $6 AND a.role = $7 AND a.actor_key = $4 AND a.active
+        AND (a.identity_issuer IS NULL OR (a.identity_issuer = $1 AND a.identity_subject = $2))
+      ${lock ? 'FOR SHARE OF i, a' : ''}`,
+    [actor.issuer, actor.subject, actor.verifiedEmail.trim().toLocaleLowerCase('en-US'), actor.actorKey, actor.role,
+      snapshot.scope.caseId, assignmentRole],
+  );
+  return result.rowCount === 1;
+}
+
 const LOAD_CASE = `SELECT c.request_id, c.session_id, c.case_id, c.proof_id, c.proof_version,
        c.participant_key, c.trainer_key, c.owner_key, c.revision::text AS revision,
        c.evidence_facts, c.evidence_values, r.requester_name, r.source_team, r.reason,
@@ -59,14 +77,25 @@ export class PostgresWorkflowGateway implements WorkflowGateway {
     return result.rows[0] ? snapshotFrom(result.rows[0]) : null;
   }
 
+  async authorize(snapshot: Snapshot, actor: Identity): Promise<boolean> {
+    const current = await this.load(snapshot.scope.caseId);
+    if (!current || current.scope.requestId !== snapshot.scope.requestId || current.scope.sessionId !== snapshot.scope.sessionId ||
+        current.personKey !== snapshot.personKey || current.trainerKey !== snapshot.trainerKey || current.ownerKey !== snapshot.ownerKey)
+      return false;
+    return currentAssignment(this.pool, current, actor);
+  }
+
   async execute(actionId: ActionId, snapshot: Snapshot, payload: Record<string, unknown>, actor: Identity, idempotencyKey: string): Promise<void> {
     await inTransaction(this.pool, async db => {
       const currentResult = await db.query<CaseRow>(`${LOAD_CASE} FOR UPDATE OF c`, [snapshot.scope.caseId]);
       const row = currentResult.rows[0];
       if (!row) throw new ActionError(404, 'Case not found');
       const current = snapshotFrom(row);
-      if (current.revision !== snapshot.revision || current.scope.requestId !== snapshot.scope.requestId || current.scope.sessionId !== snapshot.scope.sessionId)
+      if (current.revision !== snapshot.revision || current.scope.requestId !== snapshot.scope.requestId || current.scope.sessionId !== snapshot.scope.sessionId ||
+          current.scope.proofId !== snapshot.scope.proofId || current.scope.proofVersion !== snapshot.scope.proofVersion ||
+          current.personKey !== snapshot.personKey || current.trainerKey !== snapshot.trainerKey || current.ownerKey !== snapshot.ownerKey)
         throw new ActionError(409, 'Case changed; reload before retrying');
+      if (!await currentAssignment(db, current, actor, true)) throw new ActionError(403, 'Role or assignment mismatch');
 
       const duplicate = await db.query('SELECT 1 FROM workflow_events WHERE case_id = $1 AND idempotency_key = $2', [snapshot.scope.caseId, idempotencyKey]);
       if (duplicate.rowCount) throw new ActionError(409, 'This action was already recorded');

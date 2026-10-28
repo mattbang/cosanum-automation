@@ -26,6 +26,6 @@ export class PostgresIdentityProvider implements IdentityProvider {
     );
     const identity = result.rows[0];
     if (!identity?.active || identity.email_verified !== true) return null;
-    return { actorKey: identity.actor_key, role: identity.role, verifiedEmail: email };
+    return { actorKey: identity.actor_key, role: identity.role, verifiedEmail: email, issuer: claims.issuer, subject: claims.subject };
   }
 }

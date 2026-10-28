@@ -13,6 +13,7 @@ export type CreateRequestInput = {
 };
 
 export class WorkflowConflictError extends Error {}
+export class WorkflowInputError extends Error {}
 
 function timestampKey(value?: string | Date | null): string {
   if (!value) return '';
@@ -27,15 +28,24 @@ export class PostgresWorkflowRepository {
 
   async createRequest(input: CreateRequestInput, actor: Identity): Promise<{ requestId: string; caseIds: string[]; replayed: boolean }> {
     if (actor.role !== 'process_quality') throw new WorkflowConflictError('Process & Quality authorization required');
-    if (!input.id || !input.requesterName.trim() || !/^\d{4}-\d{2}-\d{2}$/.test(input.deadlineDate) ||
-        !['new_training', 'retraining', 'process_change'].includes(input.reason) || input.cases.length === 0 || input.sessions.length === 0)
-      throw new WorkflowConflictError('Invalid request, deadline, session, or case data');
+    if (!input || typeof input !== 'object' || typeof input.id !== 'string' || !input.id.trim() ||
+        typeof input.requesterName !== 'string' || !input.requesterName.trim() ||
+        (input.sourceTeam !== undefined && typeof input.sourceTeam !== 'string') || typeof input.deadlineDate !== 'string' ||
+        !/^\d{4}-\d{2}-\d{2}$/.test(input.deadlineDate) ||
+        !['new_training', 'retraining', 'process_change'].includes(input.reason) ||
+        !Array.isArray(input.cases) || input.cases.length === 0 || !Array.isArray(input.sessions) || input.sessions.length === 0 ||
+        input.sessions.some(item => !item || typeof item.sessionId !== 'string' || !item.sessionId ||
+          (item.startsAt !== undefined && typeof item.startsAt !== 'string') || (item.endsAt !== undefined && typeof item.endsAt !== 'string')) ||
+        input.cases.some(item => !item || typeof item.caseId !== 'string' || !item.caseId ||
+          typeof item.sessionId !== 'string' || !item.sessionId || typeof item.participantKey !== 'string' || !item.participantKey ||
+          typeof item.trainerKey !== 'string' || !item.trainerKey || typeof item.ownerKey !== 'string' || !item.ownerKey))
+      throw new WorkflowInputError('Invalid request, deadline, session, or case data');
     const dateCheck = new Date(`${input.deadlineDate}T00:00:00Z`);
     if (Number.isNaN(dateCheck.valueOf()) || dateCheck.toISOString().slice(0, 10) !== input.deadlineDate)
-      throw new WorkflowConflictError('Deadline must be a real calendar date');
+      throw new WorkflowInputError('Deadline must be a real calendar date');
     const sessionIds = new Set(input.sessions.map(session => session.sessionId));
     if (sessionIds.size !== input.sessions.length || input.cases.some(entry => !sessionIds.has(entry.sessionId)))
-      throw new WorkflowConflictError('Every case must reference a unique session supplied with this request');
+      throw new WorkflowInputError('Every case must reference a unique session supplied with this request');
 
     return inTransaction(this.pool, async db => {
       const requestManifest = {
