@@ -19,6 +19,7 @@ export interface DurableActionExecutor {
 type CaseRow = QueryResultRow & {
   request_id: string; session_id: string | null; case_id: string; proof_id: string | null; proof_version: string | null;
   participant_key: string; trainer_key: string; owner_key: string; revision: string | number;
+  attributes: Record<string, unknown>;
   evidence_facts: Record<string, boolean>; evidence_values: Record<string, string>;
   requester_name: string; source_team: string | null; reason: Snapshot['request'] extends infer R ? R extends { reason: infer V } ? V : never : never;
   deadline_date: string | null;
@@ -38,6 +39,7 @@ function snapshotFrom(row: CaseRow): Snapshot {
       reason: row.reason,
       ...(row.deadline_date ? { deadlineDate: String(row.deadline_date).slice(0, 10) } : {}),
     },
+    attributes: row.attributes ?? {},
     personKey: row.participant_key, trainerKey: row.trainer_key, ownerKey: row.owner_key,
     revision: String(row.revision),
     evidence: { facts: row.evidence_facts ?? {}, values: row.evidence_values ?? {} },
@@ -65,7 +67,7 @@ async function currentAssignment(db: SqlExecutor, snapshot: Snapshot, actor: Ide
 
 const LOAD_CASE = `SELECT c.request_id, c.session_id, c.case_id, c.proof_id, c.proof_version,
        c.participant_key, c.trainer_key, c.owner_key, c.revision::text AS revision,
-       c.evidence_facts, c.evidence_values, r.requester_name, r.source_team, r.reason,
+       c.attributes, c.evidence_facts, c.evidence_values, r.requester_name, r.source_team, r.reason,
        r.deadline_date::text AS deadline_date
   FROM workflow_cases c JOIN workflow_requests r ON r.request_id = c.request_id
  WHERE c.case_id = $1`;

@@ -6,16 +6,16 @@ import type { Identity } from '../src/service.ts';
 
 const input: CreateRequestInput = {
   id: 'REQ-1', requesterName: 'Requester', sourceTeam: 'Warehouse', reason: 'process_change', deadlineDate: '2026-11-20',
-  sessions: [{ sessionId: 'SES-1', startsAt: '2026-11-02T09:00:00Z', endsAt: '2026-11-02T10:00:00Z' }],
-  cases: [{ caseId: 'CASE-1', sessionId: 'SES-1', participantKey: 'PERSON-1', trainerKey: 'TRAINER-1', ownerKey: 'OWNER-1' }],
+  sessions: [{ sessionId: 'SES-1', startsAt: '2026-11-02T09:00:00Z', endsAt: '2026-11-02T10:00:00Z', attributes: { location: 'Synthetic room' } }],
+  cases: [{ caseId: 'CASE-1', sessionId: 'SES-1', participantKey: 'PERSON-1', trainerKey: 'TRAINER-1', ownerKey: 'OWNER-1', attributes: { topicId: 'TOPIC-1', targetLevel: 2 } }],
 };
 const actor: Identity = { actorKey: 'OWNER-1', role: 'process_quality', verifiedEmail: 'owner@example.test' };
 function result(rows: unknown[] = [], rowCount = rows.length) { return { rows, rowCount } as never; }
 
 function repositoryDb() {
   const requests = new Map<string, { requester_name: string; source_team: string | null; reason: string; deadline_date: string; attributes: Record<string, unknown> }>();
-  const sessions = new Map<string, { request_id: string; starts_at: string | null; ends_at: string | null }>();
-  const cases = new Map<string, Record<string, string>>();
+  const sessions = new Map<string, { request_id: string; starts_at: string | null; ends_at: string | null; attributes: Record<string, unknown> }>();
+  const cases = new Map<string, { request_id: string; session_id: string; participant_key: string; trainer_key: string; owner_key: string; attributes: Record<string, unknown> }>();
   const assignments = new Map<string, string | null>();
   const calls: string[] = [];
   const connection = {
@@ -30,13 +30,13 @@ function repositoryDb() {
       if (sql.startsWith('SELECT requester_name')) return result([requests.get(String(values[0]))!]);
       if (sql.startsWith('INSERT INTO workflow_sessions')) {
         const id = String(values[0]);
-        if (!sessions.has(id)) sessions.set(id, { request_id: String(values[1]), starts_at: values[2] as string | null, ends_at: values[3] as string | null });
+        if (!sessions.has(id)) sessions.set(id, { request_id: String(values[1]), starts_at: values[2] as string | null, ends_at: values[3] as string | null, attributes: JSON.parse(String(values[4])) });
         return result([], 1);
       }
       if (sql.startsWith('SELECT request_id, starts_at')) return result([sessions.get(String(values[0]))!]);
       if (sql.startsWith('INSERT INTO workflow_cases')) {
         const id = String(values[0]);
-        if (!cases.has(id)) cases.set(id, { request_id: String(values[1]), session_id: String(values[2]), participant_key: String(values[3]), trainer_key: String(values[4]), owner_key: String(values[5]) });
+        if (!cases.has(id)) cases.set(id, { request_id: String(values[1]), session_id: String(values[2]), participant_key: String(values[3]), trainer_key: String(values[4]), owner_key: String(values[5]), attributes: JSON.parse(String(values[6])) });
         return result([], 1);
       }
       if (sql.startsWith('SELECT request_id, session_id')) return result([cases.get(String(values[0]))!]);
@@ -70,6 +70,7 @@ test('request ID cannot be reused with a changed deadline, case set, or malforme
   await repository.createRequest(input, actor);
   await assert.rejects(repository.createRequest({ ...input, deadlineDate: '2026-11-21' }, actor), WorkflowConflictError);
   await assert.rejects(repository.createRequest({ ...input, cases: [{ ...input.cases[0]!, caseId: 'CASE-2' }] }, actor), WorkflowConflictError);
+  await assert.rejects(repository.createRequest({ ...input, cases: [{ ...input.cases[0]!, attributes: { topicId: 'TOPIC-2', targetLevel: 3 } }] }, actor), WorkflowConflictError);
   await assert.rejects(repository.createRequest({ ...input, cases: [{ ...input.cases[0]!, participantEmail: 'person@example.test' }] }, actor), WorkflowConflictError);
   await assert.rejects(repository.createRequest({ ...input, deadlineDate: '2026-02-31' }, actor), WorkflowInputError);
 });

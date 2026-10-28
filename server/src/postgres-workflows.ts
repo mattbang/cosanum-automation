@@ -8,8 +8,8 @@ export type CreateRequestInput = {
   sourceTeam?: string;
   reason: 'new_training' | 'retraining' | 'process_change';
   deadlineDate: string;
-  sessions: Array<{ sessionId: string; startsAt?: string; endsAt?: string }>;
-  cases: Array<{ caseId: string; sessionId: string; participantKey: string; participantEmail?: string; trainerKey: string; ownerKey: string }>;
+  sessions: Array<{ sessionId: string; startsAt?: string; endsAt?: string; attributes?: Record<string, unknown> }>;
+  cases: Array<{ caseId: string; sessionId: string; participantKey: string; participantEmail?: string; trainerKey: string; ownerKey: string; attributes?: Record<string, unknown> }>;
 };
 
 export class WorkflowConflictError extends Error {}
@@ -17,6 +17,14 @@ export class WorkflowInputError extends Error {}
 
 function sameIdSet(actual: unknown, expected: string[]): boolean {
   return Array.isArray(actual) && actual.length === expected.length && actual.every((item, index) => item === expected[index]);
+}
+
+function stableJson(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(stableJson).join(',')}]`;
+  if (value && typeof value === 'object') {
+    return `{${Object.entries(value).sort(([a], [b]) => a.localeCompare(b)).map(([key, item]) => `${JSON.stringify(key)}:${stableJson(item)}`).join(',')}}`;
+  }
+  return JSON.stringify(value) ?? 'null';
 }
 
 function timestampKey(value?: string | Date | null): string {
@@ -39,10 +47,12 @@ export class PostgresWorkflowRepository {
         !['new_training', 'retraining', 'process_change'].includes(input.reason) ||
         !Array.isArray(input.cases) || input.cases.length === 0 || !Array.isArray(input.sessions) || input.sessions.length === 0 ||
         input.sessions.some(item => !item || typeof item.sessionId !== 'string' || !item.sessionId ||
-          (item.startsAt !== undefined && typeof item.startsAt !== 'string') || (item.endsAt !== undefined && typeof item.endsAt !== 'string')) ||
+          (item.startsAt !== undefined && typeof item.startsAt !== 'string') || (item.endsAt !== undefined && typeof item.endsAt !== 'string') ||
+          (item.attributes !== undefined && (!item.attributes || typeof item.attributes !== 'object' || Array.isArray(item.attributes)))) ||
         input.cases.some(item => !item || typeof item.caseId !== 'string' || !item.caseId ||
           typeof item.sessionId !== 'string' || !item.sessionId || typeof item.participantKey !== 'string' || !item.participantKey ||
           (item.participantEmail !== undefined && typeof item.participantEmail !== 'string') ||
+          (item.attributes !== undefined && (!item.attributes || typeof item.attributes !== 'object' || Array.isArray(item.attributes))) ||
           typeof item.trainerKey !== 'string' || !item.trainerKey || typeof item.ownerKey !== 'string' || !item.ownerKey))
       throw new WorkflowInputError('Invalid request, deadline, session, or case data');
     const dateCheck = new Date(`${input.deadlineDate}T00:00:00Z`);
@@ -74,29 +84,31 @@ export class PostgresWorkflowRepository {
 
       for (const session of input.sessions) {
         await db.query(
-          `INSERT INTO workflow_sessions (session_id, request_id, starts_at, ends_at)
-           VALUES ($1, $2, $3, $4) ON CONFLICT (session_id) DO NOTHING`,
-          [session.sessionId, input.id, session.startsAt ?? null, session.endsAt ?? null],
+          `INSERT INTO workflow_sessions (session_id, request_id, starts_at, ends_at, attributes)
+           VALUES ($1, $2, $3, $4, $5::jsonb) ON CONFLICT (session_id) DO NOTHING`,
+          [session.sessionId, input.id, session.startsAt ?? null, session.endsAt ?? null, JSON.stringify(session.attributes ?? {})],
         );
-        const persisted = await db.query<{ request_id: string; starts_at: Date | null; ends_at: Date | null }>(
-          'SELECT request_id, starts_at, ends_at FROM workflow_sessions WHERE session_id = $1', [session.sessionId],
+        const persisted = await db.query<{ request_id: string; starts_at: Date | null; ends_at: Date | null; attributes: Record<string, unknown> }>(
+          'SELECT request_id, starts_at, ends_at, attributes FROM workflow_sessions WHERE session_id = $1', [session.sessionId],
         );
         const saved = persisted.rows[0];
-        if (!saved || saved.request_id !== input.id || timestampKey(saved.starts_at) !== timestampKey(session.startsAt) || timestampKey(saved.ends_at) !== timestampKey(session.endsAt))
+        if (!saved || saved.request_id !== input.id || timestampKey(saved.starts_at) !== timestampKey(session.startsAt) || timestampKey(saved.ends_at) !== timestampKey(session.endsAt) ||
+            stableJson(saved.attributes) !== stableJson(session.attributes ?? {}))
           throw new WorkflowConflictError(`Session ID ${session.sessionId} already exists with different data`);
       }
 
       for (const entry of input.cases) {
         await db.query(
-          `INSERT INTO workflow_cases (case_id, request_id, session_id, participant_key, trainer_key, owner_key)
-           VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (case_id) DO NOTHING`,
-          [entry.caseId, input.id, entry.sessionId, entry.participantKey, entry.trainerKey, entry.ownerKey],
+          `INSERT INTO workflow_cases (case_id, request_id, session_id, participant_key, trainer_key, owner_key, attributes)
+           VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb) ON CONFLICT (case_id) DO NOTHING`,
+          [entry.caseId, input.id, entry.sessionId, entry.participantKey, entry.trainerKey, entry.ownerKey, JSON.stringify(entry.attributes ?? {})],
         );
-        const persisted = await db.query<{ request_id: string; session_id: string; participant_key: string; trainer_key: string; owner_key: string }>(
-          'SELECT request_id, session_id, participant_key, trainer_key, owner_key FROM workflow_cases WHERE case_id = $1', [entry.caseId],
+        const persisted = await db.query<{ request_id: string; session_id: string; participant_key: string; trainer_key: string; owner_key: string; attributes: Record<string, unknown> }>(
+          'SELECT request_id, session_id, participant_key, trainer_key, owner_key, attributes FROM workflow_cases WHERE case_id = $1', [entry.caseId],
         );
         const saved = persisted.rows[0];
-        if (!saved || saved.request_id !== input.id || saved.session_id !== entry.sessionId || saved.participant_key !== entry.participantKey || saved.trainer_key !== entry.trainerKey || saved.owner_key !== entry.ownerKey)
+        if (!saved || saved.request_id !== input.id || saved.session_id !== entry.sessionId || saved.participant_key !== entry.participantKey || saved.trainer_key !== entry.trainerKey || saved.owner_key !== entry.ownerKey ||
+            stableJson(saved.attributes) !== stableJson(entry.attributes ?? {}))
           throw new WorkflowConflictError(`Case ID ${entry.caseId} already exists with different assignments`);
         for (const assignment of [
           { role: 'assigned_participant', actorKey: entry.participantKey, email: entry.participantEmail?.trim().toLocaleLowerCase('en-US') || null },

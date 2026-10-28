@@ -35,6 +35,7 @@ CREATE TABLE workflow_cases (
   proof_id text,
   proof_version text,
   status text NOT NULL DEFAULT 'open',
+  attributes jsonb NOT NULL DEFAULT '{}'::jsonb,
   state jsonb NOT NULL DEFAULT '{}'::jsonb,
   evidence_facts jsonb NOT NULL DEFAULT '{}'::jsonb,
   evidence_values jsonb NOT NULL DEFAULT '{}'::jsonb,

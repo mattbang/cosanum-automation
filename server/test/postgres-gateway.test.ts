@@ -21,6 +21,7 @@ function fakePool(options: { revision?: string; duplicate?: boolean; assignment?
       if (sql.startsWith('SELECT c.request_id')) return queryResult([{
         request_id: 'REQ-1', session_id: 'SES-1', case_id: 'CASE-1', proof_id: null, proof_version: null,
         participant_key: 'PERSON-1', trainer_key: 'TRAINER-1', owner_key: 'OWNER-1', revision: options.revision ?? '1',
+        attributes: { topicId: 'TOPIC-1', targetLevel: 2 },
         evidence_facts: snapshot.evidence.facts, evidence_values: {}, requester_name: 'Synthetic requester', source_team: 'Demo',
         reason: 'new_training', deadline_date: '2026-11-20',
       }]);
