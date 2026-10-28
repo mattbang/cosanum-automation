@@ -13,7 +13,7 @@ const snapshot: Snapshot = {
 const identity: Identity = { actorKey: 'OWNER-1', role: 'process_quality', verifiedEmail: 'owner@example.test', issuer: 'https://issuer.example.test', subject: 'owner-sub' };
 
 function queryResult(rows: unknown[] = []) { return { rows, rowCount: rows.length } as never; }
-function fakePool(options: { revision?: string; duplicate?: boolean; assignment?: boolean; group?: boolean; bookedEventId?: string } = {}) {
+function fakePool(options: { revision?: string; duplicate?: boolean; assignment?: boolean; group?: boolean; bookedEventId?: string; sessionStatus?: string } = {}) {
   const calls: Array<{ sql: string; values?: readonly unknown[] }> = [];
   const connection = {
     async query(sql: string, values?: readonly unknown[]) {
@@ -25,7 +25,7 @@ function fakePool(options: { revision?: string; duplicate?: boolean; assignment?
         attributes: { topicId: 'TOPIC-1', targetLevel: 2 }, state: {}, status: options.bookedEventId ? 'invited' : 'planning',
         evidence_facts: snapshot.evidence.facts, evidence_values: {}, requester_name: 'Synthetic requester', source_team: 'Demo',
         reason: 'new_training', deadline_date: '2026-11-20',
-        session_status: options.bookedEventId ? 'invited' : 'planned', calendar_event_id: options.bookedEventId ?? null, session_attributes: {},
+        session_status: options.sessionStatus ?? (options.bookedEventId ? 'invited' : 'planned'), calendar_event_id: options.bookedEventId ?? null, session_attributes: {},
         ...(caseId !== 'CASE-1' ? { case_id: caseId } : {}),
         });
         if (sql.includes('WHERE c.session_id = $1')) return queryResult(options.group ? [makeCase('CASE-1', 'PERSON-1'), makeCase('CASE-2', 'PERSON-2')] : [makeCase('CASE-1', 'PERSON-1')]);
@@ -124,6 +124,11 @@ test('session booking is not replayed and linked updates cannot escape the selec
     (error: unknown) => error instanceof ActionError && error.status === 409);
   assert.equal(executions, 0);
 
+  const alreadyInvited = new PostgresWorkflowGateway(fakePool({ sessionStatus: 'invited' }).pool, executor);
+  await assert.rejects(alreadyInvited.execute('bookSession', snapshot, {}, identity, 'book-no-event-id'),
+    (error: unknown) => error instanceof ActionError && error.status === 409);
+  assert.equal(executions, 0);
+
   const crossSessionDb = fakePool();
   const crossSession = new PostgresWorkflowGateway(crossSessionDb.pool, executor);
   await assert.rejects(crossSession.execute('bookSession', snapshot, {}, identity, 'book-2'),
@@ -131,4 +136,18 @@ test('session booking is not replayed and linked updates cannot escape the selec
   assert.equal(executions, 1);
   assert.equal(crossSessionDb.calls.at(-1)!.sql, 'ROLLBACK');
   assert.equal(crossSessionDb.calls.some(call => call.sql.startsWith('INSERT INTO workflow_events')), false);
+});
+
+test('group booking requires one shared event update for every case in the session', async () => {
+  const db = fakePool({ group: true });
+  const gateway = new PostgresWorkflowGateway(db.pool, { async execute() { return {
+    facts: { eventVerified: true, receiptSaved: true, calendarError: false, slotConflict: false, changedEvent: false },
+    caseStatus: 'invited', state: { calendarEventId: 'EVENT-1' },
+    session: { status: 'invited', calendarEventId: 'EVENT-1' },
+    relatedCaseUpdates: [],
+  }; } });
+  await assert.rejects(gateway.execute('bookSession', snapshot, {}, identity, 'incomplete-group-booking'),
+    (error: unknown) => error instanceof ActionError && error.status === 502);
+  assert.equal(db.calls.at(-1)!.sql, 'ROLLBACK');
+  assert.equal(db.calls.some(call => call.sql.startsWith('UPDATE workflow_cases')), false);
 });

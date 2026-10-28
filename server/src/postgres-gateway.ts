@@ -193,8 +193,9 @@ export class PostgresWorkflowGateway implements WorkflowGateway {
           current.personKey !== snapshot.personKey || current.trainerKey !== snapshot.trainerKey || current.ownerKey !== snapshot.ownerKey)
         throw new ActionError(409, 'Case changed; reload before retrying');
       if (!await currentAssignment(db, current, actor, true)) throw new ActionError(403, 'Role or assignment mismatch');
-      if (actionId === 'bookSession' && (current.status === 'invited' || current.session?.calendarEventId))
-        throw new ActionError(409, 'Session already has a verified booking');
+      if (actionId === 'bookSession' &&
+          (!current.session || current.status === 'invited' || current.session.status !== 'planned' || current.session.calendarEventId))
+        throw new ActionError(409, 'Session is missing, no longer planned, or already has a verified booking');
 
       const duplicate = await db.query('SELECT 1 FROM workflow_events WHERE case_id = $1 AND idempotency_key = $2', [snapshot.scope.caseId, idempotencyKey]);
       if (duplicate.rowCount) throw new ActionError(409, 'This action was already recorded');
@@ -227,6 +228,18 @@ export class PostgresWorkflowGateway implements WorkflowGateway {
         if (!validBooleanFacts(update.facts) || !validTextValues(update.values)) throw new ActionError(502, 'Executor returned invalid linked-case evidence');
       }
       if (result.session && !current.scope.sessionId) throw new ActionError(502, 'Executor cannot update a missing session');
+      if (actionId === 'bookSession') {
+        const eventId = result.session?.calendarEventId;
+        if (!result.session || result.session.status !== 'invited' || typeof eventId !== 'string' || !eventId.trim() ||
+            result.caseStatus !== 'invited' || result.state?.calendarEventId !== eventId)
+          throw new ActionError(502, 'Executor must confirm the shared booking and current case with one event ID');
+        const expectedLinkedCaseIds = sessionCases.map(item => item.scope.caseId).filter(caseId => caseId !== current.scope.caseId).sort();
+        const actualLinkedCaseIds = relatedUpdates.map(update => update.caseId).sort();
+        if (expectedLinkedCaseIds.length !== actualLinkedCaseIds.length ||
+            expectedLinkedCaseIds.some((caseId, index) => caseId !== actualLinkedCaseIds[index]) ||
+            relatedUpdates.some(update => update.status !== 'invited' || update.state?.calendarEventId !== eventId))
+          throw new ActionError(502, 'Executor must confirm every participant case with the shared booking event');
+      }
       for (const fact of action.postconditions || []) {
         if (result.facts[fact] !== true) throw new ActionError(502, `Executor did not verify postcondition: ${fact}`);
       }
@@ -268,13 +281,14 @@ export class PostgresWorkflowGateway implements WorkflowGateway {
         const linkedFacts = { ...linked.evidence.facts, ...(linkedUpdate.facts ?? {}) };
         const linkedValues = { ...linked.evidence.values, ...(linkedUpdate.values ?? {}) };
         const linkedRevision = String(BigInt(linked.revision) + 1n);
-        await db.query(
+        const linkedResult = await db.query(
           `UPDATE workflow_cases SET evidence_facts = $2::jsonb, evidence_values = $3::jsonb,
                   status = COALESCE($4, status), state = state || $5::jsonb, revision = $6::bigint, updated_at = now()
             WHERE case_id = $1 AND revision = $7::bigint`,
           [linked.scope.caseId, JSON.stringify(linkedFacts), JSON.stringify(linkedValues), linkedUpdate.status ?? null,
             JSON.stringify(linkedUpdate.state ?? {}), linkedRevision, linked.revision],
         );
+        if (linkedResult.rowCount !== 1) throw new ActionError(409, 'Linked case revision changed during action');
         const linkedScope = { ...linked.scope };
         const linkedSnapshot = { ...linked, scope: linkedScope };
         const linkedKey = `${idempotencyKey}:linked:${linked.scope.caseId}`;

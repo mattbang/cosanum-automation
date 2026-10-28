@@ -6,13 +6,16 @@ import { HostedParticipantLinks, ParticipantLinkError } from '../src/participant
 function fakePool(options: {
   expiresAt?: Date; revokedAt?: Date | null; assignmentActive?: boolean; claimedIssuer?: string | null; claimedSubject?: string | null;
   assignmentIssuer?: string | null; assignmentSubject?: string | null;
+  ownerAuthority?: boolean;
 } = {}) {
   const calls: Array<{ sql: string; values?: readonly unknown[] }> = [];
   const connection = {
     async query(sql: string, values?: readonly unknown[]) {
       calls.push({ sql, values });
-      if (sql.startsWith('SELECT a.assignment_id')) return values?.[2] === 'person@example.test' && values?.[3] === 'OWNER-1'
+      if (sql.startsWith('SELECT a.assignment_id')) return options.ownerAuthority !== false && values?.[2] === 'person@example.test' && values?.[3] === 'OWNER-1' && values?.[4] === 'owner@example.test'
         ? { rows: [{ assignment_id: '7' }], rowCount: 1 } as never : { rows: [], rowCount: 0 } as never;
+      if (sql.startsWith('SELECT l.link_id') && sql.includes('FOR UPDATE OF l, a, i')) return options.ownerAuthority !== false && values?.[1] === 'OWNER-1' && values?.[2] === 'owner@example.test'
+        ? { rows: [{ link_id: 'link-1' }], rowCount: 1 } as never : { rows: [], rowCount: 0 } as never;
       if (sql.startsWith('SELECT l.link_id')) return { rows: [{
         link_id: 'link-1', case_id: 'CASE-1', assignment_id: '7', email_normalized: 'person@example.test',
         expires_at: options.expiresAt ?? new Date(Date.now() + 60_000), revoked_at: options.revokedAt ?? null,
@@ -21,7 +24,7 @@ function fakePool(options: {
         actor_key: 'PERSON-1', assignment_active: options.assignmentActive ?? true,
       }], rowCount: 1 } as never;
       if (sql.startsWith('SELECT actor_key, role, email_normalized, active')) return { rows: [], rowCount: 0 } as never;
-      if (sql.startsWith('UPDATE hosted_participant_links')) return values?.[1] === 'OWNER-1'
+      if (sql.startsWith('UPDATE hosted_participant_links')) return options.ownerAuthority !== false && values?.[0] === 'link-1'
         ? { rows: [{ case_id: 'CASE-1' }], rowCount: 1 } as never : { rows: [], rowCount: 0 } as never;
       return { rows: [], rowCount: sql.startsWith('INSERT') || sql.startsWith('UPDATE') ? 1 : 0 } as never;
     },
@@ -81,6 +84,17 @@ test('only the case owner can revoke a participant link', async () => {
   assert.equal(db.calls.some(call => call.sql.includes('participant_link.revoke')), false);
   assert.equal(await links.revoke('link-1', { actorKey: 'OWNER-1', role: 'process_quality', verifiedEmail: 'owner@example.test' }), true);
   assert.ok(db.calls.some(call => call.sql.includes('participant_link.revoke')));
+});
+
+test('link issue and revocation require a current active owner assignment and verified identity', async () => {
+  const blockedDb = fakePool({ ownerAuthority: false });
+  const links = new HostedParticipantLinks(blockedDb.pool);
+  const expiresAt = new Date(Date.now() + 60_000);
+  await assert.rejects(links.issue({ caseId: 'CASE-1', assignmentId: 7, email: 'person@example.test', expiresAt,
+    createdBy: { actorKey: 'OWNER-1', role: 'process_quality', verifiedEmail: 'owner@example.test' } }),
+    (error: unknown) => error instanceof ParticipantLinkError && error.status === 409);
+  assert.equal(await links.revoke('link-1', { actorKey: 'OWNER-1', role: 'process_quality', verifiedEmail: 'owner@example.test' }), false);
+  assert.equal(blockedDb.calls.some(call => call.sql.includes('participant_link.revoke')), false);
 });
 
 test('link issuance cannot replace the email stored on the assignment', async () => {

@@ -13,6 +13,7 @@ Record and verify all of the following before wiring a token verifier or Google 
 - The identity verifier implementation and validation evidence for signature, issuer, audience, expiry, and `email_verified`. It must use an approved provider/library and must not accept decoded-but-unverified JWT claims.
 - The allowed identity directory entries: issuer, subject, normalized verified email, actor key, role, and active status. Never map a role from client payload. Seed only reviewed operator/trainer/participant identities.
 - The case assignment rows linking each participant and trainer actor key to the exact person case. Record each participant's verified assigned email on that assignment before link issuance; the link service rejects an email mismatch and binds the verified issuer/subject to that specific assignment. Trainer and owner identities also need verified directory entries.
+- Revocation semantics: the participant-link endpoint revokes that hosted token only. Deactivating a participant assignment is a separate operator/database action and must be reflected in the authorization check; do not describe token revocation as assignment revocation.
 
 No OAuth flow has been started. The browser interaction, consent screen, selected account, app/developer identity, and exact scopes require a separate reviewed action before creating or using credentials.
 

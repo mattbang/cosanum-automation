@@ -29,13 +29,19 @@ export class HostedParticipantLinks {
       const assignment = await db.query<{ assignment_id: string }>(
         `SELECT a.assignment_id
            FROM workflow_assignments a JOIN workflow_cases c ON c.case_id = a.case_id
+           JOIN workflow_assignments owner_assignment
+             ON owner_assignment.case_id = c.case_id AND owner_assignment.role = 'process_quality'
+            AND owner_assignment.actor_key = c.owner_key AND owner_assignment.active
+           JOIN verified_identities owner_identity
+             ON owner_identity.actor_key = c.owner_key AND owner_identity.role = 'process_quality'
+            AND owner_identity.email_normalized = $5 AND owner_identity.active
           WHERE a.assignment_id = $1 AND a.case_id = $2 AND c.case_id = $2
             AND a.role = 'assigned_participant' AND a.active
             AND a.actor_key = c.participant_key
             AND c.owner_key = $4
             AND a.email_normalized = $3
-          FOR UPDATE OF a`,
-        [input.assignmentId, input.caseId, email, input.createdBy.actorKey],
+          FOR UPDATE OF a, owner_assignment, owner_identity`,
+        [input.assignmentId, input.caseId, email, input.createdBy.actorKey, normalizeEmail(input.createdBy.verifiedEmail)],
       );
       if (!assignment.rowCount) throw new ParticipantLinkError(409, 'Active participant assignment does not match this case and email');
       await db.query(
@@ -57,11 +63,22 @@ export class HostedParticipantLinks {
   async revoke(linkId: string, actor: Pick<Identity, 'actorKey' | 'role' | 'verifiedEmail'>): Promise<boolean> {
     if (actor.role !== 'process_quality') throw new ParticipantLinkError(403, 'Process & Quality authorization required');
     return inTransaction(this.pool, async db => {
+      const owner = await db.query<{ link_id: string }>(
+        `SELECT l.link_id
+           FROM hosted_participant_links l
+           JOIN workflow_cases c ON c.case_id = l.case_id AND c.owner_key = $2
+           JOIN workflow_assignments a ON a.case_id = c.case_id AND a.role = 'process_quality'
+            AND a.actor_key = c.owner_key AND a.active
+           JOIN verified_identities i ON i.actor_key = c.owner_key AND i.role = 'process_quality'
+            AND i.email_normalized = $3 AND i.active
+          WHERE l.link_id = $1 AND l.revoked_at IS NULL
+          FOR UPDATE OF l, a, i`,
+        [linkId, actor.actorKey, normalizeEmail(actor.verifiedEmail)],
+      );
+      if (!owner.rowCount) return false;
       const revoked = await db.query<{ case_id: string }>(
-        `UPDATE hosted_participant_links l SET revoked_at = now()
-           FROM workflow_cases c
-          WHERE l.link_id = $1 AND l.case_id = c.case_id AND c.owner_key = $2 AND l.revoked_at IS NULL
-          RETURNING l.case_id`, [linkId, actor.actorKey],
+        `UPDATE hosted_participant_links SET revoked_at = now()
+          WHERE link_id = $1 AND revoked_at IS NULL RETURNING case_id`, [linkId],
       );
       if (!revoked.rowCount) return false;
       await db.query(
