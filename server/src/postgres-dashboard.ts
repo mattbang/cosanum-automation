@@ -45,10 +45,13 @@ function caseFor(row: DashboardRow, state: Record<string, unknown>): DashboardCa
     sessionAttrs.mode === 'group' || sessionAttrs.mode === 'single' ? sessionAttrs.mode : undefined;
   const targetLevel = Number.isInteger(attrs.targetLevel) ? attrs.targetLevel as number : undefined;
   const trainerPassed = typeof row.case_evidence_facts?.trainerPass === 'boolean' ? row.case_evidence_facts.trainerPass : undefined;
-  const declined = state.declined === true || row.case_evidence_facts?.declined === true;
+  const declined = state.declined === true;
   let attentionAction: DashboardCase['attentionAction'];
   if (declined) attentionAction = 'reschedule';
-  else if (row.case_status === 'assessed') attentionAction = trainerPassed === true ? 'participant_acknowledgement' : 'trainer_review';
+  else if (row.case_status === 'assessed') {
+    attentionAction = trainerPassed === true ? 'participant_acknowledgement' :
+      trainerPassed === false ? 'reschedule' : 'trainer_review';
+  }
   else if (row.case_status === 'proof_ready') attentionAction = 'archive_review';
   return {
     caseId: row.case_id, participantKey: row.participant_key, trainerKey: row.trainer_key,
@@ -125,7 +128,7 @@ export class PostgresProcessQualityDashboard {
         }
         session.cases.push(item);
       }
-      if (!superseded && (state.declined === true || ['assessed', 'proof_ready'].includes(row.case_status))) {
+      if (!superseded && (item.declined || ['assessed', 'proof_ready'].includes(row.case_status))) {
         dashboard.attentionCases.push({
           ...fields, ...(row.session_id ? { sessionId: row.session_id } : {}),
           ...item,

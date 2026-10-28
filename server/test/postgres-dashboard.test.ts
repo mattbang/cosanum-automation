@@ -38,6 +38,7 @@ test('Process & Quality dashboard projects durable rows with active identity and
              ('CASE-GROUP-B', 'REQ-UPCOMING', 'SES-GROUP', 'PERSON-B', 'TRAINER-B', 'OWNER-B', 'invited', 10, '{}', '{"mode":"group"}', '{}'),
              ('CASE-ATTENTION-A', 'REQ-ATTENTION', 'SES-ATTENTION', 'PERSON-A', 'TRAINER-A', 'OWNER-A', 'assessed', 11, '{}', '{}', '{"trainerPass":true}'),
              ('CASE-DECLINED-A', 'REQ-ATTENTION', 'SES-ATTENTION', 'PERSON-A3', 'TRAINER-A', 'OWNER-A', 'invited', 13, '{"declined":true}', '{}', '{}'),
+             ('CASE-FAILED-A', 'REQ-ATTENTION', 'SES-ATTENTION', 'PERSON-A4', 'TRAINER-A', 'OWNER-A', 'assessed', 14, '{}', '{}', '{"trainerPass":false}'),
              ('CASE-SUPERSEDED-A', 'REQ-ATTENTION', 'SES-ATTENTION', 'PERSON-A2', 'TRAINER-A', 'OWNER-A', 'proof_ready', 12, '{"supersededByCaseId":"CASE-RETRY"}', '{}', '{}')`);
     await pool.query(`INSERT INTO workflow_assignments (case_id, role, actor_key)
       SELECT case_id, 'process_quality', owner_key FROM workflow_cases`);
@@ -60,13 +61,16 @@ test('Process & Quality dashboard projects durable rows with active identity and
     assert.equal(dashboard.upcomingSessions[0]!.sessionRevision, '6');
     assert.deepEqual(dashboard.upcomingSessions[0]!.cases, [{ caseId: 'CASE-GROUP-A', participantKey: 'PERSON-A', trainerKey: 'TRAINER-A', status: 'invited', revision: '9', mode: 'group', declined: false }]);
     assert.equal(dashboard.upcomingSessions[1]!.sessionId, 'SES-ATTENTION');
-    assert.deepEqual(dashboard.upcomingSessions[1]!.cases.map(item => item.caseId), ['CASE-ATTENTION-A', 'CASE-DECLINED-A']);
+    assert.deepEqual(dashboard.upcomingSessions[1]!.cases.map(item => item.caseId), ['CASE-ATTENTION-A', 'CASE-DECLINED-A', 'CASE-FAILED-A']);
     assert.equal(dashboard.upcomingSessions[1]!.endsAt?.endsWith('Z'), true);
-    assert.equal(dashboard.attentionCases.length, 2);
-    assert.equal(dashboard.attentionCases[0]!.attentionAction, 'participant_acknowledgement');
-    assert.equal(dashboard.attentionCases[0]!.trainerPassed, true);
-    assert.equal(dashboard.attentionCases[1]!.attentionAction, 'reschedule');
-    assert.equal(dashboard.attentionCases[1]!.declined, true);
+    assert.equal(dashboard.attentionCases.length, 3);
+    const attentionByCase = new Map(dashboard.attentionCases.map(item => [item.caseId, item]));
+    assert.equal(attentionByCase.get('CASE-ATTENTION-A')?.attentionAction, 'participant_acknowledgement');
+    assert.equal(attentionByCase.get('CASE-ATTENTION-A')?.trainerPassed, true);
+    assert.equal(attentionByCase.get('CASE-DECLINED-A')?.attentionAction, 'reschedule');
+    assert.equal(attentionByCase.get('CASE-DECLINED-A')?.declined, true);
+    assert.equal(attentionByCase.get('CASE-FAILED-A')?.attentionAction, 'reschedule');
+    assert.equal(attentionByCase.get('CASE-FAILED-A')?.trainerPassed, false);
     const serialized = JSON.stringify(dashboard);
     for (const forbidden of ['PERSON-B', 'CASE-PLAN-B', 'CASE-GROUP-B', 'CASE-SUPERSEDED-A', 'OWNER-B']) assert.equal(serialized.includes(forbidden), false);
     const ownerBDashboard = await new PostgresProcessQualityDashboard(pool).read(ownerB);
