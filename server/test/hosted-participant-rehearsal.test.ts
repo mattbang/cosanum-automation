@@ -34,7 +34,7 @@ async function request(base: string, path: string, options: { method?: string; t
   return { status: response.status, body: response.headers.get('content-type')?.includes('application/json') && text ? JSON.parse(text) as Record<string, any> : {}, text };
 }
 
-test('synthetic hosted participant rehearsal uses same-origin HTTP, fake identities, and isolated PGlite state', async () => {
+test('synthetic participant API and static asset rehearsal uses fake identities and isolated PGlite state', async () => {
   const engine = new PGlite();
   const pool = new pg.Pool({ ...createPgConfig(engine), max: 1 });
   const receivedUrls: string[] = [];
@@ -74,6 +74,7 @@ test('synthetic hosted participant rehearsal uses same-origin HTTP, fake identit
     assert.ok(address && typeof address === 'object');
     const base = `http://127.0.0.1:${address.port}`;
 
+    // Fetching a URL with a fragment demonstrates HTTP transport behavior only; the page script is not executed here.
     const page = await request(base, '/?case=CASE-ONE#link=fragment-is-not-sent');
     assert.equal(page.status, 200);
     assert.match(page.text, /participant-response/);
@@ -119,6 +120,7 @@ test('synthetic hosted participant rehearsal uses same-origin HTTP, fake identit
       'API blocks acknowledgement before trainer pass');
     assert.equal((await request(base, '/cases/CASE-ONE', { token: 'fake-person-2-token' })).status, 403,
       'group participant cannot read another person case');
+    // This fixture seeds persisted evidence directly; it does not exercise trainer assessment submission.
     await pool.query("UPDATE workflow_cases SET evidence_facts = evidence_facts || '{\"trainerPass\":true}'::jsonb WHERE case_id = 'CASE-ONE'");
     const accepted = await request(base, '/participant-responses', { method: 'POST', token: 'fake-person-1-token', body: payload });
     assert.equal(accepted.status, 201);
