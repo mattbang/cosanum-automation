@@ -48,6 +48,9 @@ assert.equal(ctx.currentCaseTask_(tables, request, divergent[0]).state, 'complet
 assert.equal(ctx.currentCaseTask_(tables, request, divergent[1]).action, 'trainer_assessment');
 const conflictingBooking = ctx.currentCaseTask_(tables, { ...request, bookedSessions: 1 }, person({ phases: [phase({ eventUrl: '' })] }));
 assert.equal(conflictingBooking.state, 'blocked', 'booked row with missing event link needs review');
+const orphanedCase = ctx.currentCaseTask_(tables, request, person({ phases: [] }));
+assert.equal(orphanedCase.action, 'audit_review', 'saved request without a linked case session needs review');
+assert.equal(orphanedCase.state, 'blocked');
 const invalidProof = ctx.currentCaseTask_(tables, request, person({ skillStatus: '', reason: 'Originalbelege weichen vom archivierten Nachweis ab.' }));
 assert.equal(invalidProof.action, 'audit_review', 'uncategorized source mismatch blocks skill suggestion');
 assert.equal(invalidProof.state, 'blocked');

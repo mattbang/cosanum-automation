@@ -116,7 +116,8 @@ function currentCaseTask_(tables, request, personCase) {
   }
   if (personCase.state === 'complete') return result('complete', personCase.personKey, null, 'complete');
   var phases = personCase.phases || [];
-  if (!phases.length || !request.plannedSessions) return result('plan');
+  if (!request.plannedSessions) return result('plan');
+  if (!phases.length) return result('audit_review', 'MATT', null, 'blocked');
   var unbooked = phases.filter(function (phase) { return !phase.eventUrl; })[0];
   if (unbooked) return request.bookedSessions === request.plannedSessions ? result('audit_review', 'MATT', unbooked, 'blocked') : result('booking', 'MATT', unbooked);
   if (personCase.reasonCode === 'declined') return result('reschedule', 'MATT', phases.filter(function (phase) { return phase.rsvp === 'declined' || phase.rsvpFlag === 'declined'; })[0]);
