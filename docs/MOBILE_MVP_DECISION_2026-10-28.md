@@ -2,7 +2,7 @@
 
 ## Observed local result
 
-From merged `main` commit `4b60cfc`, the Android-first Expo SDK 54 app bundles for Android, iOS, and web. Expo Go on a local Android 37 emulator rendered the synthetic case list and booking screen; tapping a group booking moved both person cases to the shared synthetic event and displayed the trainer action. The 24 offline repository suites passed twice, and the mobile/server TypeScript checks and six focused tests passed. These are local and synthetic results. No iPhone device, assigned Google account, connected backend, actual PDF, notification, or deployment was tested.
+From merged `main` commit `4b60cfc`, the Android-first Expo SDK 58 app bundles for Android, iOS, and web. Expo Go 58.0.5 on a local Android 37 emulator rendered the synthetic case list and booking screen; tapping a group booking moved both person cases to the shared synthetic event and displayed the trainer action. Expo Doctor passed all 20 checks after SDK 58 dependency and config alignment. The 24 offline repository suites passed twice, and the mobile/server TypeScript checks and six focused tests passed. These are local and synthetic results. No physical Android or iPhone device, assigned Google account, connected backend, actual PDF, notification, or deployment was tested.
 
 ## Option comparison
 
@@ -13,6 +13,8 @@ From merged `main` commit `4b60cfc`, the Android-first Expo SDK 54 app bundles f
 | Expo native app with web participant link | Local operator screens and synthetic person-level group behavior work on Android; web link avoids participant install | Connected server identity/evidence API, device distribution, role-specific observations, update and support ownership |
 
 Recommendation: use the Expo prototype for the synthetic operator pilot while keeping the existing owner-only web path as the connected baseline. Decide on distribution only after the prerequisites below are observed. The current spike does not justify a maintenance or cost estimate from measured data.
+
+For physical iPhone testing, the iOS bundle export is only a build check. Expo's [SDK mismatch guidance](https://docs.expo.dev/troubleshooting/expo-go-version-mismatch/) says the App Store Expo Go build may not include SDK 58 and describes a TestFlight route for a matching build. A stable group pilot should use a signed iOS build distributed through [TestFlight](https://docs.expo.dev/submit/testflight/) when the installed Expo Go cannot run the project; that requires an Apple Developer account and a separate distribution decision. No such build or account setup was attempted here.
 
 ## Pilot gates and linked cards
 
