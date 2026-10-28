@@ -34,6 +34,30 @@ test('HTTP actions and participant routes remain unavailable when authority is n
   assert.equal(action.body.error, 'Verified identity and workflow executor are not configured');
   const request = await call(handler, 'POST', '/requests', {});
   assert.equal(request.status, 503);
+  const dashboard = await call(handler, 'GET', '/dashboard/process-quality');
+  assert.equal(dashboard.status, 503);
+});
+
+test('Process & Quality dashboard requires a verified bearer and never trusts a client role', async () => {
+  let reads = 0;
+  const handler = createApiHandler({
+    identities: { async authenticate(token) {
+      if (token === 'owner') return identity;
+      if (token === 'trainer') return { ...identity, role: 'assigned_trainer' };
+      return null;
+    } },
+    processQualityDashboard: { async read(actor) {
+      reads++;
+      assert.equal(actor.actorKey, 'OWNER');
+      return { unscheduledRequests: [], upcomingSessions: [], attentionCases: [] };
+    } },
+  });
+  assert.equal((await call(handler, 'GET', '/dashboard/process-quality')).status, 401);
+  assert.equal((await call(handler, 'GET', '/dashboard/process-quality?role=process_quality', undefined, 'Bearer trainer')).status, 403);
+  const accepted = await call(handler, 'GET', '/dashboard/process-quality', undefined, 'Bearer owner');
+  assert.equal(accepted.status, 200);
+  assert.deepEqual(accepted.body, { unscheduledRequests: [], upcomingSessions: [], attentionCases: [] });
+  assert.equal(reads, 1);
 });
 
 test('request creation preserves request-level mobile provenance and hosted link claim requires a verified bearer', async () => {

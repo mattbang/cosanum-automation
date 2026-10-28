@@ -2,6 +2,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import { ActionError, WorkflowService, type ActionRequest, type IdentityProvider, type WorkflowGateway } from './service.ts';
 import { ParticipantLinkError, HostedParticipantLinks } from './participant-links.ts';
 import { ParticipantResponses } from './participant-responses.ts';
+import { PostgresProcessQualityDashboard } from './postgres-dashboard.ts';
 import { WorkflowConflictError, WorkflowInputError, PostgresWorkflowRepository, type CreateRequestInput } from './postgres-workflows.ts';
 import type { BearerTokenVerifier } from './identity.ts';
 
@@ -11,6 +12,7 @@ export type ApiDependencies = {
   requests?: Pick<PostgresWorkflowRepository, 'createRequest'>;
   participantLinks?: Pick<HostedParticipantLinks, 'issue' | 'claim' | 'revoke'>;
   participantResponses?: Pick<ParticipantResponses, 'submit'>;
+  processQualityDashboard?: Pick<PostgresProcessQualityDashboard, 'read'>;
   tokenVerifier?: BearerTokenVerifier;
 };
 
@@ -113,6 +115,16 @@ export function createApiHandler(dependencies: ApiDependencies = {}) {
           caseId: input.caseId, idempotencyKey: input.idempotencyKey, answer: 'yes', typedName: input.typedName,
         }, identity);
         send(response, result.replayed ? 200 : 201, result);
+        return;
+      }
+      if (request.method === 'GET' && path === '/dashboard/process-quality') {
+        if (!dependencies.identities || !dependencies.processQualityDashboard) {
+          send(response, 503, { error: 'Verified identity and Process & Quality dashboard are not configured' }); return;
+        }
+        const identity = await dependencies.identities.authenticate(bearer(request));
+        if (!identity?.verifiedEmail) throw new ActionError(401, 'Verified identity required');
+        if (identity.role !== 'process_quality') throw new ActionError(403, 'Process & Quality authorization required');
+        send(response, 200, await dependencies.processQualityDashboard.read(identity));
         return;
       }
       send(response, 404, { error: 'Not found' });
