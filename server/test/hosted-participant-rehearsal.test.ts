@@ -312,9 +312,9 @@ test('synthetic participant API and static asset rehearsal uses fake identities 
       assert.equal(firstApiCall.hash, '', 'the fragment is absent when the first local API request begins');
       assert.equal(firstApiCall.historyWasReplaced, true, 'history cleanup ran before the first local API request');
 
-      await page.evaluate<void>("window.__fakeCredential = 'fake-person-ui-token'; document.getElementById('sign-in').click()");
-      await waitForPage(page, "Boolean(document.getElementById('synthetic-identity-button'))", 'retry synthetic identity button');
-      await page.evaluate<void>("document.getElementById('synthetic-identity-button').click()");
+      assert.equal(await page.evaluate<boolean>("Boolean(document.getElementById('synthetic-identity-button')?.getClientRects().length)"), true,
+        'the retry uses the visible synthetic identity button');
+      await page.evaluate<void>("window.__fakeCredential = 'fake-person-ui-token'; document.getElementById('synthetic-identity-button').click()");
       await waitForPage(page, "!document.getElementById('case-view').hidden && document.getElementById('case-status').textContent", 'assigned case read');
       assert.equal(await page.evaluate<boolean>("document.getElementById('participant-response').hidden"), true,
         'the rendered response form stays hidden before trainer pass');
@@ -328,6 +328,17 @@ test('synthetic participant API and static asset rehearsal uses fake identities 
       await waitForPage(page, "Boolean(document.getElementById('synthetic-identity-button'))", 'fresh synthetic identity button');
       await page.evaluate<void>("document.getElementById('synthetic-identity-button').click()");
       await waitForPage(page, "!document.getElementById('participant-response').hidden", 'trainer-pass response form');
+
+      const mobile = await page.evaluate<{ width: number; scrollWidth: number; consentLabelHeight: number; nameHeight: number; submitHeight: number }>(`(() => {
+        const rect = selector => document.querySelector(selector).getBoundingClientRect();
+        return { width: innerWidth, scrollWidth: document.documentElement.scrollWidth,
+          consentLabelHeight: rect('.check-row').height, nameHeight: rect('#typed-name').height, submitHeight: rect('#submit-response').height };
+      })()`);
+      assert.equal(mobile.width, 390);
+      assert.equal(mobile.scrollWidth, mobile.width, 'mobile page has no horizontal overflow');
+      assert.ok(mobile.consentLabelHeight >= 44, 'the visible checkbox label offers a 44px touch area');
+      assert.ok(mobile.nameHeight >= 44, 'the visible name field offers a 44px touch area');
+      assert.ok(mobile.submitHeight >= 44, 'the visible submit button offers a 44px touch area');
 
       const beforeResponses = responseAttempts.length;
       await page.evaluate<void>("document.getElementById('submit-response').click()");
@@ -354,17 +365,6 @@ test('synthetic participant API and static asset rehearsal uses fake identities 
       assert.deepEqual(posts[1], posts[0], 'retry uses the exact same answer and idempotency key');
       assert.equal(posts[0].idempotencyKey, responseAttempts[beforeResponses].idempotencyKey);
       assert.equal(await request(base, '/cases/CASE-UI', { token: 'fake-person-ui-token' }).then(result => result.body.status), 'acknowledged');
-
-      const mobile = await page.evaluate<{ width: number; scrollWidth: number; consentLabelHeight: number; nameHeight: number; submitHeight: number }>(`(() => {
-        const rect = selector => document.querySelector(selector).getBoundingClientRect();
-        return { width: innerWidth, scrollWidth: document.documentElement.scrollWidth,
-          consentLabelHeight: rect('.check-row').height, nameHeight: rect('#typed-name').height, submitHeight: rect('#submit-response').height };
-      })()`);
-      assert.equal(mobile.width, 390);
-      assert.equal(mobile.scrollWidth, mobile.width, 'mobile page has no horizontal overflow');
-      assert.ok(mobile.consentLabelHeight >= 44, 'the checkbox label offers a 44px touch area');
-      assert.ok(mobile.nameHeight >= 44, 'the name field offers a 44px touch area');
-      assert.ok(mobile.submitHeight >= 44, 'the submit button offers a 44px touch area');
       return mobile;
     }, t);
     if (browserResult) assert.equal(browserResult.width, 390);
