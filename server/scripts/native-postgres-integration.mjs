@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import pg from 'pg';
 import { runMigrations } from '../src/database.ts';
 import { HostedParticipantLinks, ParticipantLinkError } from '../src/participant-links.ts';
@@ -139,6 +140,25 @@ try {
     await assert.rejects(issue, error => error instanceof ParticipantLinkError && error.status === 409);
   });
   await pool.query('UPDATE verified_identities SET active = true WHERE issuer = $1 AND subject = $2', [owner.issuer, owner.subject]);
+
+  const revokeRaceLink = await links.issue({ caseId: 'CASE-NATIVE-1', assignmentId: assignment('CASE-NATIVE-1', 'assigned_participant'),
+    email: 'person1@example.test', expiresAt, createdBy: owner });
+  const revokeRaceHash = createHash('sha256').update(revokeRaceLink.token).digest();
+  const revokeRaceId = (await pool.query('SELECT link_id FROM hosted_participant_links WHERE token_hash = $1', [revokeRaceHash])).rows[0].link_id;
+  await links.claim(revokeRaceLink.token, {
+    issuer: owner.issuer, subject: 'participant-native-1', email: 'person1@example.test', emailVerified: true,
+  });
+  await withPinnedTransaction(async (lockClient, blockerPid) => {
+    await lockClient.query('UPDATE verified_identities SET active = false WHERE issuer = $1 AND subject = $2', [owner.issuer, owner.subject]);
+    const operation = { settled: false };
+    const revoke = links.revoke(revokeRaceId, owner).finally(() => { operation.settled = true; });
+    const waiterPid = await waitForBlockedPid(blockerPid, operation, 'identity deactivate versus revoke');
+    assert.notEqual(waiterPid, blockerPid, 'link revocation uses its own backend connection');
+    await lockClient.query('COMMIT');
+    assert.equal(await revoke, false, 'revocation is denied after the exact owner identity is deactivated');
+  });
+  await pool.query('UPDATE verified_identities SET active = true WHERE issuer = $1 AND subject = $2', [owner.issuer, owner.subject]);
+  console.log('Owner identity revoke race: passed on separate backends');
 
   const issued = await links.issue({ caseId: 'CASE-NATIVE-1', assignmentId: assignment('CASE-NATIVE-1', 'assigned_participant'),
     email: 'person1@example.test', expiresAt, createdBy: owner });
