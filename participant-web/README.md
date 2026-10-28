@@ -12,7 +12,7 @@ Keep the Google client ID public configuration only; never add a client secret o
 
 The current API does not set CORS headers or answer `OPTIONS` preflight. Host this page on the same origin as the API or use a same-origin reverse proxy for `/participant-links`, `/cases`, `/participant-responses`, and `/actions`. A separate frontend/API origin needs an exact, reviewed CORS allowlist in the API before browser calls can work; do not use wildcard CORS for bearer-token requests.
 
-The empty API origin and client ID are intentional. Until both identity and API configuration are supplied, the view stays fail-closed. This frontend expects the participant-response route being added to stacked backend PR #53; the currently shipped entrypoint still leaves protected routes unconfigured and returns 503. No OAuth consent flow or deployment is part of this source foundation.
+The empty API origin and client ID are intentional. Until both identity and API configuration are supplied, the view stays fail-closed. The participant-response route is committed to stacked backend PR #53 and passes the backend's local route and PGlite checks. The shipped entrypoint still leaves protected routes unconfigured and returns 503 until reviewed runtime dependencies are wired. No OAuth consent flow or deployment is part of this source foundation.
 
 ## API behavior
 
