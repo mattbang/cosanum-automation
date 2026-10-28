@@ -11,12 +11,17 @@ const compiled = new Module(source, module);
 compiled.filename = source;
 compiled.paths = Module._nodeModulePaths(path.dirname(source));
 compiled._compile(js, source);
-const { attentionCases, catalogue, createRequest, demoWeekSlots, eligibility, initialState, matrixEntry, matrixPeople, planningSessions, selectionAvailability, sessionCases, slotAvailable, trainerChoices, transition, upcomingSessions } = compiled.exports;
+const { attentionCases, catalogue, createRequest, deadlineLabel, demoWeekSlots, eligibility, futureDeadline, initialState, matrixEntry, matrixPeople, planningSessions, requestForCase, selectionAvailability, sessionCases, slotAvailable, trainerChoices, transition, upcomingSessions } = compiled.exports;
+const requestInput = () => ({ requesterName: 'Person F', sourceTeam: 'CCS', reason: 'process_change', deadlineDate: futureDeadline(14) });
 
 test('home selectors group shared requests and sessions, and show actionable exceptions', () => {
   const state = initialState();
   assert.equal(catalogue.length, 5);
   assert.deepEqual(planningSessions(state).map(group => group[0].requestId), ['REQ-S']);
+  assert.deepEqual(requestForCase(state, planningSessions(state)[0][0]), state.requests.find(request => request.id === 'REQ-S'));
+  assert.equal(requestForCase(state, planningSessions(state)[0][0]).requesterName, 'Person D');
+  assert.equal(requestForCase(state, planningSessions(state)[0][0]).sourceTeam, 'CCS');
+  assert.equal(requestForCase(state, planningSessions(state)[0][0]).deadlineDate, futureDeadline(14));
   assert.deepEqual(upcomingSessions(state).map(group => group[0].sessionId), ['SES-G']);
   assert.equal(upcomingSessions(state)[0].length, 2);
   assert.deepEqual(attentionCases(state).map(entry => entry.id), ['CASE-H-1']);
@@ -28,24 +33,42 @@ test('catalogue eligibility rejects empty, dash, trainer level and invalid jumps
   assert.equal(eligibility('TC_R030', 'MATT', 1).eligible, false);
   assert.equal(eligibility('TC_R027', 'WOHNUNG', 3).eligible, false);
   assert.equal(eligibility('TC_R027', 'SUMNER', 1).eligible, true);
-  assert.throws(() => createRequest(initialState(), 'TC_R052', ['WOHNUNG'], 1));
-  assert.throws(() => createRequest(initialState(), 'TC_R030', ['WOHNUNG', 'SUMNER'], 1, 'single', 'MARIE'));
+  assert.throws(() => createRequest(initialState(), 'TC_R052', ['WOHNUNG'], 1, 'group', 'MATT', requestInput()));
+  assert.throws(() => createRequest(initialState(), 'TC_R030', ['WOHNUNG', 'SUMNER'], 1, 'single', 'MARIE', requestInput()));
   assert.deepEqual(trainerChoices('TC_R030', 'group', 1), ['MATT', 'MARIE']);
   assert.deepEqual(trainerChoices('TC_R030', 'group', 2), ['MATT']);
-  assert.equal(createRequest(initialState(), 'TC_R030', ['WOHNUNG'], 1, 'group', 'MARIE').cases.at(-1).trainerKey, 'MARIE');
-  assert.throws(() => createRequest(initialState(), 'TC_R030', ['WOHNUNG'], 1, 'group', 'UNKNOWN'));
+  assert.equal(createRequest(initialState(), 'TC_R030', ['WOHNUNG'], 1, 'group', 'MARIE', requestInput()).cases.at(-1).trainerKey, 'MARIE');
+  assert.throws(() => createRequest(initialState(), 'TC_R030', ['WOHNUNG'], 1, 'group', 'UNKNOWN', requestInput()));
 });
 
 test('manual group request books one session with separate person cases', () => {
-  const created = createRequest(initialState(), 'TC_R033', ['WOHNUNG', 'SUMNER'], 1);
+  const created = createRequest(initialState(), 'TC_R033', ['WOHNUNG', 'SUMNER'], 1, 'group', 'MATT', requestInput());
   const group = planningSessions(created).find(items => items[0].requestId === 'REQ-M-1');
   assert.equal(group.length, 2);
   assert.equal(sessionCases(created, group[0]).length, 2);
+  assert.deepEqual(group.map(item => requestForCase(created, item)?.id), ['REQ-M-1', 'REQ-M-1']);
+  assert.deepEqual(requestForCase(created, group[0]), { id: 'REQ-M-1', ...requestInput() });
   const booked = transition(created, group[0].id, 'book', 'SLOT-2');
   const members = sessionCases(booked, group[0]);
   assert.equal(new Set(members.map(item => item.eventId)).size, 1);
+  assert.deepEqual(requestForCase(booked, members[0]), requestForCase(booked, members[1]));
   const assessed = transition(booked, members[0].id, 'fail');
   assert.equal(assessed.cases.find(item => item.id === members[1].id).status, 'invited');
+});
+
+test('manual request requires requester, reason and a real non-past Zurich deadline', () => {
+  const base = initialState();
+  const create = input => createRequest(base, 'TC_R030', ['WOHNUNG'], 1, 'single', 'MARIE', input);
+  assert.throws(() => create({ ...requestInput(), requesterName: '  ' }), /Anfragende Person/);
+  assert.throws(() => create({ ...requestInput(), reason: '' }), /Grund der Anfrage/);
+  assert.throws(() => create({ ...requestInput(), deadlineDate: '' }), /Gewünschter Abschluss/);
+  assert.throws(() => create({ ...requestInput(), deadlineDate: '2026-02-30' }), /gültiges Datum/);
+  assert.throws(() => create({ ...requestInput(), deadlineDate: '2000-01-01' }), /Vergangenheit/);
+  assert.equal(base.requests.length, 3);
+  const created = create({ ...requestInput(), requesterName: '  Person F  ', sourceTeam: '  Leitstand  ' });
+  assert.equal(created.requests.at(-1).requesterName, 'Person F');
+  assert.equal(created.requests.at(-1).sourceTeam, 'Leitstand');
+  assert.match(deadlineLabel(created.requests.at(-1).deadlineDate), /^\d{2}\.\d{2}\.\d{4}$/);
 });
 
 test('failed assessment creates one retraining case without changing old evidence', () => {
@@ -60,6 +83,9 @@ test('failed assessment creates one retraining case without changing old evidenc
   assert.equal(next.status, 'planning');
   assert.equal(next.eventId, undefined);
   assert.equal(next.mode, 'single');
+  assert.equal(next.requestId, old.requestId);
+  assert.deepEqual(requestForCase(state, next), requestForCase(state, old));
+  assert.equal(requestForCase(state, next).deadlineDate, requestForCase(initialState(), old).deadlineDate);
   assert.equal(attentionCases(state).some(item => item.id === old.id), false);
   assert.throws(() => transition(state, old.id, 'retry'));
 });
@@ -76,6 +102,8 @@ test('decline opens a single replacement without changing the shared group booki
   assert.equal(old.declined, true);
   assert.equal(replacement.personKey, old.personKey);
   assert.equal(replacement.sessionId !== old.sessionId, true);
+  assert.equal(replacement.requestId, old.requestId);
+  assert.deepEqual(requestForCase(retried, replacement), requestForCase(retried, old));
   assert.equal(planningSessions(retried).some(group => group[0].id === replacement.id), true);
 });
 

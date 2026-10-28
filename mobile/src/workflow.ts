@@ -12,8 +12,11 @@ export type TrainingCase = {
   proofId?: string; proofVersion?: string; archiveReceipt?: string; skillApplied?: boolean;
   declined?: boolean; previousCaseId?: string; supersededByCaseId?: string;
 };
+export type RequestReason = 'new_training' | 'retraining' | 'process_change';
+export type RequestInput = { requesterName: string; sourceTeam?: string; reason: RequestReason; deadlineDate: string };
+export type TrainingRequest = RequestInput & { id: string };
 export type Slot = { id: string; label: string; start: string; end: string; busy: string[] };
-export type DemoState = { cases: TrainingCase[]; slots: Slot[]; nextId?: number };
+export type DemoState = { requests: TrainingRequest[]; cases: TrainingCase[]; slots: Slot[]; nextId?: number };
 export type ActionId = typeof workflow.actions[number]['id'];
 export type CurrentTask = { action: string; state: 'suggested' | 'blocked' | 'complete'; reason: string; canExecute: false };
 
@@ -22,6 +25,29 @@ export const catalogue = fixture.Topics.map(row => ({ id: String(row[0]), name: 
 const people = new Map(fixture.People.map(row => [String(row[0]), ({ MATT: 'Daniel / P&Q', MARIE: 'Marie / HCM4', WOHNUNG: 'Person A', SUMNER: 'Person B' } as Record<string, string>)[String(row[0])] || String(row[5])]));
 const topics = new Map(catalogue.map(topic => [topic.id, topic]));
 const levels = new Map(fixture.Skills.map(row => [`${row[0]}:${row[1]}`, row[2]]));
+export const requestReasonLabels: Record<RequestReason, string> = { new_training: 'Neue Schulung', retraining: 'Nachschulung', process_change: 'Prozessänderung' };
+function zurichDate(date: Date): string {
+  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Zurich', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(date);
+  const part = (type: string) => parts.find(item => item.type === type)?.value || '';
+  return `${part('year')}-${part('month')}-${part('day')}`;
+}
+export function futureDeadline(daysAhead: number): string { return zurichDate(new Date(Date.now() + daysAhead * 86400000)); }
+export function deadlineLabel(date: string): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return date;
+  return new Intl.DateTimeFormat('de-CH', { timeZone: 'Europe/Zurich', day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(`${date}T12:00:00Z`));
+}
+function validatedRequest(input: RequestInput): RequestInput {
+  if (!input) throw new Error('Anfragende Person, Grund und gewünschten Abschluss eingeben');
+  const requesterName = input.requesterName?.trim();
+  const sourceTeam = input.sourceTeam?.trim() || undefined;
+  if (!requesterName) throw new Error('Anfragende Person eingeben');
+  if (!input.reason || !Object.hasOwn(requestReasonLabels, input.reason)) throw new Error('Grund der Anfrage wählen');
+  const date = input.deadlineDate?.trim();
+  if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(`${date}T12:00:00Z`)) || new Date(`${date}T12:00:00Z`).toISOString().slice(0, 10) !== date) throw new Error('Gewünschter Abschluss: gültiges Datum als JJJJ-MM-TT eingeben');
+  if (date < zurichDate(new Date())) throw new Error('Gewünschter Abschluss darf nicht in der Vergangenheit liegen');
+  return { requesterName, sourceTeam, reason: input.reason, deadlineDate: date };
+}
+export function requestForCase(state: DemoState, entry: TrainingCase): TrainingRequest | undefined { return state.requests.find(request => request.id === entry.requestId); }
 export const learners = fixture.People.filter(row => String(row[2]) === 'Mitarbeiter').map(row => ({ key: String(row[0]), name: people.get(String(row[0]))! }));
 export const matrixPeople = fixture.People.map(row => ({ key: String(row[0]), name: people.get(String(row[0]))!, role: String(row[2]) }));
 
@@ -60,7 +86,8 @@ function makeCase(id: string, requestId: string, sessionId: string, personKey: s
     targetLevel: Math.min(originalLevel + 1, 3), status: 'planning' };
 }
 
-export function createRequest(state: DemoState, topicId: string, personKeys: string[], targetLevel: number, mode: 'group' | 'single' = 'group', trainerKey = 'MATT'): DemoState {
+export function createRequest(state: DemoState, topicId: string, personKeys: string[], targetLevel: number, mode: 'group' | 'single', trainerKey: string, input: RequestInput): DemoState {
+  const metadata = validatedRequest(input);
   const topic = topics.get(topicId);
   if (!topic || !personKeys.length || new Set(personKeys).size !== personKeys.length) throw new Error('Thema und eindeutige Personen wählen');
   if (mode === 'single' && personKeys.length !== 1) throw new Error('Einzeltraining erfordert genau eine Person');
@@ -72,7 +99,7 @@ export function createRequest(state: DemoState, topicId: string, personKeys: str
     id: `CASE-M-${n}-${index + 1}`, requestId, sessionId, personKey: key, personName: people.get(key)!, topicId,
     topicName: topic.name, mode, trainerKey, originalLevel: eligibility(topicId, key, targetLevel).level!, targetLevel, status: 'planning',
   }));
-  return { ...state, nextId: n + 1, cases: [...state.cases, ...cases] };
+  return { ...state, nextId: n + 1, requests: [...state.requests, { id: requestId, ...metadata }], cases: [...state.cases, ...cases] };
 }
 
 export function planningSessions(state: DemoState): TrainingCase[][] {
@@ -106,6 +133,11 @@ function demoSlot(id: string, daysAhead: number, hour: number, busy: string[]): 
 
 export function initialState(): DemoState {
   return {
+    requests: [
+      { id: 'REQ-G', requesterName: 'Person C', sourceTeam: 'Leitstand', reason: 'new_training', deadlineDate: futureDeadline(21) },
+      { id: 'REQ-S', requesterName: 'Person D', sourceTeam: 'CCS', reason: 'process_change', deadlineDate: futureDeadline(14) },
+      { id: 'REQ-H', requesterName: 'Person E', reason: 'retraining', deadlineDate: futureDeadline(28) },
+    ],
     cases: [
       { ...makeCase('CASE-G-1', 'REQ-G', 'SES-G', 'WOHNUNG', 'TC_R027', 'group'), status: 'invited', slotId: 'SLOT-1', eventId: 'DEMO-EVENT-SES-G' },
       { ...makeCase('CASE-G-2', 'REQ-G', 'SES-G', 'SUMNER', 'TC_R027', 'group'), status: 'invited', slotId: 'SLOT-1', eventId: 'DEMO-EVENT-SES-G' },

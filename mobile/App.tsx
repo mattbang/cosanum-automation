@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Linking, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View, type ScrollViewInstance } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { attentionCases, catalogue, createRequest, currentTask, demoWeekSlots, eligibility, initialState, learners, matrixEntry, matrixPeople, planningSessions, selectionAvailability, sessionCases, slotAvailable, trainerChoices, transition, upcomingSessions, type DemoState, type TrainingCase } from './src/workflow';
+import { attentionCases, catalogue, createRequest, currentTask, deadlineLabel, demoWeekSlots, eligibility, initialState, learners, matrixEntry, matrixPeople, planningSessions, requestForCase, requestReasonLabels, selectionAvailability, sessionCases, slotAvailable, trainerChoices, transition, upcomingSessions, type DemoState, type RequestReason, type TrainingCase } from './src/workflow';
 
 const plum = '#452347';
 const coral = '#b94355';
@@ -88,17 +88,17 @@ export default function App() {
   const [state, setState] = useState<DemoState>(() => {
     if (Platform.OS === 'web' && typeof window !== 'undefined') {
       try {
-        const saved = window.localStorage.getItem('cosanum-synthetic-mobile-v3');
+        const saved = window.localStorage.getItem('cosanum-synthetic-mobile-v4');
         if (saved) {
           const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed.cases) && Array.isArray(parsed.slots)) return parsed as DemoState;
+          if (Array.isArray(parsed.requests) && Array.isArray(parsed.cases) && Array.isArray(parsed.slots)) return parsed as DemoState;
         }
       } catch { /* Reset an invalid local demo state. */ }
     }
     return initialState();
   });
   useEffect(() => {
-    if (Platform.OS === 'web' && typeof window !== 'undefined') window.localStorage.setItem('cosanum-synthetic-mobile-v3', JSON.stringify(state));
+    if (Platform.OS === 'web' && typeof window !== 'undefined') window.localStorage.setItem('cosanum-synthetic-mobile-v4', JSON.stringify(state));
   }, [state]);
   const [screen, setScreen] = useState<Screen>('home');
   const [selectedId, select] = useState<string | null>(null);
@@ -107,6 +107,10 @@ export default function App() {
   const [trainerKey, setTrainer] = useState('MATT');
   const [targetLevel, setTargetLevel] = useState(1);
   const [personKeys, setPeople] = useState<string[]>([]);
+  const [requesterName, setRequesterName] = useState('');
+  const [sourceTeam, setSourceTeam] = useState('');
+  const [requestReason, setRequestReason] = useState<RequestReason | ''>('');
+  const [deadlineDate, setDeadlineDate] = useState('');
   const [slotId, setSlot] = useState('SLOT-1');
   const [calendarPeople, setCalendarPeople] = useState<string[]>(['WOHNUNG', 'SUMNER']);
   const [calendarTrainer, setCalendarTrainer] = useState('MATT');
@@ -116,6 +120,7 @@ export default function App() {
   const [error, setError] = useState('');
   const { width } = useWindowDimensions(); const wide = width >= 800;
   const selected = state.cases.find(item => item.id === selectedId);
+  const selectedRequest = selected ? requestForCase(state, selected) : undefined;
   const participant = state.cases.find(item => item.id === participantId);
   const topic = catalogue.find(item => item.id === topicId)!;
   const requests = planningSessions(state);
@@ -126,10 +131,10 @@ export default function App() {
     catch (cause) { setError(cause instanceof Error ? cause.message : 'Aktion fehlgeschlagen'); }
   }
   function openCase(id: string) { const entry = state.cases.find(item => item.id === id); if (entry?.status === 'planning') setSlot(state.slots.find(slot => slotAvailable(state, entry, slot.id))?.id || ''); select(id); setScreen('case'); setError(''); }
-  function openTopic(id: string) { setTopic(id); setMode('group'); setTrainer('MATT'); setTargetLevel(1); setPeople([]); setSlot(''); setScreen('create'); setError(''); }
+  function openTopic(id: string) { setTopic(id); setMode('group'); setTrainer('MATT'); setTargetLevel(1); setPeople([]); setSlot(''); setRequesterName(''); setSourceTeam(''); setRequestReason(''); setDeadlineDate(''); setScreen('create'); setError(''); }
   function saveRequest() {
     try {
-      const next = createRequest(state, topicId, personKeys, targetLevel, mode, trainerKey);
+      const next = createRequest(state, topicId, personKeys, targetLevel, mode, trainerKey, { requesterName, sourceTeam, reason: requestReason as RequestReason, deadlineDate });
       const entry = next.cases[next.cases.length - personKeys.length];
       setState(next); setSlot(slotAvailable(next, entry, slotId) ? slotId : next.slots.find(slot => slotAvailable(next, entry, slot.id))?.id || ''); select(entry.id); setScreen('case'); setError('');
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Auftrag konnte nicht erstellt werden'); }
@@ -137,15 +142,17 @@ export default function App() {
   function openParticipant(entry: TrainingCase) {
     const url = participantUrl(entry.id); if (url) void Linking.openURL(url); else setParticipant(entry.id);
   }
-  function resetDemo() { setState(initialState()); setScreen('home'); select(null); setPeople([]); setSlot(''); setCalendarSlot(''); setError(''); }
+  function resetDemo() { setState(initialState()); setScreen('home'); select(null); setPeople([]); setRequesterName(''); setSourceTeam(''); setRequestReason(''); setDeadlineDate(''); setSlot(''); setCalendarSlot(''); setError(''); }
   function sessionCard(group: TrainingCase[], kind: 'planning' | 'upcoming') {
-    const first = group[0]; const slot = state.slots.find(item => item.id === first.slotId);
+    const first = group[0]; const slot = state.slots.find(item => item.id === first.slotId); const request = requestForCase(state, first);
     return <Card key={first.sessionId}>
       <Text style={styles.cardTitle}>{first.topicName}</Text>
-      <Text style={styles.meta}>{first.requestId} · {first.sessionId} · {first.mode === 'group' ? 'Gruppe' : 'Einzeln'}</Text>
-      <Text style={styles.body}>{kind === 'planning' ? 'Termin noch offen' : slot?.label || 'Termin gebucht'} · Trainer {trainerName(first.trainerKey)}</Text>
-      <Text style={styles.meta}>{group.map(item => `${item.personName}: ${statusText(item)}`).join(' · ')}</Text>
-      <Button title={kind === 'planning' ? 'Termin planen' : 'Sitzung ansehen'} secondary onPress={() => openCase(first.id)} />
+      {kind === 'planning' ? <>
+        <Text style={styles.body}>Angefragt von {request?.requesterName || 'Unbekannt'}{request?.sourceTeam ? ` · ${request.sourceTeam}` : ''}</Text>
+        <Text style={styles.meta}>{first.mode === 'group' ? 'Gruppe' : 'Einzeln'} · {request ? requestReasonLabels[request.reason] : 'Grund offen'} · Abschluss bis {request ? deadlineLabel(request.deadlineDate) : 'offen'}</Text>
+        <Text style={styles.meta}>{group.map(item => item.personName).join(', ')} · Termin offen</Text>
+      </> : <><Text style={styles.meta}>{first.requestId} · {first.mode === 'group' ? 'Gruppe' : 'Einzeln'}</Text><Text style={styles.body}>{slot?.label || 'Termin gebucht'} · Trainer {trainerName(first.trainerKey)}</Text><Text style={styles.meta}>{group.map(item => `${item.personName}: ${statusText(item)}`).join(' · ')}</Text></>}
+      <Button title={kind === 'planning' ? 'Anfrage ansehen und Termin planen' : 'Sitzung ansehen'} secondary onPress={() => openCase(first.id)} />
     </Card>;
   }
   function attentionCard(entry: TrainingCase) {
@@ -197,6 +204,12 @@ export default function App() {
       {screen === 'create' ? <>
         <Button title="Zurück zum Material" secondary onPress={() => setScreen('catalogue')} />
         <Card><Text style={styles.cardTitle}>{topic.name}</Text><Text style={styles.meta}>{topic.material} · {topic.practiceIndividual ? 'Praxisphase im vollständigen Workflow einzeln' : 'Demo-Material'}</Text>
+          <Text style={styles.section}>Anfrage</Text>
+          <Text style={styles.label}>Anfragende Person *</Text><TextInput accessibilityLabel="Anfragende Person" style={styles.input} value={requesterName} onChangeText={setRequesterName} placeholder="z. B. Person C" autoCapitalize="words" />
+          <Text style={styles.label}>Team / Quelle (optional)</Text><TextInput accessibilityLabel="Team oder Quelle" style={styles.input} value={sourceTeam} onChangeText={setSourceTeam} placeholder="z. B. CCS oder Leitstand" />
+          <Text style={styles.label}>Grund der Anfrage *</Text><View style={styles.reasonChoices}>{(Object.keys(requestReasonLabels) as RequestReason[]).map(reason => <Pressable key={reason} accessibilityRole="radio" accessibilityState={{ checked: requestReason === reason }} onPress={() => setRequestReason(reason)} style={[styles.choice, requestReason === reason && styles.choiceActive]}><Text>{requestReasonLabels[reason]}</Text></Pressable>)}</View>
+          <Text style={styles.label}>Gewünschter Abschluss bis * (JJJJ-MM-TT)</Text><TextInput accessibilityLabel="Gewünschter Abschluss bis" style={styles.input} value={deadlineDate} onChangeText={setDeadlineDate} placeholder="JJJJ-MM-TT" keyboardType="numbers-and-punctuation" autoCapitalize="none" />
+          <Text style={styles.meta}>Die Frist bleibt bei einem Ersatztermin dieselbe. Das Datum gilt für Europe/Zurich.</Text>
           <Text style={styles.section}>Schulungsform</Text><View style={styles.row}>{(['group', 'single'] as const).map(choice => <Pressable key={choice} accessibilityRole="radio" accessibilityState={{ checked: mode === choice }} onPress={() => { setMode(choice); setTrainer('MATT'); setPeople([]); setSlot(''); }} style={[styles.choice, mode === choice && styles.choiceActive]}><Text>{choice === 'group' ? 'Gruppe' : 'Einzeln'}</Text></Pressable>)}</View>
           <Text style={styles.section}>Zielstufe wählen</Text><View style={styles.row}>{(topic.fixedTarget ? [topic.fixedTarget] : [1, 2, 3]).map(level => <Pressable key={level} accessibilityRole="radio" accessibilityState={{ checked: targetLevel === level }} onPress={() => { setTargetLevel(level); setPeople([]); setSlot(''); }} style={[styles.choice, targetLevel === level && styles.choiceActive]}><Text>Stufe {level}</Text></Pressable>)}</View>
           <Text style={styles.section}>Teilnehmende auswählen</Text>
@@ -209,6 +222,7 @@ export default function App() {
         <Text style={styles.section}>Gemeinsame Verfügbarkeit</Text>
         <WeekAvailability state={state} personKeys={personKeys} trainerKey={trainerKey} selectedSlot={slotId} onSelect={setSlot} compact />
         <Button title="Anfrage anlegen → Termin bestätigen" disabled={!personKeys.length || !trainerChoices(topicId, mode, personKeys.length).includes(trainerKey)} onPress={saveRequest} />
+        {error ? <Text style={styles.warning}>{error}</Text> : null}
       </> : null}
       {screen === 'case' ? selected ? <>
         <Button title="Zurück zur Übersicht" secondary onPress={() => setScreen('home')} />
@@ -219,6 +233,12 @@ export default function App() {
           {selected.previousCaseId ? <Text style={styles.meta}>Neuer Versuch nach {selected.previousCaseId}; früherer Beleg bleibt erhalten.</Text> : null}
           {selected.supersededByCaseId ? <Text style={styles.meta}>Neuer Versuch: {selected.supersededByCaseId}</Text> : null}
         </Card>
+        {selectedRequest ? <Card><Text style={styles.cardTitle}>Ursprüngliche Anfrage</Text>
+          <Text style={styles.body}>Angefragt von {selectedRequest.requesterName}{selectedRequest.sourceTeam ? ` · ${selectedRequest.sourceTeam}` : ''}</Text>
+          <Text style={styles.body}>Grund: {requestReasonLabels[selectedRequest.reason]}</Text>
+          <Text style={styles.body}>Gewünschter Abschluss bis {deadlineLabel(selectedRequest.deadlineDate)}</Text>
+          <Text style={styles.meta}>{selected.mode === 'group' ? 'Gruppensitzung' : 'Einzelsitzung'} · {selected.requestId}</Text>
+        </Card> : null}
         {selected.status === 'planning' ? <><Card><Text style={styles.cardTitle}>Termin und Verfügbarkeit</Text>
           <Text style={styles.body}>Verknüpfte Personen: {sessionCases(state, selected).map(item => item.personName).join(', ')}</Text></Card>
           <WeekAvailability state={state} personKeys={sessionCases(state, selected).map(item => item.personKey)} trainerKey={selected.trainerKey} selectedSlot={slotId} onSelect={setSlot} excludeSessionId={selected.sessionId} compact />
@@ -254,6 +274,7 @@ const styles = StyleSheet.create({
   unavailableSlot: { backgroundColor: '#f9f6f9' }, weekDay: { borderTopColor: '#eee7ef', borderTopWidth: 1, paddingVertical: 8 }, weekLabel: { color: plum, fontWeight: '700', fontSize: 14 },
   matrixRow: { borderTopColor: '#eee7ef', borderTopWidth: 1, paddingVertical: 12 }, rowTight: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 10 }, matrixLevel: { color: plum, fontWeight: '700', fontSize: 13, textAlign: 'right', flexShrink: 1 },
   choice: { borderColor: '#e6dce8', borderWidth: 1, borderRadius: 9, padding: 10, backgroundColor: '#fff' }, choiceActive: { borderColor: coral, backgroundColor: '#f9e9ec' }, personChoice: { borderColor: '#e6dce8', borderWidth: 1, borderRadius: 9, padding: 10, marginTop: 8 },
+  reasonChoices: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
   warning: { color: '#8b2737', backgroundColor: '#fae9ec', padding: 11, borderRadius: 8, marginTop: 10, lineHeight: 20 },
   label: { color: '#302536', fontWeight: '700', marginTop: 17 }, input: { borderColor: '#a999ae', borderWidth: 1, borderRadius: 9, minHeight: 44, paddingHorizontal: 12, marginTop: 7, backgroundColor: '#fff' },
   checkbox: { width: 25, height: 25, borderWidth: 2, borderColor: plum, borderRadius: 4, textAlign: 'center', color: plum, fontWeight: '800', fontSize: 18 },
