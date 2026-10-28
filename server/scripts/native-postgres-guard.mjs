@@ -32,19 +32,27 @@ export async function assertEmptyNativeSchema(pool, schemaName) {
 
   const objects = await pool.query(
     `SELECT n.oid,
-       (SELECT count(*) FROM pg_class WHERE relnamespace = n.oid) +
-       (SELECT count(*) FROM pg_proc WHERE pronamespace = n.oid) +
-       (SELECT count(*) FROM pg_type WHERE typnamespace = n.oid) +
-       (SELECT count(*) FROM pg_operator WHERE oprnamespace = n.oid) +
-       (SELECT count(*) FROM pg_opclass WHERE opcnamespace = n.oid) +
-       (SELECT count(*) FROM pg_opfamily WHERE opfnamespace = n.oid) +
-       (SELECT count(*) FROM pg_collation WHERE collnamespace = n.oid) +
-       (SELECT count(*) FROM pg_conversion WHERE connamespace = n.oid) +
-       (SELECT count(*) FROM pg_ts_dict WHERE dictnamespace = n.oid) +
-       (SELECT count(*) FROM pg_ts_config WHERE cfgnamespace = n.oid) +
-       (SELECT count(*) FROM pg_extension WHERE extnamespace = n.oid) AS object_count
+       (SELECT count(*) FROM pg_class WHERE relnamespace = n.oid) AS relations,
+       (SELECT count(*) FROM pg_proc WHERE pronamespace = n.oid) AS routines,
+       (SELECT count(*) FROM pg_type WHERE typnamespace = n.oid) AS types,
+       (SELECT count(*) FROM pg_operator WHERE oprnamespace = n.oid) AS operators,
+       (SELECT count(*) FROM pg_opclass WHERE opcnamespace = n.oid) AS operator_classes,
+       (SELECT count(*) FROM pg_opfamily WHERE opfnamespace = n.oid) AS operator_families,
+       (SELECT count(*) FROM pg_collation WHERE collnamespace = n.oid) AS collations,
+       (SELECT count(*) FROM pg_conversion WHERE connamespace = n.oid) AS conversions,
+       (SELECT count(*) FROM pg_ts_dict WHERE dictnamespace = n.oid) AS text_search_dictionaries,
+       (SELECT count(*) FROM pg_ts_config WHERE cfgnamespace = n.oid) AS text_search_configurations,
+       (SELECT count(*) FROM pg_ts_parser WHERE prsnamespace = n.oid) AS text_search_parsers,
+       (SELECT count(*) FROM pg_ts_template WHERE tmplnamespace = n.oid) AS text_search_templates,
+       (SELECT count(*) FROM pg_statistic_ext WHERE stxnamespace = n.oid) AS extended_statistics,
+       (SELECT count(*) FROM pg_extension WHERE extnamespace = n.oid) AS extensions,
+       (SELECT count(*) FROM pg_default_acl WHERE defaclnamespace = n.oid) AS default_privileges,
+       (SELECT count(*) FROM pg_publication_namespace WHERE pnnspid = n.oid) AS publication_memberships,
+       (SELECT count(*) FROM pg_event_trigger WHERE evtenabled <> 'D') AS active_database_event_triggers
        FROM pg_namespace n WHERE n.nspname = $1`, [schemaName],
   );
   if (!objects.rowCount) throw new Error(`Dedicated schema ${schemaName} does not exist`);
-  if (Number(objects.rows[0].object_count) !== 0) throw new Error(`Dedicated schema ${schemaName} is not empty`);
+  const occupied = Object.entries(objects.rows[0]).filter(([name]) => name !== 'oid').filter(([, count]) => Number(count) > 0);
+  if (occupied.length)
+    throw new Error(`Dedicated schema ${schemaName} is not empty or isolated: ${occupied.map(([name]) => name).join(', ')}`);
 }
