@@ -104,6 +104,42 @@ function auditCase_(tables, personCase, now) {
   return row;
 }
 
+// TASK_PROJECTION_START: pure, read-only projection from persisted audit and session rows.
+function currentCaseTask_(tables, request, personCase) {
+  var base = { requestId: request.requestId, caseId: personCase.caseId,
+    personKey: personCase.personKey, actorKey: 'MATT', sessionId: '',
+    action: '', state: 'suggested', reasonCode: personCase.reasonCode || '',
+    reason: personCase.reason || '', canExecute: false };
+  function result(action, actorKey, phase, state) {
+    return Object.assign({}, base, { action: action, actorKey: actorKey === undefined ? 'MATT' : actorKey,
+      sessionId: phase ? phase.sessionId : '', state: state || 'suggested' });
+  }
+  if (personCase.state === 'complete') return result('complete', personCase.personKey, null, 'complete');
+  var phases = personCase.phases || [];
+  if (!phases.length || !request.plannedSessions) return result('plan');
+  var unbooked = phases.filter(function (phase) { return !phase.eventUrl; })[0];
+  if (unbooked) return request.bookedSessions === request.plannedSessions ? result('audit_review', 'MATT', unbooked, 'blocked') : result('booking', 'MATT', unbooked);
+  if (personCase.reasonCode === 'declined') return result('reschedule', 'MATT', phases.filter(function (phase) { return phase.rsvp === 'declined' || phase.rsvpFlag === 'declined'; })[0]);
+  if (personCase.reasonCode === 'failed') return result('trainer_review');
+  if (personCase.reasonCode === 'archive_error') return result('archive_review');
+  if (personCase.reasonCode === 'skill_conflict') return result('skill_review');
+  if (personCase.reasonCode === 'acknowledgement_overdue') return result('followup');
+  var awaitingRsvp = phases.filter(function (phase) { return !phase.rsvp; })[0];
+  if (awaitingRsvp) return result('rsvp_review', 'MATT', awaitingRsvp);
+  var awaitingTrainer = phases.filter(function (phase) { return !phase.trainerResponseId; })[0];
+  if (awaitingTrainer) {
+    var session = (tables.Sessions || []).filter(function (row) { return row.session_id === awaitingTrainer.sessionId && row.request_id === request.requestId && row.demo_marker === '[DEMO]'; })[0];
+    return result('trainer_assessment', session ? session.trainer_key : '', awaitingTrainer, session && session.trainer_key ? 'suggested' : 'blocked');
+  }
+  var awaitingParticipant = phases.filter(function (phase) { return !phase.acknowledgementResponseId; })[0];
+  if (awaitingParticipant) return result('participant_acknowledgement', personCase.personKey, awaitingParticipant);
+  if (!personCase.proofId) return result('create_proof');
+  if (personCase.archiveStatus !== 'archived_verified' || !personCase.archiveVerifiedAt) return result('archive_review');
+  if (personCase.skillStatus !== 'applied') return result('skill_update');
+  return result('audit_review', 'MATT', null, 'blocked');
+}
+// TASK_PROJECTION_END
+
 function auditView_(tables, now, spreadsheetUrl) {
   auditOwner_(tables);
   var requestIds = tables.Requests.filter(function (row) { return row.demo_marker === '[DEMO]'; }).map(function (row) { return row.request_id; });
@@ -122,13 +158,15 @@ function auditView_(tables, now, spreadsheetUrl) {
     var notices = tables.MessageLedger.filter(function (row) { return row.request_id === request.request_id && row.demo_marker === '[DEMO]' &&
       (row.purpose === 'completion_notice' || row.purpose === 'exception_notice'); });
     var sessions = tables.Sessions.filter(function (row) { return row.request_id === request.request_id && row.demo_marker === '[DEMO]'; });
-    return { requestId: request.request_id, requestNo: tables.Requests.indexOf(request) + 1, topicId: request.topic_id, topicName: String(topic.display_name),
+    var view = { requestId: request.request_id, requestNo: tables.Requests.indexOf(request) + 1, topicId: request.topic_id, topicName: String(topic.display_name),
       mode: String(request.mode), createdAt: String(request.created_at), state: complete ? 'complete' :
         caseRows.some(function (row) { return row.state === 'open'; }) ? 'open' : 'waiting',
       plannedSessions: sessions.length, bookedSessions: sessions.filter(function (row) { return !!row.calendar_event_id; }).length,
       sheetUrl: spreadsheetUrl, cases: caseRows,
       completionNoticeState: notices.filter(function (row) { return row.purpose === 'completion_notice'; }).map(function (row) { return row.state; })[0] || '',
       notices: notices.map(function (row) { return { key: row.send_key, purpose: row.purpose, state: row.state, sentAt: String(row.sent_at_utc) }; }) };
+    view.cases.forEach(function (row) { row.currentTask = currentCaseTask_(tables, view, row); });
+    return view;
   });
 }
 

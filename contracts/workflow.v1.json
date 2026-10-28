@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "kind": "cosanum.training.workflow",
+  "scope": "synthetic-contract",
+  "facts": {
+    "sessionPlanned": "Persisted session is planned and belongs to the selected request",
+    "slotAvailable": "Selected slot is still free for the assigned trainer and linked participants",
+    "eventVerified": "Calendar event ID, time, and attendees were read back and match the session",
+    "receiptSaved": "The session row records the verified event",
+    "eventAndGuestVerified": "Persisted event and one assigned guest response were read back",
+    "assignedTrainer": "Verified responder matches the trainer assigned to the session",
+    "trainerFormVerified": "Trainer form has VERIFIED email collection and matches the session",
+    "trainerPass": "Accepted trainer assessment reports attended and passed for this person and phase",
+    "assignedParticipant": "Verified responder matches the participant linked to the case",
+    "participantFormVerified": "Participant form has VERIFIED email collection and matches the case",
+    "answeredYes": "Participant explicitly confirmed participation",
+    "allPhaseEvidence": "Every required phase has accepted trainer and participant responses",
+    "proofVerified": "Proof IDs, version, source hash, and source responses match this case",
+    "drivePdfVerified": "Drive PDF is readable and its case/version metadata matches the proof",
+    "localPdfVerified": "Local PDF is readable and its SHA-256 matches the Drive PDF",
+    "archiveReceiptVerified": "Archive receipt matches case, proof, version, and source hash",
+    "liveLevelUnchanged": "The live matrix level equals the case's original level"
+  },
+  "actions": [
+    {
+      "id": "bookSession",
+      "actor": "process_quality",
+      "scopeKey": ["requestId", "sessionId"],
+      "requires": ["sessionPlanned", "slotAvailable"],
+      "postconditions": ["eventVerified", "receiptSaved"],
+      "forbids": ["calendarError", "slotConflict", "changedEvent"],
+      "result": {"sessionStatus": "invited"},
+      "idempotencyKey": "sessionId",
+      "source": "apps-script/Booking.gs"
+    },
+    {
+      "id": "recordDecline",
+      "actor": "system",
+      "scopeKey": ["requestId", "sessionId", "caseId"],
+      "requires": ["eventAndGuestVerified"],
+      "equals": {"guestResponse": "declined"},
+      "result": {"rsvpFlag": "declined", "otherCases": "unchanged", "groupEvent": "unchanged"},
+      "idempotencyKey": "sessionId+caseId+guestResponse",
+      "source": "apps-script/Rsvp.gs"
+    },
+    {
+      "id": "recordTrainerAssessment",
+      "actor": "assigned_trainer",
+      "scopeKey": ["requestId", "sessionId", "caseId"],
+      "requires": ["assignedTrainer", "trainerFormVerified"],
+      "result": {"trainerAssessment": "recorded", "trainerPass": "true only when attended and passed"},
+      "idempotencyKey": "formId+responseId",
+      "source": "apps-script/TrainerAssessment.gs"
+    },
+    {
+      "id": "acceptParticipantAcknowledgement",
+      "actor": "assigned_participant",
+      "scopeKey": ["requestId", "sessionId", "caseId"],
+      "requires": ["assignedParticipant", "participantFormVerified", "trainerPass", "answeredYes"],
+      "result": {"participantAcknowledgement": "accepted"},
+      "idempotencyKey": "formId+responseId",
+      "source": "apps-script/ParticipantAcknowledgement.gs"
+    },
+    {
+      "id": "verifyArchive",
+      "actor": "process_quality",
+      "scopeKey": ["requestId", "caseId", "proofId", "proofVersion"],
+      "requires": ["allPhaseEvidence", "proofVerified", "drivePdfVerified", "localPdfVerified"],
+      "postconditions": ["archiveReceiptVerified"],
+      "result": {"proofStatus": "archived_verified"},
+      "idempotencyKey": "proofId+proofVersion+sourceHash",
+      "source": "scripts/archive_proof.py"
+    },
+    {
+      "id": "applySkillUpdate",
+      "actor": "system",
+      "scopeKey": ["requestId", "caseId", "proofId", "proofVersion"],
+      "requires": ["allPhaseEvidence", "proofVerified", "archiveReceiptVerified", "liveLevelUnchanged"],
+      "equals": {"proofStatus": "archived_verified"},
+      "forbids": ["levelFourTarget", "duplicateAppliedUpdate"],
+      "result": {"skillUpdate": "applied"},
+      "idempotencyKey": "proofId+proofVersion+sourceHash",
+      "source": "apps-script/SkillUpdate.gs"
+    }
+  ]
+}

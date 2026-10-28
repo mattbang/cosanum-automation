@@ -1,0 +1,9 @@
+# COS_C5: Wiederholbare lokale Tests
+
+`node scripts/run_local_tests.mjs --repeat 3` führt die 24 freigegebenen Offline-Tests dreimal in getrennten Prozessen aus. `--repeat` akzeptiert 1 bis 20 Durchläufe; `--list` zeigt die feste Testauswahl. Der Runner führt alle ausgewählten Tests aus und endet mit Code 1, wenn mindestens einer fehlschlägt oder sich die geprüften Eingabedateien während des Laufs ändern. Ein ungültiger Aufruf oder eine geänderte Testauswahl endet mit Code 2.
+
+Jeder Lauf speichert `report.json` mit den einzelnen Ergebnissen und `summary.md` mit Passrate, Laufzeit und Einstufung pro Test in `data/test-runs/<lauf-id>/`. Dieser Ordner ist vom Git-Tracking ausgeschlossen. **Stable pass** bedeutet, dass alle Wiederholungen bestanden haben; **intermittent failure** bezeichnet gemischte Ergebnisse, **consistent failure** ausschließlich Fehlschläge. Auch ein einmaliger Fehlschlag macht den Gesamtlauf rot. Der Eingabe-Hash und der Commit helfen, Wiederholungen derselben Quellbasis zu vergleichen.
+
+Die feste Auswahl enthält 22 JavaScript-Regeltests und zwei Python-Tests für Archiv und Readback, darunter den Personenaufgaben-Projektor und den portablen Workflow-Vertrag. Neue `scripts/test_*.mjs`- oder `scripts/test_*.py`-Dateien blockieren den Runner, bis sie als Offline-Tests geprüft und in seiner Liste ergänzt wurden. Der Runner ruft weder `clasp` noch die Google-Dienste auf und setzt keine Testumgebung zurück.
+
+Diese Ergebnisse sind **lokale Evidenz**. Ein [verbundener Readback-Checker](CONNECTED_TEST_AUTOMATION.md) kann einen bestehenden synthetischen Fall gegen Sheet, Drive und das lokale Archiv prüfen. Für die Abnahme eines nummerierten Releases bleiben die weiteren Konten-, Formular-, Kalender- und UI-Beobachtungen aus der [Replay-Checkliste](product/DEMO_REPLAY_CHECKLIST.md) und dem [Feature-Register](FEATURE_REGISTER.md) separat erforderlich. Aus einem grünen lokalen Report folgt keine verbundene Abnahme.
