@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "tsx src/http.ts",
     "migrate": "tsx src/migrate.ts",
+    "test:native-postgres": "node --import tsx scripts/native-postgres-integration.mjs",
     "check": "tsc --noEmit",
     "test": "node --import tsx --test test/*.test.ts"
   },
