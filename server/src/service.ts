@@ -5,7 +5,7 @@ export type Scope = { requestId: string; sessionId: string; caseId: string; proo
 export type Identity = { actorKey: string; role: Role; verifiedEmail: string; issuer?: string; subject?: string };
 export type Evidence = { facts: Record<string, boolean>; values: Record<string, string> };
 export type RequestContext = { requesterName: string; sourceTeam?: string; reason: 'new_training' | 'retraining' | 'process_change'; deadlineDate?: string };
-export type Snapshot = { scope: Scope; request?: RequestContext; attributes?: Record<string, unknown>; personKey: string; trainerKey: string; ownerKey: string; revision: string; evidence: Evidence };
+export type Snapshot = { scope: Scope; request?: RequestContext; attributes?: Record<string, unknown>; state?: Record<string, unknown>; status?: string; personKey: string; trainerKey: string; ownerKey: string; revision: string; evidence: Evidence };
 export type ActionRequest = { actionId: ActionId; caseId: string; idempotencyKey: string; payload?: Record<string, unknown> };
 export type ActionResponse = { status: 'verified'; actionId: ActionId; caseId: string; revision: string };
 

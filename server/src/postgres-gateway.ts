@@ -7,6 +7,8 @@ import { inTransaction, type SqlExecutor, type SqlPool } from './database.ts';
 export type ActionExecutionResult = {
   facts: Record<string, boolean>;
   values?: Record<string, string>;
+  caseStatus?: NonNullable<Snapshot['status']>;
+  state?: Record<string, unknown>;
   details?: Record<string, unknown>;
 };
 export interface DurableActionExecutor {
@@ -20,6 +22,7 @@ type CaseRow = QueryResultRow & {
   request_id: string; session_id: string | null; case_id: string; proof_id: string | null; proof_version: string | null;
   participant_key: string; trainer_key: string; owner_key: string; revision: string | number;
   attributes: Record<string, unknown>;
+  state: Record<string, unknown>; status: string;
   evidence_facts: Record<string, boolean>; evidence_values: Record<string, string>;
   requester_name: string; source_team: string | null; reason: Snapshot['request'] extends infer R ? R extends { reason: infer V } ? V : never : never;
   deadline_date: string | null;
@@ -40,6 +43,8 @@ function snapshotFrom(row: CaseRow): Snapshot {
       ...(row.deadline_date ? { deadlineDate: String(row.deadline_date).slice(0, 10) } : {}),
     },
     attributes: row.attributes ?? {},
+    state: row.state ?? {},
+    status: row.status,
     personKey: row.participant_key, trainerKey: row.trainer_key, ownerKey: row.owner_key,
     revision: String(row.revision),
     evidence: { facts: row.evidence_facts ?? {}, values: row.evidence_values ?? {} },
@@ -67,7 +72,7 @@ async function currentAssignment(db: SqlExecutor, snapshot: Snapshot, actor: Ide
 
 const LOAD_CASE = `SELECT c.request_id, c.session_id, c.case_id, c.proof_id, c.proof_version,
        c.participant_key, c.trainer_key, c.owner_key, c.revision::text AS revision,
-       c.attributes, c.evidence_facts, c.evidence_values, r.requester_name, r.source_team, r.reason,
+       c.attributes, c.state, c.status, c.evidence_facts, c.evidence_values, r.requester_name, r.source_team, r.reason,
        r.deadline_date::text AS deadline_date
   FROM workflow_cases c JOIN workflow_requests r ON r.request_id = c.request_id
  WHERE c.case_id = $1`;
@@ -108,6 +113,9 @@ export class PostgresWorkflowGateway implements WorkflowGateway {
       const result = await this.executor.execute({ actionId, snapshot: current, payload, actor, idempotencyKey });
       const action = contract.actions.find(item => item.id === actionId);
       if (!action) throw new ActionError(400, 'Unknown workflow action');
+      const allowedStatuses = ['open', 'planning', 'invited', 'assessed', 'acknowledged', 'proof_ready', 'archived_verified', 'complete'];
+      if (result.caseStatus && !allowedStatuses.includes(result.caseStatus)) throw new ActionError(502, 'Executor returned an invalid case status');
+      if (result.state && (typeof result.state !== 'object' || Array.isArray(result.state))) throw new ActionError(502, 'Executor returned invalid case state');
       for (const fact of action.postconditions || []) {
         if (result.facts[fact] !== true) throw new ActionError(502, `Executor did not verify postcondition: ${fact}`);
       }
@@ -122,9 +130,11 @@ export class PostgresWorkflowGateway implements WorkflowGateway {
       const updated = await db.query(
         `UPDATE workflow_cases
             SET evidence_facts = $2::jsonb, evidence_values = $3::jsonb,
-                revision = $4::bigint, updated_at = now()
+                revision = $4::bigint, status = COALESCE($6, status),
+                state = state || $7::jsonb, updated_at = now()
           WHERE case_id = $1 AND revision = $5::bigint`,
-        [snapshot.scope.caseId, JSON.stringify(evidence.facts), JSON.stringify(evidence.values), nextRevision, current.revision],
+        [snapshot.scope.caseId, JSON.stringify(evidence.facts), JSON.stringify(evidence.values), nextRevision, current.revision,
+          result.caseStatus ?? null, JSON.stringify(result.state ?? {})],
       );
       if (updated.rowCount !== 1) throw new ActionError(409, 'Case revision changed during action');
 

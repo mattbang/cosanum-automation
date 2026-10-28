@@ -4,7 +4,7 @@ CREATE TABLE workflow_requests (
   source_team text,
   reason text NOT NULL CHECK (reason IN ('new_training', 'retraining', 'process_change')),
   deadline_date date NOT NULL,
-  status text NOT NULL DEFAULT 'open',
+  status text NOT NULL DEFAULT 'planning' CHECK (status IN ('open', 'planning', 'invited', 'assessed', 'acknowledged', 'proof_ready', 'archived_verified', 'complete')),
   attributes jsonb NOT NULL DEFAULT '{}'::jsonb,
   revision bigint NOT NULL DEFAULT 1 CHECK (revision > 0),
   created_at timestamptz NOT NULL DEFAULT now(),
@@ -178,4 +178,3 @@ CREATE TRIGGER audit_events_immutable BEFORE UPDATE OR DELETE ON audit_events
   FOR EACH ROW EXECUTE FUNCTION reject_history_mutation();
 CREATE TRIGGER case_evidence_immutable BEFORE UPDATE OR DELETE ON case_evidence
   FOR EACH ROW EXECUTE FUNCTION reject_history_mutation();
-

@@ -21,7 +21,7 @@ function fakePool(options: { revision?: string; duplicate?: boolean; assignment?
       if (sql.startsWith('SELECT c.request_id')) return queryResult([{
         request_id: 'REQ-1', session_id: 'SES-1', case_id: 'CASE-1', proof_id: null, proof_version: null,
         participant_key: 'PERSON-1', trainer_key: 'TRAINER-1', owner_key: 'OWNER-1', revision: options.revision ?? '1',
-        attributes: { topicId: 'TOPIC-1', targetLevel: 2 },
+        attributes: { topicId: 'TOPIC-1', targetLevel: 2 }, state: {}, status: 'planning',
         evidence_facts: snapshot.evidence.facts, evidence_values: {}, requester_name: 'Synthetic requester', source_team: 'Demo',
         reason: 'new_training', deadline_date: '2026-11-20',
       }]);
@@ -43,7 +43,8 @@ test('Postgres gateway locks the revision and persists evidence, event, and audi
   const gateway = new PostgresWorkflowGateway(db.pool, { async execute(input) {
     executions++;
     assert.equal(input.idempotencyKey, 'booking-1');
-    return { facts: { eventVerified: true, receiptSaved: true, calendarError: false, slotConflict: false, changedEvent: false }, details: { externalReadback: 'synthetic' } };
+    return { facts: { eventVerified: true, receiptSaved: true, calendarError: false, slotConflict: false, changedEvent: false },
+      caseStatus: 'invited', state: { calendarEventId: 'EVENT-1' }, details: { externalReadback: 'synthetic' } };
   } });
   await gateway.execute('bookSession', snapshot, {}, identity, 'booking-1');
   assert.equal(executions, 1);
@@ -51,6 +52,9 @@ test('Postgres gateway locks the revision and persists evidence, event, and audi
   assert.ok(db.calls.some(call => call.sql.includes('FOR UPDATE OF c')));
   assert.ok(db.calls.some(call => call.sql.startsWith('INSERT INTO workflow_events')));
   assert.ok(db.calls.some(call => call.sql.startsWith('INSERT INTO audit_events')));
+  const update = db.calls.find(call => call.sql.startsWith('UPDATE workflow_cases'))!;
+  assert.equal(update.values?.[5], 'invited');
+  assert.deepEqual(JSON.parse(String(update.values?.[6])), { calendarEventId: 'EVENT-1' });
   assert.equal(db.calls.at(-1)!.sql, 'COMMIT');
 });
 
