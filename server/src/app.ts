@@ -8,7 +8,7 @@ export type ApiDependencies = {
   identities?: IdentityProvider;
   gateway?: WorkflowGateway;
   requests?: Pick<PostgresWorkflowRepository, 'createRequest'>;
-  participantLinks?: Pick<HostedParticipantLinks, 'issue' | 'claim'>;
+  participantLinks?: Pick<HostedParticipantLinks, 'issue' | 'claim' | 'revoke'>;
   tokenVerifier?: BearerTokenVerifier;
 };
 
@@ -80,6 +80,15 @@ export function createApiHandler(dependencies: ApiDependencies = {}) {
           email: String(input.email || ''), expiresAt, createdBy: identity,
         });
         send(response, 201, result);
+        return;
+      }
+      if (request.method === 'POST' && /^\/participant-links\/[^/]+\/revoke$/.test(path)) {
+        if (!dependencies.identities || !dependencies.participantLinks) { send(response, 503, { error: 'Verified identity and participant-link service are not configured' }); return; }
+        const identity = await dependencies.identities.authenticate(bearer(request));
+        if (!identity?.verifiedEmail) throw new ActionError(401, 'Verified identity required');
+        const linkId = decodeURIComponent(path.slice('/participant-links/'.length).replace(/\/revoke$/, ''));
+        const revoked = await dependencies.participantLinks.revoke(linkId, identity);
+        send(response, revoked ? 200 : 404, { status: revoked ? 'revoked' : 'not_found' });
         return;
       }
       if (request.method === 'POST' && path === '/participant-links/claim') {

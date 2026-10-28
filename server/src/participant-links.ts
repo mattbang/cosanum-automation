@@ -32,9 +32,10 @@ export class HostedParticipantLinks {
           WHERE a.assignment_id = $1 AND a.case_id = $2 AND c.case_id = $2
             AND a.role = 'assigned_participant' AND a.active
             AND a.actor_key = c.participant_key
+            AND c.owner_key = $4
             AND a.email_normalized = $3
           FOR UPDATE OF a`,
-        [input.assignmentId, input.caseId, email],
+        [input.assignmentId, input.caseId, email, input.createdBy.actorKey],
       );
       if (!assignment.rowCount) throw new ParticipantLinkError(409, 'Active participant assignment does not match this case and email');
       await db.query(
@@ -57,8 +58,10 @@ export class HostedParticipantLinks {
     if (actor.role !== 'process_quality') throw new ParticipantLinkError(403, 'Process & Quality authorization required');
     return inTransaction(this.pool, async db => {
       const revoked = await db.query<{ case_id: string }>(
-        `UPDATE hosted_participant_links SET revoked_at = now()
-          WHERE link_id = $1 AND revoked_at IS NULL RETURNING case_id`, [linkId],
+        `UPDATE hosted_participant_links l SET revoked_at = now()
+           FROM workflow_cases c
+          WHERE l.link_id = $1 AND l.case_id = c.case_id AND c.owner_key = $2 AND l.revoked_at IS NULL
+          RETURNING l.case_id`, [linkId, actor.actorKey],
       );
       if (!revoked.rowCount) return false;
       await db.query(
@@ -79,10 +82,11 @@ export class HostedParticipantLinks {
       const match = await db.query<{
         link_id: string; case_id: string; assignment_id: string; email_normalized: string;
         expires_at: Date; revoked_at: Date | null; claimed_issuer: string | null; claimed_subject: string | null;
-        actor_key: string; assignment_active: boolean;
+        actor_key: string; assignment_active: boolean; assignment_issuer: string | null; assignment_subject: string | null;
       }>(
         `SELECT l.link_id, l.case_id, l.assignment_id, l.email_normalized, l.expires_at,
                 l.revoked_at, l.claimed_issuer, l.claimed_subject,
+                a.identity_issuer AS assignment_issuer, a.identity_subject AS assignment_subject,
                 a.actor_key, a.active AS assignment_active
            FROM hosted_participant_links l
            JOIN workflow_assignments a ON a.assignment_id = l.assignment_id AND a.case_id = l.case_id
@@ -97,6 +101,8 @@ export class HostedParticipantLinks {
       if (link.email_normalized !== email) throw new ParticipantLinkError(403, 'Verified account does not match assigned participant');
       if (link.claimed_issuer && (link.claimed_issuer !== claims.issuer || link.claimed_subject !== claims.subject))
         throw new ParticipantLinkError(403, 'Participant link is already bound to another verified account');
+      if (link.assignment_issuer && (link.assignment_issuer !== claims.issuer || link.assignment_subject !== claims.subject))
+        throw new ParticipantLinkError(403, 'Participant assignment is already bound to another verified account');
 
       const prior = await db.query<{ actor_key: string; role: Identity['role']; email_normalized: string; active: boolean }>(
         'SELECT actor_key, role, email_normalized, active FROM verified_identities WHERE issuer = $1 AND subject = $2 FOR UPDATE',
@@ -111,7 +117,8 @@ export class HostedParticipantLinks {
       );
       await db.query(
         `UPDATE workflow_assignments SET identity_issuer = $2, identity_subject = $3, email_normalized = $4
-          WHERE assignment_id = $1`, [link.assignment_id, claims.issuer, claims.subject, email],
+          WHERE assignment_id = $1 AND (identity_issuer IS NULL OR (identity_issuer = $2 AND identity_subject = $3))`,
+        [link.assignment_id, claims.issuer, claims.subject, email],
       );
       await db.query(
         `INSERT INTO verified_identities (issuer, subject, email_normalized, email_verified, actor_key, role)

@@ -14,7 +14,7 @@ CREATE TABLE workflow_requests (
 CREATE TABLE workflow_sessions (
   session_id text PRIMARY KEY,
   request_id text NOT NULL REFERENCES workflow_requests(request_id),
-  status text NOT NULL DEFAULT 'planned',
+  status text NOT NULL DEFAULT 'planned' CHECK (status IN ('planned', 'invited', 'in_progress', 'completed', 'cancelled')),
   starts_at timestamptz,
   ends_at timestamptz,
   calendar_event_id text,

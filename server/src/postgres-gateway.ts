@@ -9,12 +9,15 @@ export type ActionExecutionResult = {
   values?: Record<string, string>;
   caseStatus?: NonNullable<Snapshot['status']>;
   state?: Record<string, unknown>;
+  session?: { status?: string; calendarEventId?: string; attributes?: Record<string, unknown> };
+  relatedCaseUpdates?: Array<{ caseId: string; status?: string; state?: Record<string, unknown>; facts?: Record<string, boolean>; values?: Record<string, string> }>;
   details?: Record<string, unknown>;
 };
+export type SessionCase = Snapshot;
 export interface DurableActionExecutor {
   execute(input: {
     actionId: ActionId; snapshot: Snapshot; payload: Record<string, unknown>;
-    actor: Identity; idempotencyKey: string;
+    actor: Identity; idempotencyKey: string; sessionCases: SessionCase[];
   }): Promise<ActionExecutionResult>;
 }
 
@@ -23,6 +26,7 @@ type CaseRow = QueryResultRow & {
   participant_key: string; trainer_key: string; owner_key: string; revision: string | number;
   attributes: Record<string, unknown>;
   state: Record<string, unknown>; status: string;
+  session_status: string | null; calendar_event_id: string | null; session_attributes: Record<string, unknown> | null;
   evidence_facts: Record<string, boolean>; evidence_values: Record<string, string>;
   requester_name: string; source_team: string | null; reason: Snapshot['request'] extends infer R ? R extends { reason: infer V } ? V : never : never;
   deadline_date: string | null;
@@ -45,6 +49,11 @@ function snapshotFrom(row: CaseRow): Snapshot {
     attributes: row.attributes ?? {},
     state: row.state ?? {},
     status: row.status,
+    ...(row.session_id ? { session: {
+      status: row.session_status ?? 'planned',
+      ...(row.calendar_event_id ? { calendarEventId: row.calendar_event_id } : {}),
+      attributes: row.session_attributes ?? {},
+    } } : {}),
     personKey: row.participant_key, trainerKey: row.trainer_key, ownerKey: row.owner_key,
     revision: String(row.revision),
     evidence: { facts: row.evidence_facts ?? {}, values: row.evidence_values ?? {} },
@@ -70,12 +79,74 @@ async function currentAssignment(db: SqlExecutor, snapshot: Snapshot, actor: Ide
   return result.rowCount === 1;
 }
 
+const CASE_STATUSES = ['open', 'planning', 'invited', 'assessed', 'acknowledged', 'proof_ready', 'archived_verified', 'complete'];
+const SESSION_STATUSES = ['planned', 'invited', 'in_progress', 'completed', 'cancelled'];
+
+function validBooleanFacts(facts: Record<string, boolean> | undefined): boolean {
+  return !facts || Object.values(facts).every(value => typeof value === 'boolean');
+}
+function validTextValues(values: Record<string, string> | undefined): boolean {
+  return !values || Object.values(values).every(value => typeof value === 'string');
+}
+
+async function recordHistory(
+  db: SqlExecutor, snapshot: Snapshot, actor: Identity, actionId: ActionId, idempotencyKey: string,
+  beforeRevision: string, afterRevision: string, details: Record<string, unknown>,
+): Promise<string> {
+  const event = await db.query<{ event_id: string }>(
+    `INSERT INTO workflow_events
+      (request_id, case_id, action_id, actor_key, actor_role, actor_email, idempotency_key,
+       scope, before_revision, after_revision, outcome, details)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9::bigint, $10::bigint, 'accepted', $11::jsonb)
+     RETURNING event_id`,
+    [snapshot.scope.requestId, snapshot.scope.caseId, actionId, actor.actorKey, actor.role, actor.verifiedEmail,
+      idempotencyKey, JSON.stringify(snapshot.scope), beforeRevision, afterRevision, JSON.stringify(details)],
+  );
+  const eventId = event.rows[0]!.event_id;
+  await db.query(
+    `INSERT INTO audit_events
+      (actor_key, actor_role, actor_email, operation, request_id, case_id, event_id, outcome, details)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, 'accepted', $8::jsonb)`,
+    [actor.actorKey, actor.role, actor.verifiedEmail, `workflow.${actionId}`, snapshot.scope.requestId,
+      snapshot.scope.caseId, eventId, JSON.stringify({ idempotencyKey, beforeRevision, afterRevision })],
+  );
+  return eventId;
+}
+
+async function recordEvidence(db: SqlExecutor, caseId: string, evidence: ActionExecutionResult, eventId: string, revision: string): Promise<void> {
+  for (const [factKey, factValue] of Object.entries(evidence.facts)) {
+    await db.query(
+      `INSERT INTO case_evidence (case_id, fact_key, fact_value, source_type, source_id, source_version, observed_at)
+       VALUES ($1, $2, $3, 'workflow_action', $4, $5, now())`,
+      [caseId, factKey, factValue, eventId, revision],
+    );
+  }
+  for (const [valueKey, valueText] of Object.entries(evidence.values ?? {})) {
+    await db.query(
+      `INSERT INTO case_evidence (case_id, fact_key, value_key, value_text, source_type, source_id, source_version, observed_at)
+       VALUES ($1, '', $2, $3, 'workflow_action', $4, $5, now())`,
+      [caseId, valueKey, valueText, eventId, revision],
+    );
+  }
+}
+
 const LOAD_CASE = `SELECT c.request_id, c.session_id, c.case_id, c.proof_id, c.proof_version,
        c.participant_key, c.trainer_key, c.owner_key, c.revision::text AS revision,
        c.attributes, c.state, c.status, c.evidence_facts, c.evidence_values, r.requester_name, r.source_team, r.reason,
-       r.deadline_date::text AS deadline_date
+       r.deadline_date::text AS deadline_date, s.status AS session_status, s.calendar_event_id,
+       s.attributes AS session_attributes
   FROM workflow_cases c JOIN workflow_requests r ON r.request_id = c.request_id
+  LEFT JOIN workflow_sessions s ON s.session_id = c.session_id
  WHERE c.case_id = $1`;
+
+const LOAD_SESSION_CASES = `SELECT c.request_id, c.session_id, c.case_id, c.proof_id, c.proof_version,
+       c.participant_key, c.trainer_key, c.owner_key, c.revision::text AS revision,
+       c.attributes, c.state, c.status, c.evidence_facts, c.evidence_values, r.requester_name, r.source_team, r.reason,
+       r.deadline_date::text AS deadline_date, s.status AS session_status, s.calendar_event_id,
+       s.attributes AS session_attributes
+  FROM workflow_cases c JOIN workflow_requests r ON r.request_id = c.request_id
+  LEFT JOIN workflow_sessions s ON s.session_id = c.session_id
+ WHERE c.session_id = $1 AND c.request_id = $2 ORDER BY c.case_id`;
 
 /** Persists verified state and history atomically after an injected, idempotent executor confirms its writes. */
 export class PostgresWorkflowGateway implements WorkflowGateway {
@@ -96,6 +167,23 @@ export class PostgresWorkflowGateway implements WorkflowGateway {
 
   async execute(actionId: ActionId, snapshot: Snapshot, payload: Record<string, unknown>, actor: Identity, idempotencyKey: string): Promise<void> {
     await inTransaction(this.pool, async db => {
+      const candidateResult = await db.query<CaseRow>(LOAD_CASE, [snapshot.scope.caseId]);
+      if (!candidateResult.rows[0]) throw new ActionError(404, 'Case not found');
+      const candidate = snapshotFrom(candidateResult.rows[0]);
+      // All actions on a shared session acquire locks in the same order before locking individual cases.
+      if (candidate.scope.sessionId) {
+        const session = await db.query(
+          'SELECT session_id FROM workflow_sessions WHERE session_id = $1 AND request_id = $2 FOR UPDATE',
+          [candidate.scope.sessionId, candidate.scope.requestId],
+        );
+        if (!session.rowCount) throw new ActionError(409, 'Case session is missing');
+        await db.query(
+          'SELECT case_id FROM workflow_cases WHERE request_id = $1 AND session_id = $2 ORDER BY case_id FOR UPDATE',
+          [candidate.scope.requestId, candidate.scope.sessionId],
+        );
+      } else {
+        await db.query('SELECT case_id FROM workflow_cases WHERE case_id = $1 FOR UPDATE', [snapshot.scope.caseId]);
+      }
       const currentResult = await db.query<CaseRow>(`${LOAD_CASE} FOR UPDATE OF c`, [snapshot.scope.caseId]);
       const row = currentResult.rows[0];
       if (!row) throw new ActionError(404, 'Case not found');
@@ -105,17 +193,40 @@ export class PostgresWorkflowGateway implements WorkflowGateway {
           current.personKey !== snapshot.personKey || current.trainerKey !== snapshot.trainerKey || current.ownerKey !== snapshot.ownerKey)
         throw new ActionError(409, 'Case changed; reload before retrying');
       if (!await currentAssignment(db, current, actor, true)) throw new ActionError(403, 'Role or assignment mismatch');
+      if (actionId === 'bookSession' && (current.status === 'invited' || current.session?.calendarEventId))
+        throw new ActionError(409, 'Session already has a verified booking');
 
       const duplicate = await db.query('SELECT 1 FROM workflow_events WHERE case_id = $1 AND idempotency_key = $2', [snapshot.scope.caseId, idempotencyKey]);
       if (duplicate.rowCount) throw new ActionError(409, 'This action was already recorded');
 
+      const sessionRows = current.scope.sessionId
+        ? await db.query<CaseRow>(LOAD_SESSION_CASES, [current.scope.sessionId, current.scope.requestId])
+        : { rows: [row], rowCount: 1 };
+      const sessionCases = sessionRows.rows.map(snapshotFrom);
+
       // The executor must use idempotencyKey for external requests and verify the resulting external state before returning.
-      const result = await this.executor.execute({ actionId, snapshot: current, payload, actor, idempotencyKey });
+      const result = await this.executor.execute({ actionId, snapshot: current, payload, actor, idempotencyKey, sessionCases });
       const action = contract.actions.find(item => item.id === actionId);
       if (!action) throw new ActionError(400, 'Unknown workflow action');
-      const allowedStatuses = ['open', 'planning', 'invited', 'assessed', 'acknowledged', 'proof_ready', 'archived_verified', 'complete'];
-      if (result.caseStatus && !allowedStatuses.includes(result.caseStatus)) throw new ActionError(502, 'Executor returned an invalid case status');
+      if (result.caseStatus && !CASE_STATUSES.includes(result.caseStatus)) throw new ActionError(502, 'Executor returned an invalid case status');
+      if (result.session?.status && !SESSION_STATUSES.includes(result.session.status)) throw new ActionError(502, 'Executor returned an invalid session status');
+      if (result.session?.calendarEventId !== undefined && typeof result.session.calendarEventId !== 'string') throw new ActionError(502, 'Executor returned an invalid Calendar event ID');
       if (result.state && (typeof result.state !== 'object' || Array.isArray(result.state))) throw new ActionError(502, 'Executor returned invalid case state');
+      if (result.session?.attributes && (typeof result.session.attributes !== 'object' || Array.isArray(result.session.attributes))) throw new ActionError(502, 'Executor returned invalid session attributes');
+      if (!validBooleanFacts(result.facts) || !validTextValues(result.values)) throw new ActionError(502, 'Executor returned invalid evidence');
+      const relatedUpdates = result.relatedCaseUpdates ?? [];
+      const sessionCaseIds = new Set(sessionCases.map(item => item.scope.caseId));
+      const relatedIds = new Set<string>();
+      for (const update of relatedUpdates) {
+        if (!update.caseId || update.caseId === current.scope.caseId || relatedIds.has(update.caseId) || !sessionCaseIds.has(update.caseId))
+          throw new ActionError(502, 'Executor returned an out-of-session or duplicate case update');
+        relatedIds.add(update.caseId);
+        if (actor.role !== 'process_quality' && actor.role !== 'system') throw new ActionError(403, 'Only workflow coordinators may update linked session cases');
+        if (update.status && !CASE_STATUSES.includes(update.status)) throw new ActionError(502, 'Executor returned an invalid linked-case status');
+        if (update.state && (typeof update.state !== 'object' || Array.isArray(update.state))) throw new ActionError(502, 'Executor returned invalid linked-case state');
+        if (!validBooleanFacts(update.facts) || !validTextValues(update.values)) throw new ActionError(502, 'Executor returned invalid linked-case evidence');
+      }
+      if (result.session && !current.scope.sessionId) throw new ActionError(502, 'Executor cannot update a missing session');
       for (const fact of action.postconditions || []) {
         if (result.facts[fact] !== true) throw new ActionError(502, `Executor did not verify postcondition: ${fact}`);
       }
@@ -138,36 +249,38 @@ export class PostgresWorkflowGateway implements WorkflowGateway {
       );
       if (updated.rowCount !== 1) throw new ActionError(409, 'Case revision changed during action');
 
-      const event = await db.query<{ event_id: string }>(
-        `INSERT INTO workflow_events
-          (request_id, case_id, action_id, actor_key, actor_role, actor_email, idempotency_key,
-           scope, before_revision, after_revision, outcome, details)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9::bigint, $10::bigint, 'accepted', $11::jsonb)
-         RETURNING event_id`,
-        [current.scope.requestId, current.scope.caseId, actionId, actor.actorKey, actor.role, actor.verifiedEmail,
-          idempotencyKey, JSON.stringify(current.scope), current.revision, nextRevision, JSON.stringify(result.details ?? {})],
-      );
-      await db.query(
-        `INSERT INTO audit_events
-          (actor_key, actor_role, actor_email, operation, request_id, case_id, event_id, outcome, details)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, 'accepted', $8::jsonb)`,
-        [actor.actorKey, actor.role, actor.verifiedEmail, `workflow.${actionId}`, current.scope.requestId,
-          current.scope.caseId, event.rows[0]!.event_id, JSON.stringify({ idempotencyKey, beforeRevision: current.revision, afterRevision: nextRevision })],
-      );
-
-      for (const [factKey, factValue] of Object.entries(result.facts)) {
-        await db.query(
-          `INSERT INTO case_evidence (case_id, fact_key, fact_value, source_type, source_id, source_version, observed_at)
-           VALUES ($1, $2, $3, 'workflow_action', $4, $5, now())`,
-          [current.scope.caseId, factKey, factValue, event.rows[0]!.event_id, nextRevision],
+      if (result.session) {
+        const sessionUpdated = await db.query(
+          `UPDATE workflow_sessions SET status = COALESCE($3, status), calendar_event_id = COALESCE($4, calendar_event_id),
+                  attributes = attributes || $5::jsonb, revision = revision + 1, updated_at = now()
+            WHERE session_id = $1 AND request_id = $2`,
+          [current.scope.sessionId, current.scope.requestId, result.session.status ?? null,
+            result.session.calendarEventId ?? null, JSON.stringify(result.session.attributes ?? {})],
         );
+        if (sessionUpdated.rowCount !== 1) throw new ActionError(409, 'Session changed during action');
       }
-      for (const [valueKey, valueText] of Object.entries(result.values ?? {})) {
+      const eventDetails = { ...(result.details ?? {}), ...(result.session ? { sessionId: current.scope.sessionId, sessionUpdate: result.session } : {}), relatedCaseIds: [...relatedIds] };
+      const eventId = await recordHistory(db, current, actor, actionId, idempotencyKey, current.revision, nextRevision, eventDetails);
+      await recordEvidence(db, current.scope.caseId, result, eventId, nextRevision);
+
+      for (const linkedUpdate of relatedUpdates) {
+        const linked = sessionCases.find(item => item.scope.caseId === linkedUpdate.caseId)!;
+        const linkedFacts = { ...linked.evidence.facts, ...(linkedUpdate.facts ?? {}) };
+        const linkedValues = { ...linked.evidence.values, ...(linkedUpdate.values ?? {}) };
+        const linkedRevision = String(BigInt(linked.revision) + 1n);
         await db.query(
-          `INSERT INTO case_evidence (case_id, fact_key, value_key, value_text, source_type, source_id, source_version, observed_at)
-           VALUES ($1, '', $2, $3, 'workflow_action', $4, $5, now())`,
-          [current.scope.caseId, valueKey, valueText, event.rows[0]!.event_id, nextRevision],
+          `UPDATE workflow_cases SET evidence_facts = $2::jsonb, evidence_values = $3::jsonb,
+                  status = COALESCE($4, status), state = state || $5::jsonb, revision = $6::bigint, updated_at = now()
+            WHERE case_id = $1 AND revision = $7::bigint`,
+          [linked.scope.caseId, JSON.stringify(linkedFacts), JSON.stringify(linkedValues), linkedUpdate.status ?? null,
+            JSON.stringify(linkedUpdate.state ?? {}), linkedRevision, linked.revision],
         );
+        const linkedScope = { ...linked.scope };
+        const linkedSnapshot = { ...linked, scope: linkedScope };
+        const linkedKey = `${idempotencyKey}:linked:${linked.scope.caseId}`;
+        const linkedEventId = await recordHistory(db, linkedSnapshot, actor, actionId, linkedKey, linked.revision, linkedRevision,
+          { linkedToCaseId: current.scope.caseId, parentIdempotencyKey: idempotencyKey });
+        await recordEvidence(db, linked.scope.caseId, { facts: linkedUpdate.facts ?? {}, values: linkedUpdate.values ?? {} }, linkedEventId, linkedRevision);
       }
     });
   }

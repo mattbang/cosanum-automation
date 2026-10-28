@@ -13,22 +13,31 @@ const snapshot: Snapshot = {
 const identity: Identity = { actorKey: 'OWNER-1', role: 'process_quality', verifiedEmail: 'owner@example.test', issuer: 'https://issuer.example.test', subject: 'owner-sub' };
 
 function queryResult(rows: unknown[] = []) { return { rows, rowCount: rows.length } as never; }
-function fakePool(options: { revision?: string; duplicate?: boolean; assignment?: boolean } = {}) {
+function fakePool(options: { revision?: string; duplicate?: boolean; assignment?: boolean; group?: boolean; bookedEventId?: string } = {}) {
   const calls: Array<{ sql: string; values?: readonly unknown[] }> = [];
   const connection = {
     async query(sql: string, values?: readonly unknown[]) {
       calls.push({ sql, values });
-      if (sql.startsWith('SELECT c.request_id')) return queryResult([{
+      if (sql.startsWith('SELECT c.request_id')) {
+        const makeCase = (caseId: string, personKey: string) => ({
         request_id: 'REQ-1', session_id: 'SES-1', case_id: 'CASE-1', proof_id: null, proof_version: null,
-        participant_key: 'PERSON-1', trainer_key: 'TRAINER-1', owner_key: 'OWNER-1', revision: options.revision ?? '1',
-        attributes: { topicId: 'TOPIC-1', targetLevel: 2 }, state: {}, status: 'planning',
+        participant_key: personKey, trainer_key: 'TRAINER-1', owner_key: 'OWNER-1', revision: options.revision ?? '1',
+        attributes: { topicId: 'TOPIC-1', targetLevel: 2 }, state: {}, status: options.bookedEventId ? 'invited' : 'planning',
         evidence_facts: snapshot.evidence.facts, evidence_values: {}, requester_name: 'Synthetic requester', source_team: 'Demo',
         reason: 'new_training', deadline_date: '2026-11-20',
-      }]);
+        session_status: options.bookedEventId ? 'invited' : 'planned', calendar_event_id: options.bookedEventId ?? null, session_attributes: {},
+        ...(caseId !== 'CASE-1' ? { case_id: caseId } : {}),
+        });
+        if (sql.includes('WHERE c.session_id = $1')) return queryResult(options.group ? [makeCase('CASE-1', 'PERSON-1'), makeCase('CASE-2', 'PERSON-2')] : [makeCase('CASE-1', 'PERSON-1')]);
+        return queryResult([makeCase('CASE-1', 'PERSON-1')]);
+      }
+      if (sql.startsWith('SELECT session_id FROM workflow_sessions')) return queryResult([{ session_id: 'SES-1' }]);
+      if (sql.startsWith('SELECT case_id FROM workflow_cases')) return queryResult([{ case_id: 'CASE-1' }]);
       if (sql.startsWith('SELECT 1 FROM workflow_events')) return options.duplicate ? queryResult([{ '?column?': 1 }]) : queryResult();
       if (sql.includes('FROM verified_identities i')) return options.assignment === false ? queryResult() : queryResult([{ '?column?': 1 }]);
       if (sql.includes('RETURNING event_id')) return queryResult([{ event_id: '00000000-0000-0000-0000-000000000001' }]);
       if (sql.startsWith('UPDATE workflow_cases')) return { rows: [], rowCount: 1 } as never;
+      if (sql.startsWith('UPDATE workflow_sessions')) return { rows: [], rowCount: 1 } as never;
       return queryResult();
     },
     release() {},
@@ -38,13 +47,17 @@ function fakePool(options: { revision?: string; duplicate?: boolean; assignment?
 }
 
 test('Postgres gateway locks the revision and persists evidence, event, and audit atomically', async () => {
-  const db = fakePool();
+  const db = fakePool({ group: true });
   let executions = 0;
   const gateway = new PostgresWorkflowGateway(db.pool, { async execute(input) {
     executions++;
     assert.equal(input.idempotencyKey, 'booking-1');
+    assert.equal(input.sessionCases.length, 2);
     return { facts: { eventVerified: true, receiptSaved: true, calendarError: false, slotConflict: false, changedEvent: false },
-      caseStatus: 'invited', state: { calendarEventId: 'EVENT-1' }, details: { externalReadback: 'synthetic' } };
+      caseStatus: 'invited', state: { calendarEventId: 'EVENT-1' },
+      session: { status: 'invited', calendarEventId: 'EVENT-1' },
+      relatedCaseUpdates: [{ caseId: 'CASE-2', status: 'invited', state: { calendarEventId: 'EVENT-1' } }],
+      details: { externalReadback: 'synthetic' } };
   } });
   await gateway.execute('bookSession', snapshot, {}, identity, 'booking-1');
   assert.equal(executions, 1);
@@ -52,6 +65,9 @@ test('Postgres gateway locks the revision and persists evidence, event, and audi
   assert.ok(db.calls.some(call => call.sql.includes('FOR UPDATE OF c')));
   assert.ok(db.calls.some(call => call.sql.startsWith('INSERT INTO workflow_events')));
   assert.ok(db.calls.some(call => call.sql.startsWith('INSERT INTO audit_events')));
+  assert.equal(db.calls.filter(call => call.sql.startsWith('UPDATE workflow_cases')).length, 2);
+  assert.equal(db.calls.filter(call => call.sql.startsWith('INSERT INTO workflow_events')).length, 2);
+  assert.ok(db.calls.some(call => call.sql.startsWith('UPDATE workflow_sessions')));
   const update = db.calls.find(call => call.sql.startsWith('UPDATE workflow_cases'))!;
   assert.equal(update.values?.[5], 'invited');
   assert.deepEqual(JSON.parse(String(update.values?.[6])), { calendarEventId: 'EVENT-1' });
@@ -95,4 +111,24 @@ test('Postgres gateway does not commit an executor result with missing postcondi
     assert.equal(db.calls.at(-1)!.sql, 'ROLLBACK');
     assert.equal(db.calls.some(call => call.sql.startsWith('INSERT INTO workflow_events')), false);
   }
+});
+
+test('session booking is not replayed and linked updates cannot escape the selected session', async () => {
+  let executions = 0;
+  const executor = { async execute() { executions++; return {
+    facts: { eventVerified: true, receiptSaved: true, calendarError: false, slotConflict: false, changedEvent: false },
+    relatedCaseUpdates: [{ caseId: 'CASE-OTHER', status: 'invited' }],
+  }; } };
+  const booked = new PostgresWorkflowGateway(fakePool({ bookedEventId: 'EVENT-1' }).pool, executor);
+  await assert.rejects(booked.execute('bookSession', snapshot, {}, identity, 'book-1'),
+    (error: unknown) => error instanceof ActionError && error.status === 409);
+  assert.equal(executions, 0);
+
+  const crossSessionDb = fakePool();
+  const crossSession = new PostgresWorkflowGateway(crossSessionDb.pool, executor);
+  await assert.rejects(crossSession.execute('bookSession', snapshot, {}, identity, 'book-2'),
+    (error: unknown) => error instanceof ActionError && error.status === 502);
+  assert.equal(executions, 1);
+  assert.equal(crossSessionDb.calls.at(-1)!.sql, 'ROLLBACK');
+  assert.equal(crossSessionDb.calls.some(call => call.sql.startsWith('INSERT INTO workflow_events')), false);
 });

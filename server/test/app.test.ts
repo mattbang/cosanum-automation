@@ -45,6 +45,7 @@ test('request creation preserves request-level mobile provenance and hosted link
     participantLinks: {
       async issue(input) { return { token: 'one-time-synthetic-link', expiresAt: input.expiresAt }; },
       async claim(linkToken, claims) { seen.push({ linkToken, claims }); return { actorKey: 'PERSON', role: 'assigned_participant', verifiedEmail: claims.email }; },
+      async revoke() { return true; },
     },
   });
   {

@@ -49,6 +49,8 @@ For every action enabled in the API, document its server-derived evidence source
 - Preserve request, session, person-case, proof, and proof-version scope and reject stale revisions or revoked assignments.
 - Exercise wrong-account, wrong-case, expired/revoked-link, duplicate, stale-revision, provider-error, and readback-mismatch cases with synthetic tests before enabling the action.
 
+Proof registration remains an explicit missing step. The schema reserves `proof_id` and `proof_version`, but no trusted proof registrar writes them yet. Before enabling `verifyArchive` or `applySkillUpdate`, add and review a proof-scope transition that verifies source evidence and the external document/version, then persists the exact ID/version under the selected case revision.
+
 ## 5. Deployment evidence to add after approval
 
 Keep these records separate from local tests:
