@@ -42,7 +42,7 @@ test('Postgres gateway locks the revision and persists evidence, event, and audi
   const gateway = new PostgresWorkflowGateway(db.pool, { async execute(input) {
     executions++;
     assert.equal(input.idempotencyKey, 'booking-1');
-    return { facts: { eventVerified: true, receiptSaved: true }, details: { externalReadback: 'synthetic' } };
+    return { facts: { eventVerified: true, receiptSaved: true, calendarError: false, slotConflict: false, changedEvent: false }, details: { externalReadback: 'synthetic' } };
   } });
   await gateway.execute('bookSession', snapshot, {}, identity, 'booking-1');
   assert.equal(executions, 1);
@@ -75,4 +75,19 @@ test('Postgres gateway rejects stale and replayed revisions before executing the
   await assert.rejects(duplicateGateway.execute('bookSession', snapshot, {}, identity, 'booking-1'),
     (error: unknown) => error instanceof ActionError && error.status === 409);
   assert.equal(executions, 0);
+});
+
+test('Postgres gateway does not commit an executor result with missing postconditions or forbidden facts', async () => {
+  const cases: Array<Record<string, boolean>> = [
+    { eventVerified: true, calendarError: false, slotConflict: false, changedEvent: false },
+    { eventVerified: true, receiptSaved: true, calendarError: true, slotConflict: false, changedEvent: false },
+  ];
+  for (const facts of cases) {
+    const db = fakePool();
+    const gateway = new PostgresWorkflowGateway(db.pool, { async execute() { return { facts }; } });
+    await assert.rejects(gateway.execute('bookSession', snapshot, {}, identity, 'booking-1'),
+      (error: unknown) => error instanceof ActionError && error.status === 502);
+    assert.equal(db.calls.at(-1)!.sql, 'ROLLBACK');
+    assert.equal(db.calls.some(call => call.sql.startsWith('INSERT INTO workflow_events')), false);
+  }
 });

@@ -58,6 +58,9 @@ export class WorkflowService {
     for (const fact of action.postconditions || []) {
       if (after.evidence.facts[fact] !== true) throw new ActionError(502, `Postcondition not verified: ${fact}`);
     }
+    for (const fact of action.forbids || []) {
+      if (after.evidence.facts[fact] !== false) throw new ActionError(502, `Forbidden state after action: ${fact}`);
+    }
     return { status: 'verified', actionId: request.actionId, caseId: request.caseId, revision: after.revision };
   }
 

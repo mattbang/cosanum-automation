@@ -1,5 +1,6 @@
 import type { QueryResultRow } from 'pg';
 import type { ActionId } from '../../mobile/src/workflow.ts';
+import contract from '../../contracts/workflow.v1.json' with { type: 'json' };
 import { ActionError, type Evidence, type Identity, type Snapshot, type WorkflowGateway } from './service.ts';
 import { inTransaction, type SqlExecutor, type SqlPool } from './database.ts';
 
@@ -103,6 +104,14 @@ export class PostgresWorkflowGateway implements WorkflowGateway {
 
       // The executor must use idempotencyKey for external requests and verify the resulting external state before returning.
       const result = await this.executor.execute({ actionId, snapshot: current, payload, actor, idempotencyKey });
+      const action = contract.actions.find(item => item.id === actionId);
+      if (!action) throw new ActionError(400, 'Unknown workflow action');
+      for (const fact of action.postconditions || []) {
+        if (result.facts[fact] !== true) throw new ActionError(502, `Executor did not verify postcondition: ${fact}`);
+      }
+      for (const fact of action.forbids || []) {
+        if (result.facts[fact] !== false) throw new ActionError(502, `Executor reported forbidden state: ${fact}`);
+      }
       const evidence: Evidence = {
         facts: { ...current.evidence.facts, ...result.facts },
         values: { ...current.evidence.values, ...(result.values ?? {}) },
