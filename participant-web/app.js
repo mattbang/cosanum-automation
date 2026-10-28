@@ -1,7 +1,7 @@
-import { apiRequest, invitationUrlWithoutSecret, participantResponseReady, readConfig, readInvitation } from './core.js';
+import { apiRequest, canRetryParticipantResponse, invitationUrlWithoutSecret, isRetryableSubmissionError, participantResponseReady, readConfig, readInvitation } from './core.js';
 
 const configValue = window.COSANUM_PARTICIPANT_CONFIG || {};
-const elements = Object.fromEntries(['notice', 'error', 'case-id', 'identity-status', 'sign-in', 'google-button', 'case-view', 'case-heading', 'case-status', 'case-details', 'action-state', 'participant-response', 'answer-yes', 'typed-name', 'submit-response'].map(id => [id, document.getElementById(id)]));
+const elements = Object.fromEntries(['notice', 'error', 'case-id', 'identity-status', 'sign-in', 'google-button', 'case-view', 'case-heading', 'case-status', 'case-details', 'action-state', 'participant-response', 'answer-yes', 'typed-name', 'submit-response', 'refresh-case'].map(id => [id, document.getElementById(id)]));
 const invite = readInvitation(window.location.href);
 const initialUrl = new URL(window.location.href);
 let config;
@@ -10,6 +10,8 @@ let bearerToken = '';
 let snapshot;
 let claimedActorKey = '';
 let responseAttempt;
+let responseAttemptCount = 0;
+const MAX_RESPONSE_ATTEMPTS = 3;
 
 // Strip the invitation fragment (and any legacy query secret) before config checks or network loads.
 if (initialUrl.hash || initialUrl.searchParams.has('link') || initialUrl.searchParams.has('linkToken'))
@@ -50,6 +52,7 @@ function renderCase(value) {
   elements['case-heading'].textContent = acknowledged ? 'Ihre Aufgabe ist bestätigt' : 'Ihre Schulungsaufgabe';
   details(value);
   elements['participant-response'].hidden = true;
+  elements['refresh-case'].hidden = true;
   elements['answer-yes'].disabled = false;
   elements['typed-name'].disabled = false;
   elements['submit-response'].disabled = false;
@@ -163,7 +166,10 @@ async function submitResponse(event) {
   }
   elements['typed-name'].setCustomValidity('');
   const payload = { caseId: invite.caseId, answer: 'yes', typedName };
-  if (!responseAttempt) responseAttempt = { idempotencyKey: crypto.randomUUID(), payload };
+  if (!responseAttempt) {
+    responseAttempt = { idempotencyKey: crypto.randomUUID(), payload };
+    responseAttemptCount = 0;
+  }
   if (JSON.stringify(responseAttempt.payload) !== JSON.stringify(payload)) {
     show(elements.error, 'Für eine sichere Wiederholung muss dieselbe Antwort verwendet werden. Bitte laden Sie die ursprüngliche Einladung erneut.');
     return;
@@ -174,6 +180,7 @@ async function submitResponse(event) {
   elements['submit-response'].textContent = 'Wird übermittelt …';
   show(elements['action-state'], 'Ihre Antwort wird serverseitig geprüft …');
   try {
+    responseAttemptCount += 1;
     const receipt = await apiRequest(configValue, '/participant-responses', bearerToken, {
       method: 'POST',
       body: JSON.stringify({ ...responseAttempt.payload, idempotencyKey: responseAttempt.idempotencyKey }),
@@ -185,22 +192,67 @@ async function submitResponse(event) {
     if (latest.revision !== receipt.revision || latest.status !== 'acknowledged')
       throw new Error('Die Antwort wurde quittiert, aber der neue Fallstand konnte nicht eindeutig zurückgelesen werden. Bitte laden Sie den Fall neu.');
     responseAttempt = undefined;
+    responseAttemptCount = 0;
     renderCase(latest);
     show(elements.notice, 'Der Schulungsdienst hat Ihre Teilnahmebestätigung gespeichert und den Fallstand zurückgelesen.');
   } catch (error) {
-    show(elements['action-state'], error.message || 'Die Antwort ist noch nicht bestätigt.');
-    show(elements.error, error.message || 'Die Antwort konnte nicht bestätigt werden.');
-    const retryable = !error.status || error.status === 503;
+    const retryable = isRetryableSubmissionError(error);
+    const shouldReadBack = retryable || error.status === 409;
+    if (shouldReadBack) {
+      try {
+        const latest = await fetchCase();
+        if (latest.status === 'acknowledged' || latest.status === 'complete') {
+          responseAttempt = undefined;
+          responseAttemptCount = 0;
+          renderCase(latest);
+          show(elements.notice, 'Der Schulungsdienst bestätigt im aktuellen Fallstand, dass Ihre Teilnahme gespeichert wurde.');
+          return;
+        }
+      } catch { /* Preserve the exact payload/key for the next bounded attempt. */ }
+    }
     elements['answer-yes'].disabled = true;
     elements['typed-name'].disabled = true;
-    elements['submit-response'].disabled = !retryable;
-    elements['submit-response'].textContent = retryable ? 'Mit derselben Antwort erneut versuchen' : 'Erneutes Senden gesperrt';
+    const mayRetry = canRetryParticipantResponse(error, responseAttemptCount, MAX_RESPONSE_ATTEMPTS);
+    elements['submit-response'].disabled = !mayRetry;
+    elements['submit-response'].textContent = mayRetry ? 'Mit derselben Antwort erneut versuchen' : 'Erneutes Senden gesperrt';
+    elements['refresh-case'].hidden = !(shouldReadBack && !mayRetry);
+    let message = error.message || 'Die Antwort konnte nicht bestätigt werden.';
+    if (mayRetry)
+      message = `Der Dienst hat noch keine Bestätigung geliefert. Sie können dieselbe Antwort noch ${MAX_RESPONSE_ATTEMPTS - responseAttemptCount} Mal mit derselben Anfrage-ID erneut senden.`;
+    else if (retryable)
+      message = 'Der Fallstand konnte nach den Wiederholungen nicht eindeutig bestätigt werden. Prüfen Sie den Serverstand oder öffnen Sie die ursprüngliche Einladung später erneut.';
+    else if (error.status === 409)
+      message = 'Der Fall hat sich geändert oder eine Antwort wurde bereits erfasst. Prüfen Sie den Serverstand, bevor Sie erneut fortfahren.';
+    show(elements['action-state'], message);
+    show(elements.error, error.message || 'Die Antwort konnte nicht bestätigt werden.');
+  }
+}
+
+async function refreshCaseAfterUncertainSubmit() {
+  clearError();
+  elements['refresh-case'].disabled = true;
+  try {
+    const latest = await fetchCase();
+    if (latest.status === 'acknowledged' || latest.status === 'complete') {
+      responseAttempt = undefined;
+      responseAttemptCount = 0;
+      renderCase(latest);
+      show(elements.notice, 'Der Schulungsdienst bestätigt im aktuellen Fallstand, dass Ihre Teilnahme gespeichert wurde.');
+    } else {
+      elements['case-status'].textContent = labelStatus(latest.status);
+      show(elements['action-state'], 'Der aktuelle Serverstand bestätigt die Teilnahme noch nicht. Es wurde keine Bestätigung angezeigt; öffnen Sie die ursprüngliche Einladung später erneut.');
+    }
+  } catch (error) {
+    show(elements.error, error.message || 'Der Fallstand konnte nicht geladen werden.');
+  } finally {
+    elements['refresh-case'].disabled = false;
   }
 }
 
 elements['case-id'].textContent = invite.caseId || 'Keine gültige Fallnummer im Link';
 elements['sign-in'].addEventListener('click', () => void signIn());
 elements['participant-response'].addEventListener('submit', event => void submitResponse(event));
+elements['refresh-case'].addEventListener('click', () => void refreshCaseAfterUncertainSubmit());
 
 try {
   if (invite.insecureQueryToken) throw new Error('Der Einladungslink ist nicht sicher formatiert. Öffnen Sie den Link erneut aus der Einladungs-E-Mail.');

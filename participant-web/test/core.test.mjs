@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { apiRequest, invitationUrlWithoutSecret, participantResponseReady, readConfig, readInvitation } from '../core.js';
+import { apiRequest, canRetryParticipantResponse, invitationUrlWithoutSecret, isRetryableSubmissionError, participantResponseReady, readConfig, readInvitation } from '../core.js';
 
 test('configuration fails closed until an API origin is provided', () => {
   assert.throws(() => readConfig({}), /not configured|konfiguriert/i);
@@ -23,6 +23,16 @@ test('participant response requires a claimed participant link and persisted tra
   assert.equal(participantResponseReady({ status: 'assessed', evidence: { facts: { trainerPass: false } } }, true), false);
   assert.equal(participantResponseReady(snapshot, true), true);
   assert.equal(participantResponseReady({ ...snapshot, status: 'acknowledged' }, true), false);
+});
+
+test('transient server and network failures can retry, while client conflicts cannot', () => {
+  assert.equal(isRetryableSubmissionError(new TypeError('network unavailable')), true);
+  for (const status of [500, 502, 503, 504, 599]) assert.equal(isRetryableSubmissionError({ status }), true);
+  for (const status of [400, 401, 403, 404, 409]) assert.equal(isRetryableSubmissionError({ status }), false);
+  assert.equal(canRetryParticipantResponse({ status: 502 }, 1), true);
+  assert.equal(canRetryParticipantResponse(new TypeError('network unavailable'), 2), true);
+  assert.equal(canRetryParticipantResponse({ status: 503 }, 3), false);
+  assert.equal(canRetryParticipantResponse({ status: 409 }, 1), false);
 });
 
 test('API client uses configured origin and verified bearer without storing client state', async () => {

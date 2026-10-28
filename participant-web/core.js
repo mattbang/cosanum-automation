@@ -37,6 +37,17 @@ export function participantResponseReady(snapshot, verifiedParticipantClaim) {
   return verifiedParticipantClaim === true && snapshot?.evidence?.facts?.trainerPass === true && snapshot?.status !== 'acknowledged' && snapshot?.status !== 'complete';
 }
 
+export function isRetryableSubmissionError(error) {
+  if (!error || error.status === undefined || error.status === null) return true;
+  const status = Number(error.status);
+  return Number.isInteger(status) && status >= 500 && status <= 599;
+}
+
+export function canRetryParticipantResponse(error, attemptCount, maxAttempts = 3) {
+  return isRetryableSubmissionError(error) && Number.isInteger(attemptCount) && attemptCount > 0 &&
+    Number.isInteger(maxAttempts) && maxAttempts > 0 && attemptCount < maxAttempts;
+}
+
 export async function apiRequest(config, path, token, options = {}, fetchImpl = fetch) {
   const safeConfig = readConfig(config);
   if (!token) throw new Error('Für diesen Schritt ist eine verifizierte Anmeldung erforderlich.');

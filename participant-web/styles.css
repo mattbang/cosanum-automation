@@ -32,6 +32,8 @@ h2 { font-size: clamp(21px, 5vw, 27px); }
 .button { display: inline-flex; min-height: 48px; align-items: center; justify-content: center; padding: 12px 18px; border: 0; border-radius: 11px; cursor: pointer; font-weight: 700; text-align: center; transition: background .15s ease, transform .15s ease; }
 .button-primary { width: 100%; background: var(--green); color: white; }
 .button-primary:hover:not(:disabled) { background: var(--green-dark); }
+.button-secondary { width: 100%; border: 1px solid #aebfba; background: white; color: #214a43; }
+.button-secondary:hover:not(:disabled) { background: #f3f7f5; }
 .button:active:not(:disabled) { transform: translateY(1px); }
 .button:focus-visible { outline: 3px solid #85c9bd; outline-offset: 3px; }
 .button:disabled { cursor: wait; opacity: .7; }
