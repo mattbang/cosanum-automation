@@ -25,9 +25,9 @@ test('migration runner applies each checksum-tracked migration once', async () =
     async connect() { return connection; }, async end() {},
   } as unknown as SqlPool;
   await runMigrations(pool);
-  const appliedSqlCount = sqlCalls.filter(sql => sql.startsWith('CREATE TABLE workflow_requests')).length;
-  assert.equal(applied.size, 1);
-  assert.equal(appliedSqlCount, 1);
+  const appliedSqlCount = sqlCalls.filter(sql => sql.includes('CREATE TABLE workflow_requests') || sql.includes('CREATE TABLE participant_responses')).length;
+  assert.equal(applied.size, 2);
+  assert.equal(appliedSqlCount, 2);
   await runMigrations(pool);
-  assert.equal(sqlCalls.filter(sql => sql.startsWith('CREATE TABLE workflow_requests')).length, 1);
+  assert.equal(sqlCalls.filter(sql => sql.includes('CREATE TABLE workflow_requests') || sql.includes('CREATE TABLE participant_responses')).length, 2);
 });

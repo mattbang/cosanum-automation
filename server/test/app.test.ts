@@ -94,3 +94,30 @@ test('case reads and actions both enforce exact role assignment and idempotency'
     assert.equal(writes, 1);
   }
 });
+
+test('participant response route requires a verified bearer and returns the persisted receipt', async () => {
+  let received: unknown;
+  const participant: Identity = {
+    actorKey: 'PERSON', role: 'assigned_participant', verifiedEmail: 'person@example.test',
+    issuer: 'https://issuer.example.test', subject: 'person-subject',
+  };
+  const handler = createApiHandler({
+    identities: { async authenticate(token) { return token === 'valid-person' ? participant : null; } },
+    participantResponses: { async submit(input, actor) {
+      received = { input, actor };
+      return { status: 'verified', actionId: 'acceptParticipantAcknowledgement', caseId: input.caseId,
+        responseId: 'response-1', revision: '2', replayed: false };
+    } },
+  });
+  assert.equal((await call(handler, 'POST', '/participant-responses', { caseId: 'CASE-1', idempotencyKey: 'key' })).status, 401);
+  const invalid = await call(handler, 'POST', '/participant-responses', { caseId: 'CASE-1', idempotencyKey: 'key', answer: 'no', typedName: 'Person' }, 'Bearer valid-person');
+  assert.equal(invalid.status, 400);
+  const accepted = await call(handler, 'POST', '/participant-responses', {
+    caseId: 'CASE-1', idempotencyKey: 'key', answer: 'yes', typedName: 'Person', facts: { trainerPass: true },
+  }, 'Bearer valid-person');
+  assert.equal(accepted.status, 201);
+  assert.deepEqual(accepted.body, {
+    status: 'verified', actionId: 'acceptParticipantAcknowledgement', caseId: 'CASE-1', responseId: 'response-1', revision: '2', replayed: false,
+  });
+  assert.deepEqual(received, { input: { caseId: 'CASE-1', idempotencyKey: 'key', answer: 'yes', typedName: 'Person' }, actor: participant });
+});

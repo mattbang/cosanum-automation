@@ -12,7 +12,7 @@
     "trainerFormVerified": "Trainer form has VERIFIED email collection and matches the session",
     "trainerPass": "Accepted trainer assessment reports attended and passed for this person and phase",
     "assignedParticipant": "Verified responder matches the participant linked to the case",
-    "participantFormVerified": "Participant form has VERIFIED email collection and matches the case",
+    "participantFormVerified": "Participant response uses a verified identity assigned to the case",
     "answeredYes": "Participant explicitly confirmed participation",
     "allPhaseEvidence": "Every required phase has accepted trainer and participant responses",
     "proofVerified": "Proof IDs, version, source hash, and source responses match this case",

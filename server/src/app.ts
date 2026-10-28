@@ -1,6 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { ActionError, WorkflowService, type ActionRequest, type IdentityProvider, type WorkflowGateway } from './service.ts';
 import { ParticipantLinkError, HostedParticipantLinks } from './participant-links.ts';
+import { ParticipantResponses } from './participant-responses.ts';
 import { WorkflowConflictError, WorkflowInputError, PostgresWorkflowRepository, type CreateRequestInput } from './postgres-workflows.ts';
 import type { BearerTokenVerifier } from './identity.ts';
 
@@ -9,6 +10,7 @@ export type ApiDependencies = {
   gateway?: WorkflowGateway;
   requests?: Pick<PostgresWorkflowRepository, 'createRequest'>;
   participantLinks?: Pick<HostedParticipantLinks, 'issue' | 'claim' | 'revoke'>;
+  participantResponses?: Pick<ParticipantResponses, 'submit'>;
   tokenVerifier?: BearerTokenVerifier;
 };
 
@@ -98,6 +100,19 @@ export function createApiHandler(dependencies: ApiDependencies = {}) {
         const input = await bodyOf(request);
         const identity = await dependencies.participantLinks.claim(String(input.linkToken || ''), claims);
         send(response, 200, { status: 'claimed', actorKey: identity.actorKey, role: identity.role });
+        return;
+      }
+      if (request.method === 'POST' && path === '/participant-responses') {
+        if (!dependencies.identities || !dependencies.participantResponses) { send(response, 503, { error: 'Verified identity and participant-response service are not configured' }); return; }
+        const identity = await dependencies.identities.authenticate(bearer(request));
+        if (!identity?.verifiedEmail) throw new ActionError(401, 'Verified identity required');
+        const input = await bodyOf(request);
+        if (typeof input.caseId !== 'string' || typeof input.idempotencyKey !== 'string' || input.answer !== 'yes' || typeof input.typedName !== 'string')
+          throw new ActionError(400, 'Case ID, idempotency key, affirmative answer, and typed name required');
+        const result = await dependencies.participantResponses.submit({
+          caseId: input.caseId, idempotencyKey: input.idempotencyKey, answer: 'yes', typedName: input.typedName,
+        }, identity);
+        send(response, result.replayed ? 200 : 201, result);
         return;
       }
       send(response, 404, { error: 'Not found' });

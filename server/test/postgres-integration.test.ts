@@ -8,6 +8,7 @@ import { runMigrations } from '../src/database.ts';
 import { HostedParticipantLinks, ParticipantLinkError } from '../src/participant-links.ts';
 import { PostgresWorkflowGateway } from '../src/postgres-gateway.ts';
 import { PostgresWorkflowRepository } from '../src/postgres-workflows.ts';
+import { ParticipantResponses } from '../src/participant-responses.ts';
 import { ActionError, type Identity } from '../src/service.ts';
 
 test('PostgreSQL integration: migration, group booking, case history, link binding, and rollback', async () => {
@@ -17,7 +18,7 @@ test('PostgreSQL integration: migration, group booking, case history, link bindi
     await runMigrations(pool);
     await runMigrations(pool);
     const migrationRows = await pool.query('SELECT count(*)::int AS count FROM schema_migrations');
-    assert.equal(migrationRows.rows[0].count, 1);
+    assert.equal(migrationRows.rows[0].count, 2);
 
     const owner: Identity = {
       actorKey: 'OWNER-1', role: 'process_quality', verifiedEmail: 'owner@example.test',
@@ -93,6 +94,70 @@ test('PostgreSQL integration: migration, group booking, case history, link bindi
       issuer: owner.issuer!, subject: 'participant-subject-1', email: 'person@example.test', emailVerified: true,
     }), (error: unknown) => error instanceof ParticipantLinkError && error.status === 401);
 
+    const participant: Identity = {
+      actorKey: 'PERSON-1', role: 'assigned_participant', verifiedEmail: 'person@example.test',
+      issuer: owner.issuer, subject: 'participant-subject-1',
+    };
+    await pool.query("UPDATE workflow_cases SET evidence_facts = evidence_facts || '{\"trainerPass\":true}'::jsonb WHERE case_id = $1", ['CASE-PGLITE-1']);
+    const responses = new ParticipantResponses(pool);
+    const wrongAccount = { ...participant, subject: 'wrong-participant-subject' };
+    await assert.rejects(responses.submit({ caseId: 'CASE-PGLITE-1', idempotencyKey: 'wrong-account', answer: 'yes', typedName: 'Other Person' }, wrongAccount),
+      (error: unknown) => error instanceof ActionError && error.status === 403);
+
+    const participant2: Identity = {
+      actorKey: 'PERSON-2', role: 'assigned_participant', verifiedEmail: 'person2@example.test',
+      issuer: owner.issuer, subject: 'participant-subject-2',
+    };
+    await pool.query("UPDATE workflow_cases SET evidence_facts = evidence_facts || '{\"trainerPass\":true}'::jsonb WHERE case_id = $1", ['CASE-PGLITE-2']);
+    const assignment2 = await pool.query<{ assignment_id: string }>(
+      "SELECT assignment_id FROM workflow_assignments WHERE case_id = 'CASE-PGLITE-2' AND role = 'assigned_participant'",
+    );
+    const expiredLink = await links.issue({ caseId: 'CASE-PGLITE-2', assignmentId: Number(assignment2.rows[0]!.assignment_id),
+      email: participant2.verifiedEmail, expiresAt: expiry, createdBy: owner });
+    await links.claim(expiredLink.token, { issuer: participant2.issuer!, subject: participant2.subject!, email: participant2.verifiedEmail, emailVerified: true });
+    await pool.query("UPDATE hosted_participant_links SET expires_at = now() - interval '1 second' WHERE token_hash = $1",
+      [createHash('sha256').update(expiredLink.token).digest()]);
+    await assert.rejects(responses.submit({ caseId: 'CASE-PGLITE-2', idempotencyKey: 'expired-link', answer: 'yes', typedName: 'Participant Two' }, participant2),
+      (error: unknown) => error instanceof ActionError && error.status === 403);
+    const revokedLink = await links.issue({ caseId: 'CASE-PGLITE-2', assignmentId: Number(assignment2.rows[0]!.assignment_id),
+      email: participant2.verifiedEmail, expiresAt: expiry, createdBy: owner });
+    await links.claim(revokedLink.token, { issuer: participant2.issuer!, subject: participant2.subject!, email: participant2.verifiedEmail, emailVerified: true });
+    await pool.query('UPDATE hosted_participant_links SET revoked_at = now() WHERE token_hash = $1',
+      [createHash('sha256').update(revokedLink.token).digest()]);
+    await assert.rejects(responses.submit({ caseId: 'CASE-PGLITE-2', idempotencyKey: 'revoked-link', answer: 'yes', typedName: 'Participant Two' }, participant2),
+      (error: unknown) => error instanceof ActionError && error.status === 403);
+
+    const responseKeys = ['participant-response-1', 'participant-response-racer-2'];
+    const competing = await Promise.allSettled(responseKeys.map(idempotencyKey => responses.submit({
+      caseId: 'CASE-PGLITE-1', idempotencyKey, answer: 'yes', typedName: 'Participant One',
+    }, participant)));
+    assert.equal(competing.filter(result => result.status === 'fulfilled').length, 1);
+    const winnerIndex = competing.findIndex(result => result.status === 'fulfilled');
+    const response = (competing[winnerIndex] as PromiseFulfilledResult<Awaited<ReturnType<typeof responses.submit>>>).value;
+    assert.equal(competing.filter(result => result.status === 'rejected' && result.reason instanceof ActionError && result.reason.status === 409).length, 1);
+    const responseInput = { caseId: 'CASE-PGLITE-1', idempotencyKey: responseKeys[winnerIndex]!, answer: 'yes' as const, typedName: 'Participant One' };
+    assert.equal(response.status, 'verified');
+    assert.equal(response.actionId, 'acceptParticipantAcknowledgement');
+    assert.equal(response.revision, '2');
+    assert.equal(response.replayed, false);
+    assert.deepEqual(await responses.submit(responseInput, participant), { ...response, replayed: true });
+    await assert.rejects(responses.submit({ ...responseInput, idempotencyKey: 'participant-response-2' }, participant),
+      (error: unknown) => error instanceof ActionError && error.status === 409);
+    const savedResponse = await pool.query<{ actor_key: string; typed_name: string; answer: string; source_type: string; revision: string }>(
+      'SELECT actor_key, typed_name, answer, source_type, revision::text AS revision FROM participant_responses WHERE response_id = $1', [response.responseId],
+    );
+    assert.deepEqual(savedResponse.rows[0], {
+      actor_key: 'PERSON-1', typed_name: 'Participant One', answer: 'yes', source_type: 'hosted_participant_response', revision: '2',
+    });
+    const participantHistory = await pool.query<{ event_count: number; audit_count: number; evidence_count: number; status: string; revision: string }>(
+      `SELECT (SELECT count(*)::int FROM workflow_events WHERE event_id = (SELECT event_id FROM participant_responses WHERE response_id = $1)) AS event_count,
+              (SELECT count(*)::int FROM audit_events WHERE event_id = (SELECT event_id FROM participant_responses WHERE response_id = $1)) AS audit_count,
+              (SELECT count(*)::int FROM case_evidence WHERE case_id = 'CASE-PGLITE-1' AND source_id = $1::text) AS evidence_count,
+              c.status, c.revision::text AS revision
+         FROM workflow_cases c WHERE c.case_id = 'CASE-PGLITE-1'`, [response.responseId],
+    );
+    assert.deepEqual(participantHistory.rows[0], { event_count: 1, audit_count: 1, evidence_count: 3, status: 'acknowledged', revision: '2' });
+
     let executorCalls = 0;
     const gateway = new PostgresWorkflowGateway(pool, { async execute({ sessionCases }) {
       executorCalls++;
@@ -122,20 +187,24 @@ test('PostgreSQL integration: migration, group booking, case history, link bindi
          FROM workflow_cases c WHERE c.request_id = $1 ORDER BY c.case_id`, ['REQ-PGLITE'],
     );
     assert.equal(casesAfterBooking.rows.length, 2);
-    assert.ok(casesAfterBooking.rows.every(row => row.status === 'invited' && row.revision === '2' && row.event_id === 'EVENT-PGLITE-1'));
+    assert.ok(casesAfterBooking.rows.every(row => row.status === 'invited' && row.event_id === 'EVENT-PGLITE-1'));
+    assert.equal(casesAfterBooking.rows.find(row => row.case_id === 'CASE-PGLITE-1')?.revision, '3');
+    assert.equal(casesAfterBooking.rows.find(row => row.case_id === 'CASE-PGLITE-2')?.revision, '2');
     const session = await pool.query<{ status: string; calendar_event_id: string; revision: string }>(
       'SELECT status, calendar_event_id, revision::text AS revision FROM workflow_sessions WHERE session_id = $1', ['SES-PGLITE'],
     );
     assert.deepEqual(session.rows[0], { status: 'invited', calendar_event_id: 'EVENT-PGLITE-1', revision: '2' });
-    assert.equal((await pool.query('SELECT count(*)::int AS count FROM workflow_events WHERE request_id = $1', ['REQ-PGLITE'])).rows[0].count, 2);
-    assert.equal((await pool.query('SELECT count(*)::int AS count FROM audit_events WHERE request_id = $1', ['REQ-PGLITE'])).rows[0].count, 3);
+    assert.equal((await pool.query('SELECT count(*)::int AS count FROM workflow_events WHERE request_id = $1', ['REQ-PGLITE'])).rows[0].count, 3);
+    assert.equal((await pool.query('SELECT count(*)::int AS count FROM audit_events WHERE request_id = $1', ['REQ-PGLITE'])).rows[0].count, 4);
     const evidence = await pool.query<{ case_id: string; facts: string[]; count: number }>(
       `SELECT case_id, array_agg(fact_key ORDER BY fact_key) AS facts, count(*)::int AS count
          FROM case_evidence WHERE case_id IN ($1, $2) GROUP BY case_id ORDER BY case_id`,
       ['CASE-PGLITE-1', 'CASE-PGLITE-2'],
     );
     assert.equal(evidence.rows.length, 2);
-    assert.ok(evidence.rows.every(row => row.count === 5 && row.facts.includes('eventVerified') && row.facts.includes('receiptSaved')));
+    assert.equal(evidence.rows.find(row => row.case_id === 'CASE-PGLITE-1')?.count, 8);
+    assert.equal(evidence.rows.find(row => row.case_id === 'CASE-PGLITE-2')?.count, 5);
+    assert.ok(evidence.rows.every(row => row.facts.includes('eventVerified') && row.facts.includes('receiptSaved')));
     const latest = await gateway.load('CASE-PGLITE-1');
     await assert.rejects(gateway.execute('bookSession', latest!, {}, owner, 'booking-pglite-2'),
       (error: unknown) => error instanceof ActionError && error.status === 409);
