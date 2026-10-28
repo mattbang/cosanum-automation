@@ -53,7 +53,8 @@ async function currentAssignment(db: SqlExecutor, snapshot: Snapshot, actor: Ide
       WHERE i.issuer = $1 AND i.subject = $2 AND i.email_normalized = $3
         AND i.email_verified AND i.active AND i.actor_key = $4 AND i.role = $5
         AND a.case_id = $6 AND a.role = $7 AND a.actor_key = $4 AND a.active
-        AND (a.identity_issuer IS NULL OR (a.identity_issuer = $1 AND a.identity_subject = $2))
+        AND ((a.role = 'assigned_participant' AND a.identity_issuer = $1 AND a.identity_subject = $2)
+          OR (a.role <> 'assigned_participant' AND (a.identity_issuer IS NULL OR (a.identity_issuer = $1 AND a.identity_subject = $2))))
       ${lock ? 'FOR SHARE OF i, a' : ''}`,
     [actor.issuer, actor.subject, actor.verifiedEmail.trim().toLocaleLowerCase('en-US'), actor.actorKey, actor.role,
       snapshot.scope.caseId, assignmentRole],

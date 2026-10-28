@@ -32,7 +32,7 @@ export class HostedParticipantLinks {
           WHERE a.assignment_id = $1 AND a.case_id = $2 AND c.case_id = $2
             AND a.role = 'assigned_participant' AND a.active
             AND a.actor_key = c.participant_key
-            AND (a.email_normalized IS NULL OR a.email_normalized = $3)
+            AND a.email_normalized = $3
           FOR UPDATE OF a`,
         [input.assignmentId, input.caseId, email],
       );
@@ -87,7 +87,7 @@ export class HostedParticipantLinks {
            FROM hosted_participant_links l
            JOIN workflow_assignments a ON a.assignment_id = l.assignment_id AND a.case_id = l.case_id
            JOIN workflow_cases c ON c.case_id = l.case_id AND c.participant_key = a.actor_key
-          WHERE l.token_hash = $1 AND a.role = 'assigned_participant'
+          WHERE l.token_hash = $1 AND a.role = 'assigned_participant' AND a.email_normalized = l.email_normalized
           FOR UPDATE OF l, a`,
         [tokenHash(token)],
       );

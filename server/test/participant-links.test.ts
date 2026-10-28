@@ -8,7 +8,8 @@ function fakePool(options: { expiresAt?: Date; revokedAt?: Date | null; assignme
   const connection = {
     async query(sql: string, values?: readonly unknown[]) {
       calls.push({ sql, values });
-      if (sql.startsWith('SELECT a.assignment_id')) return { rows: [{ assignment_id: '7' }], rowCount: 1 } as never;
+      if (sql.startsWith('SELECT a.assignment_id')) return values?.[2] === 'person@example.test'
+        ? { rows: [{ assignment_id: '7' }], rowCount: 1 } as never : { rows: [], rowCount: 0 } as never;
       if (sql.startsWith('SELECT l.link_id')) return { rows: [{
         link_id: 'link-1', case_id: 'CASE-1', assignment_id: '7', email_normalized: 'person@example.test',
         expires_at: options.expiresAt ?? new Date(Date.now() + 60_000), revoked_at: options.revokedAt ?? null,
@@ -65,6 +66,16 @@ test('only Process & Quality can issue participant links', async () => {
     createdBy: { actorKey: 'PERSON-1', role: 'assigned_participant', verifiedEmail: 'person@example.test' },
   }), (error: unknown) => error instanceof ParticipantLinkError && error.status === 403);
   assert.equal(db.calls.length, 0);
+});
+
+test('link issuance cannot replace the email stored on the assignment', async () => {
+  const db = fakePool();
+  const links = new HostedParticipantLinks(db.pool);
+  await assert.rejects(links.issue({
+    caseId: 'CASE-1', assignmentId: 7, email: 'wrong@example.test', expiresAt: new Date(Date.now() + 60_000),
+    createdBy: { actorKey: 'OWNER-1', role: 'process_quality', verifiedEmail: 'owner@example.test' },
+  }), (error: unknown) => error instanceof ParticipantLinkError && error.status === 409);
+  assert.equal(db.calls.some(call => call.sql.startsWith('INSERT INTO hosted_participant_links')), false);
 });
 
 test('expired, revoked, or differently bound links fail closed', async () => {

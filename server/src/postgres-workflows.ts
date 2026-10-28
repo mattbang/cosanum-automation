@@ -9,11 +9,15 @@ export type CreateRequestInput = {
   reason: 'new_training' | 'retraining' | 'process_change';
   deadlineDate: string;
   sessions: Array<{ sessionId: string; startsAt?: string; endsAt?: string }>;
-  cases: Array<{ caseId: string; sessionId: string; participantKey: string; trainerKey: string; ownerKey: string }>;
+  cases: Array<{ caseId: string; sessionId: string; participantKey: string; participantEmail?: string; trainerKey: string; ownerKey: string }>;
 };
 
 export class WorkflowConflictError extends Error {}
 export class WorkflowInputError extends Error {}
+
+function sameIdSet(actual: unknown, expected: string[]): boolean {
+  return Array.isArray(actual) && actual.length === expected.length && actual.every((item, index) => item === expected[index]);
+}
 
 function timestampKey(value?: string | Date | null): string {
   if (!value) return '';
@@ -38,6 +42,7 @@ export class PostgresWorkflowRepository {
           (item.startsAt !== undefined && typeof item.startsAt !== 'string') || (item.endsAt !== undefined && typeof item.endsAt !== 'string')) ||
         input.cases.some(item => !item || typeof item.caseId !== 'string' || !item.caseId ||
           typeof item.sessionId !== 'string' || !item.sessionId || typeof item.participantKey !== 'string' || !item.participantKey ||
+          (item.participantEmail !== undefined && typeof item.participantEmail !== 'string') ||
           typeof item.trainerKey !== 'string' || !item.trainerKey || typeof item.ownerKey !== 'string' || !item.ownerKey))
       throw new WorkflowInputError('Invalid request, deadline, session, or case data');
     const dateCheck = new Date(`${input.deadlineDate}T00:00:00Z`);
@@ -58,12 +63,13 @@ export class PostgresWorkflowRepository {
         [input.id, input.requesterName.trim(), input.sourceTeam?.trim() || null, input.reason, input.deadlineDate, JSON.stringify(requestManifest)],
       );
       const priorRequest = await db.query<{
-        requester_name: string; source_team: string | null; reason: CreateRequestInput['reason']; deadline_date: string; attributes: typeof requestManifest;
+        requester_name: string; source_team: string | null; reason: CreateRequestInput['reason']; deadline_date: string;
+        attributes: { sessionIds?: unknown; caseIds?: unknown };
       }>('SELECT requester_name, source_team, reason, deadline_date::text AS deadline_date, attributes FROM workflow_requests WHERE request_id = $1 FOR UPDATE', [input.id]);
       const request = priorRequest.rows[0];
       if (!request || request.requester_name !== input.requesterName.trim() || request.source_team !== (input.sourceTeam?.trim() || null) ||
           request.reason !== input.reason || String(request.deadline_date).slice(0, 10) !== input.deadlineDate ||
-          JSON.stringify(request.attributes) !== JSON.stringify(requestManifest))
+          !sameIdSet(request.attributes?.sessionIds, requestManifest.sessionIds) || !sameIdSet(request.attributes?.caseIds, requestManifest.caseIds))
         throw new WorkflowConflictError('Request ID already exists with different origin, deadline, sessions, or cases');
 
       for (const session of input.sessions) {
@@ -93,19 +99,20 @@ export class PostgresWorkflowRepository {
         if (!saved || saved.request_id !== input.id || saved.session_id !== entry.sessionId || saved.participant_key !== entry.participantKey || saved.trainer_key !== entry.trainerKey || saved.owner_key !== entry.ownerKey)
           throw new WorkflowConflictError(`Case ID ${entry.caseId} already exists with different assignments`);
         for (const assignment of [
-          { role: 'assigned_participant', actorKey: entry.participantKey },
-          { role: 'assigned_trainer', actorKey: entry.trainerKey },
-          { role: 'process_quality', actorKey: entry.ownerKey },
+          { role: 'assigned_participant', actorKey: entry.participantKey, email: entry.participantEmail?.trim().toLocaleLowerCase('en-US') || null },
+          { role: 'assigned_trainer', actorKey: entry.trainerKey, email: null },
+          { role: 'process_quality', actorKey: entry.ownerKey, email: null },
         ]) {
           await db.query(
-            `INSERT INTO workflow_assignments (case_id, role, actor_key)
-             VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`, [entry.caseId, assignment.role, assignment.actorKey],
+            `INSERT INTO workflow_assignments (case_id, role, actor_key, email_normalized)
+             VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING`, [entry.caseId, assignment.role, assignment.actorKey, assignment.email],
           );
-          const assignmentCheck = await db.query<{ assignment_id: string }>(
-            'SELECT assignment_id FROM workflow_assignments WHERE case_id = $1 AND role = $2 AND actor_key = $3 AND active',
+          const assignmentCheck = await db.query<{ assignment_id: string; email_normalized: string | null }>(
+            'SELECT assignment_id, email_normalized FROM workflow_assignments WHERE case_id = $1 AND role = $2 AND actor_key = $3 AND active',
             [entry.caseId, assignment.role, assignment.actorKey],
           );
-          if (!assignmentCheck.rowCount) throw new WorkflowConflictError(`Assignment for ${assignment.role} is inactive or missing`);
+          if (!assignmentCheck.rowCount || assignmentCheck.rows[0]!.email_normalized !== assignment.email)
+            throw new WorkflowConflictError(`Assignment for ${assignment.role} is inactive or differs from the existing record`);
         }
       }
       if (inserted.rowCount) {

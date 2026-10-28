@@ -26,6 +26,13 @@ export class GoogleResourceMappings {
     return { resourceId: mapping.resource_id };
   }
 
+  async calendarAvailability(logicalKeys: string[]): Promise<CalendarResourceMapping> {
+    const keys = [...new Set(logicalKeys.map(key => key.trim()).filter(Boolean))];
+    if (!keys.length) throw new Error('At least one logical calendar mapping is required');
+    const mappings = await Promise.all(keys.map(key => this.get('calendar', key)));
+    return { resourceId: mappings[0]!.resource_id, availabilityResourceIds: mappings.map(mapping => mapping.resource_id) };
+  }
+
   async sheets(logicalKey: string): Promise<SheetsResourceMapping> {
     const mapping = await this.get('sheets', logicalKey);
     if (!mapping.range_name) throw new Error(`Sheets mapping ${logicalKey} has no range`);

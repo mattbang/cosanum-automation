@@ -47,11 +47,15 @@ test('resource mappings reject absent and disabled resources', async () => {
   const db = {
     async query(_sql: string, values: unknown[] = []) {
       const key = values[2];
-      const rows = key === 'enabled' ? [{ provider: 'calendar', resource_id: 'cal-1', range_name: null, enabled: true }] : [];
+      const rows = key === 'enabled' || key === 'trainer' || key === 'participant'
+        ? [{ provider: 'calendar', resource_id: key === 'participant' ? 'cal-participant' : 'cal-trainer', range_name: null, enabled: true }] : [];
       return { rows, rowCount: rows.length };
     },
   } as never;
   const mappings = new GoogleResourceMappings(db, 'synthetic');
-  assert.deepEqual(await mappings.calendar('enabled'), { resourceId: 'cal-1' });
+  assert.deepEqual(await mappings.calendar('trainer'), { resourceId: 'cal-trainer' });
+  assert.deepEqual(await mappings.calendarAvailability(['trainer', 'participant']), {
+    resourceId: 'cal-trainer', availabilityResourceIds: ['cal-trainer', 'cal-participant'],
+  });
   await assert.rejects(mappings.calendar('missing'), /No enabled calendar resource mapping/);
 });
