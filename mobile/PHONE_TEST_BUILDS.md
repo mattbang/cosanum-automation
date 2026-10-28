@@ -17,6 +17,8 @@ cd android
 
 The file is `android/app/build/outputs/apk/release/app-release.apk`. This local Gradle template signs its release variant with the Android debug key, so it is an **internal test APK**, not a production-signed build. Do not use it for Play Store delivery. Install it with `adb install -r .../app-release.apk`, or download the APK link on an Android phone and allow installation from that source. The JavaScript bundle is embedded: Metro and the laptop are not needed after installation. The package ID is `com.mattbang.cosanumtrainingdemo`.
 
+The verified 28 October 2026 test build is available as a [direct APK download](https://github.com/mattbang/cosanum-automation/releases/download/mobile-test-sdk58-2026-10-28/cosanum-training-demo-sdk58-android-test.apk), with its [SHA-256 checksum file](https://github.com/mattbang/cosanum-automation/releases/download/mobile-test-sdk58-2026-10-28/SHA256SUMS.txt). SHA-256: `f750bde24ec228794d6989d716e3b22f5bcacf9522c07d47d911ad4ab06e84f2`.
+
 The standalone app accepts `cosanum-training-demo://participant/CASE-S-1` as a local demo link. It selects a synthetic case; it does not authenticate a participant or authorize a real response. A phone can open the link after the app is installed. The **Hinweise** screen offers an opt-in, device-local reminder for visible attention items about 30 seconds later. It requests notification permission on tap, schedules no remote push, and includes no person details in the notification.
 
 ## iPhone device build handoff
