@@ -30,7 +30,7 @@ With a disposable PostgreSQL database, set `DATABASE_URL` and run `npm run migra
 
 The current HTTP entrypoint deliberately wires no identity verifier, identity provider, request store, link service, workflow gateway, or Google adapter. Protected routes return `503` until those exact dependencies are configured; the schema and repository are foundations, not connected acceptance. `/health` reports database availability separately from identity and Google connectivity.
 
-Proof creation and the verified `proof_id`/`proof_version` transition are not implemented. Those columns are reserved in the case schema, but there is no proof-creation/registration route or trusted proof verifier yet. Consequently `verifyArchive` and `applySkillUpdate` cannot pass their proof-scope gates through this API. Keep those actions disabled and issue #49 open until a reviewed proof registration step verifies the source evidence and persists the exact proof ID/version.
+Proof creation and the verified `proof_id`/`proof_version` transition are not implemented. Those columns are reserved in the case schema, but there is no proof-creation/registration route or trusted proof verifier yet. The required registration contract and checks are specified in `docs/CONNECTED_HANDOFF.md`. Consequently `verifyArchive` and `applySkillUpdate` cannot pass their proof-scope gates through this API. Keep those actions disabled and issue #49 open until a reviewed proof registration step verifies the source evidence and persists the exact proof ID/version.
 
 ## Cloud Run handoff
 

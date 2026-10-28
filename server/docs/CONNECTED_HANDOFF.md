@@ -50,7 +50,16 @@ For every action enabled in the API, document its server-derived evidence source
 - Preserve request, session, person-case, proof, and proof-version scope and reject stale revisions or revoked assignments.
 - Exercise wrong-account, wrong-case, expired/revoked-link, duplicate, stale-revision, provider-error, and readback-mismatch cases with synthetic tests before enabling the action.
 
-Proof registration remains an explicit missing step. The schema reserves `proof_id` and `proof_version`, but no trusted proof registrar writes them yet. Before enabling `verifyArchive` or `applySkillUpdate`, add and review a proof-scope transition that verifies source evidence and the external document/version, then persists the exact ID/version under the selected case revision.
+Proof registration remains an explicit missing step. The schema reserves `proof_id` and `proof_version`, but no trusted proof registrar writes them yet. The next implementation must keep proof actions disabled until all of these checks are in place:
+
+1. The endpoint accepts only the case ID and a stable request idempotency key. It reads the canonical request, case, person, topic, session, and phase evidence from persisted state; it does not accept proof IDs, source hashes, response IDs, or artifact IDs as client evidence.
+2. An injected trusted verifier checks that every required phase has the original accepted trainer and participant responses for the same request, person, topic, and case. It derives the proof ID, version, and source hash from that verified source set.
+3. The verifier reads back the exact registered Google Doc and PDF. Drive search by proof ID must return exactly those two IDs, with matching request/case/proof/version properties, names, MIME types, and parent folder. The PDF must be readable and its Drive checksum must match the downloaded PDF bytes.
+4. The verifier checks both local archive copies: the local PDF hash must match Drive, and the DOCX plus manifest must match the same request/case/proof/version/source hash. The archive receipt must name the same source response IDs, session IDs, Doc/PDF IDs, and checksums. See `docs/PROOF_METADATA.md` and `scripts/archive_proof.py` for the current source checks; connector output or a client-provided receipt alone is not proof.
+5. After external readbacks complete, a short PostgreSQL transaction locks the selected case, rechecks the expected revision and active actor assignment, enforces case-scoped proof/version and idempotency uniqueness, persists the immutable proof/receipt record, sets the exact `proof_id` and `proof_version`, and appends workflow evidence, event, and audit rows atomically. An exact retry returns the original registration; a changed source hash, proof version, case, or stale revision fails closed.
+6. Tests cover wrong request/case/person/topic, missing or duplicate Drive assets, property mismatch, unreadable files, checksum mismatch across Drive/local copies, source-response drift, stale revision, exact retry, conflicting retry, and rollback after any failed persistence step.
+
+This is a contract for later implementation, not current functionality or connected acceptance. No route or verifier is wired in this foundation. Synthetic verifier tests may check transaction and fail-closed behavior, but they cannot mark a case `proofVerified` for live workflow use. `verifyArchive` and `applySkillUpdate` remain disabled until real source/Drive/local readbacks and the registration transaction are independently reviewed.
 
 ## 5. Deployment evidence to add after approval
 
