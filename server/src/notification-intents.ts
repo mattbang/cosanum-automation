@@ -54,8 +54,8 @@ export class NotificationIntents {
       const cancelled = await db.query<{ intent_id: string }>(
         `UPDATE notification_intents
             SET status = 'cancelled', cancelled_at = now(), cancel_reason = 'source_state_changed'
-          WHERE case_id = $1 AND recipient_role = 'process_quality' AND recipient_actor_key = $2
-            AND status = 'pending' AND (source_revision <> $3::bigint OR NOT $4::boolean)
+          WHERE case_id = $1 AND recipient_role = 'process_quality'
+            AND status = 'pending' AND (recipient_actor_key <> $2 OR source_revision <> $3::bigint OR NOT $4::boolean)
           RETURNING intent_id`,
         [caseId, row.owner_key, row.revision, eligible],
       );
@@ -72,7 +72,7 @@ export class NotificationIntents {
         status: 'not_eligible', sourceRevision: row.revision, replayed: false, cancelledCount,
       };
 
-      const semanticKey = `failed_assessment:${caseId}:${row.revision}:${row.owner_key}`;
+      const semanticKey = JSON.stringify(['failed_assessment', caseId, row.revision, row.owner_key]);
       const inserted = await db.query<IntentRow>(
         `INSERT INTO notification_intents
           (semantic_key, event_type, task_key, request_id, session_id, case_id, source_revision,

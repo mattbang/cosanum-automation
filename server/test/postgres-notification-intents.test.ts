@@ -28,7 +28,8 @@ test('failed-assessment notification intents are authorized, idempotent, private
     await pool.query(`INSERT INTO workflow_cases (case_id, request_id, session_id, participant_key, trainer_key, owner_key, status, evidence_facts)
       VALUES ('CASE-FAILED-A', 'REQ-OUTBOX', 'SES-OUTBOX', 'PERSON-PRIVATE-A', 'TRAINER-A', 'OWNER-A', 'assessed', '{"trainerPass":false}'),
              ('CASE-PASSED-B', 'REQ-OUTBOX', 'SES-OUTBOX', 'PERSON-PRIVATE-B', 'TRAINER-B', 'OWNER-B', 'assessed', '{"trainerPass":true}'),
-             ('CASE-FAILED-C', 'REQ-OUTBOX', 'SES-OUTBOX', 'PERSON-PRIVATE-C', 'TRAINER-A', 'OWNER-A', 'assessed', '{"trainerPass":false}')`);
+             ('CASE-FAILED-C', 'REQ-OUTBOX', 'SES-OUTBOX', 'PERSON-PRIVATE-C', 'TRAINER-A', 'OWNER-A', 'assessed', '{"trainerPass":false}'),
+             ('CASE-TRANSFER-D', 'REQ-OUTBOX', 'SES-OUTBOX', 'PERSON-PRIVATE-D', 'TRAINER-A', 'OWNER-A', 'assessed', '{"trainerPass":false}')`);
     await pool.query(`INSERT INTO workflow_assignments (case_id, role, actor_key)
       SELECT case_id, 'process_quality', owner_key FROM workflow_cases`);
     const intents = new NotificationIntents(pool);
@@ -46,7 +47,7 @@ test('failed-assessment notification intents are authorized, idempotent, private
     const created = await intents.reconcileFailedAssessment({ caseId: 'CASE-FAILED-A', expectedRevision: '1' }, ownerA);
     assert.equal(created.status, 'pending');
     assert.equal(created.replayed, false);
-    assert.equal(created.semanticKey, 'failed_assessment:CASE-FAILED-A:1:OWNER-A');
+    assert.equal(created.semanticKey, JSON.stringify(['failed_assessment', 'CASE-FAILED-A', '1', 'OWNER-A']));
     const replay = await intents.reconcileFailedAssessment({ caseId: 'CASE-FAILED-A', expectedRevision: '1' }, ownerA);
     assert.deepEqual(replay, { ...created, replayed: true });
     const stored = await pool.query<{ recipient_role: string; recipient_actor_key: string; payload: Record<string, unknown>; status: string }>(
@@ -73,13 +74,37 @@ test('failed-assessment notification intents are authorized, idempotent, private
     assert.equal(repeatAfterCancel.status, 'not_eligible');
     assert.equal((await pool.query('SELECT count(*)::int AS count FROM notification_intents WHERE case_id = $1', ['CASE-FAILED-A'])).rows[0]!.count, 1);
 
+    await intents.reconcileFailedAssessment({ caseId: 'CASE-TRANSFER-D', expectedRevision: '1' }, ownerA);
+    await pool.query("UPDATE workflow_assignments SET active = false, revoked_at = now() WHERE case_id = 'CASE-TRANSFER-D' AND role = 'process_quality'");
+    await pool.query("UPDATE workflow_cases SET owner_key = 'OWNER-B', revision = 2 WHERE case_id = 'CASE-TRANSFER-D'");
+    await pool.query("INSERT INTO workflow_assignments (case_id, role, actor_key) VALUES ('CASE-TRANSFER-D', 'process_quality', 'OWNER-B')");
+    const transferred = await intents.reconcileFailedAssessment({ caseId: 'CASE-TRANSFER-D', expectedRevision: '2' }, ownerB);
+    assert.equal(transferred.status, 'pending');
+    assert.equal(transferred.cancelledCount, 1);
+    const transferRows = await pool.query<{ recipient_actor_key: string; status: string }>(
+      'SELECT recipient_actor_key, status FROM notification_intents WHERE case_id = $1 ORDER BY recipient_actor_key', ['CASE-TRANSFER-D'],
+    );
+    assert.deepEqual(transferRows.rows, [
+      { recipient_actor_key: 'OWNER-A', status: 'cancelled' },
+      { recipient_actor_key: 'OWNER-B', status: 'pending' },
+    ]);
+
+    await pool.query("UPDATE verified_identities SET active = false WHERE issuer = $1 AND subject = $2", [ownerA.issuer, ownerA.subject]);
+    await assert.rejects(intents.reconcileFailedAssessment({ caseId: 'CASE-FAILED-C', expectedRevision: '1' }, ownerA),
+      (error: unknown) => error instanceof ActionError && error.status === 403);
+    await pool.query("UPDATE verified_identities SET active = true WHERE issuer = $1 AND subject = $2", [ownerA.issuer, ownerA.subject]);
+    await pool.query("UPDATE workflow_assignments SET active = false, revoked_at = now() WHERE case_id = 'CASE-FAILED-C' AND role = 'process_quality'");
+    await assert.rejects(intents.reconcileFailedAssessment({ caseId: 'CASE-FAILED-C', expectedRevision: '1' }, ownerA),
+      (error: unknown) => error instanceof ActionError && error.status === 403);
+    await pool.query("UPDATE workflow_assignments SET active = true, revoked_at = NULL WHERE case_id = 'CASE-FAILED-C' AND role = 'process_quality'");
+
     await pool.query("ALTER TABLE audit_events ADD CONSTRAINT notification_intent_rollback_probe CHECK (operation <> 'notification.intent.create') NOT VALID");
     await assert.rejects(intents.reconcileFailedAssessment({ caseId: 'CASE-FAILED-C', expectedRevision: '1' }, ownerA));
     assert.equal((await pool.query('SELECT count(*)::int AS count FROM notification_intents WHERE case_id = $1', ['CASE-FAILED-C'])).rows[0]!.count, 0);
     await pool.query('ALTER TABLE audit_events DROP CONSTRAINT notification_intent_rollback_probe');
     const recovered = await intents.reconcileFailedAssessment({ caseId: 'CASE-FAILED-C', expectedRevision: '1' }, ownerA);
     assert.equal(recovered.status, 'pending');
-    assert.equal((await pool.query("SELECT count(*)::int AS count FROM audit_events WHERE operation = 'notification.intent.create'")).rows[0]!.count, 2);
+    assert.equal((await pool.query("SELECT count(*)::int AS count FROM audit_events WHERE operation = 'notification.intent.create'")).rows[0]!.count, 4);
   } finally {
     await pool.end();
     await engine.close();
