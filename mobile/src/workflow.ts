@@ -10,37 +10,106 @@ export type TrainingCase = {
   originalLevel: number; targetLevel: number; status: CaseStatus;
   slotId?: string; eventId?: string; trainerPassed?: boolean; acknowledgement?: boolean;
   proofId?: string; proofVersion?: string; archiveReceipt?: string; skillApplied?: boolean;
-  declined?: boolean;
+  declined?: boolean; previousCaseId?: string; supersededByCaseId?: string;
 };
 export type Slot = { id: string; label: string; start: string; end: string; busy: string[] };
-export type DemoState = { cases: TrainingCase[]; slots: Slot[] };
+export type DemoState = { cases: TrainingCase[]; slots: Slot[]; nextId?: number };
 export type ActionId = typeof workflow.actions[number]['id'];
 export type CurrentTask = { action: string; state: 'suggested' | 'blocked' | 'complete'; reason: string; canExecute: false };
 
-const people = new Map(fixture.People.map(row => [String(row[0]), String(row[5])]));
-const topics = new Map(fixture.Topics.map(row => [String(row[0]), String(row[1])]));
-const levels = new Map(fixture.Skills.map(row => [`${row[0]}:${row[1]}`, Number(row[2])]));
+const demoTitles: Record<string, string> = { TC_R030: 'Wareneingang · Demo', TC_R052: 'Hochregallager · Demo' };
+export const catalogue = fixture.Topics.map(row => ({ id: String(row[0]), name: demoTitles[String(row[0])] || `Demo-Schulungsmodul ${row[0]}`, material: 'Übungsmaterial', practiceIndividual: String(row[7]) === 'Praxis einzeln', fixedTarget: String(row[8]) === 'fixed' ? Number(row[10]) : undefined }));
+const people = new Map(fixture.People.map(row => [String(row[0]), ({ WOHNUNG: 'Person A', SUMNER: 'Person B' } as Record<string, string>)[String(row[0])] || String(row[5])]));
+const topics = new Map(catalogue.map(topic => [topic.id, topic]));
+const levels = new Map(fixture.Skills.map(row => [`${row[0]}:${row[1]}`, row[2]]));
+export const learners = fixture.People.filter(row => String(row[2]) === 'Mitarbeiter').map(row => ({ key: String(row[0]), name: people.get(String(row[0]))! }));
+
+export function trainerChoices(topicId: string, mode: 'group' | 'single', participantCount: number): string[] {
+  if (!topics.has(topicId) || participantCount < 1 || (mode === 'single' && participantCount !== 1)) return [];
+  return ['MATT', 'MARIE'].filter(key => Number(levels.get(`${key}:${topicId}`)) === 4 && (mode === 'single' || participantCount === 1 || key === 'MATT'));
+}
+
+export function eligibility(topicId: string, personKey: string, targetLevel: number): { eligible: boolean; level: number | null; reason: string } {
+  const topic = topics.get(topicId);
+  const raw = levels.get(`${personKey}:${topicId}`);
+  const level = typeof raw === 'number' && Number.isInteger(raw) ? raw : null;
+  if (!topic || !learners.some(person => person.key === personKey)) return { eligible: false, level, reason: 'Thema oder Person unbekannt' };
+  if (level === null) return { eligible: false, level, reason: 'Keine gültige Ausgangsstufe in der Demo-Matrix' };
+  if (level === 4) return { eligible: false, level, reason: 'Bereits Trainerstufe 4' };
+  if (level < 0 || level > 3) return { eligible: false, level, reason: 'Ungültige Ausgangsstufe' };
+  if (!Number.isInteger(targetLevel) || targetLevel < 1 || targetLevel > 3 || (topic.fixedTarget && targetLevel !== topic.fixedTarget)) return { eligible: false, level, reason: 'Ungültige Zielstufe' };
+  if (targetLevel !== level + 1) return { eligible: false, level, reason: `Nur der nächste Schritt nach Stufe ${level} ist zulässig` };
+  return { eligible: true, level, reason: `Stufe ${level} → ${targetLevel}` };
+}
 
 function makeCase(id: string, requestId: string, sessionId: string, personKey: string, topicId: string, mode: 'group' | 'single'): TrainingCase {
-  const originalLevel = levels.get(`${personKey}:${topicId}`);
-  if (!Number.isInteger(originalLevel) || originalLevel! < 0) throw new Error('Synthetic case has no valid starting level');
+  const topic = topics.get(topicId);
+  const originalLevel = Number(levels.get(`${personKey}:${topicId}`));
+  if (!topic || !Number.isInteger(originalLevel) || originalLevel < 0) throw new Error('Synthetic case has no valid starting level');
   return { id, requestId, sessionId, personKey, personName: people.get(personKey)!, topicId,
-    topicName: topics.get(topicId)!, mode, trainerKey: 'MARIE', originalLevel: originalLevel!,
-    targetLevel: Math.min(originalLevel! + 1, 3), status: 'planning' };
+    topicName: topic.name, mode, trainerKey: mode === 'group' ? 'MATT' : 'MARIE', originalLevel,
+    targetLevel: Math.min(originalLevel + 1, 3), status: 'planning' };
+}
+
+export function createRequest(state: DemoState, topicId: string, personKeys: string[], targetLevel: number, mode: 'group' | 'single' = 'group', trainerKey = 'MATT'): DemoState {
+  const topic = topics.get(topicId);
+  if (!topic || !personKeys.length || new Set(personKeys).size !== personKeys.length) throw new Error('Thema und eindeutige Personen wählen');
+  if (mode === 'single' && personKeys.length !== 1) throw new Error('Einzeltraining erfordert genau eine Person');
+  for (const key of personKeys) if (!eligibility(topicId, key, targetLevel).eligible) throw new Error(`${people.get(key) || key}: ${eligibility(topicId, key, targetLevel).reason}`);
+  if (!trainerChoices(topicId, mode, personKeys.length).includes(trainerKey)) throw new Error('Trainer ist für diese Sitzung nicht qualifiziert');
+  const n = state.nextId || 1;
+  const requestId = `REQ-M-${n}`; const sessionId = `SES-M-${n}`;
+  const cases = personKeys.map((key, index): TrainingCase => ({
+    id: `CASE-M-${n}-${index + 1}`, requestId, sessionId, personKey: key, personName: people.get(key)!, topicId,
+    topicName: topic.name, mode, trainerKey, originalLevel: eligibility(topicId, key, targetLevel).level!, targetLevel, status: 'planning',
+  }));
+  return { ...state, nextId: n + 1, cases: [...state.cases, ...cases] };
+}
+
+export function planningSessions(state: DemoState): TrainingCase[][] {
+  const groups = new Map<string, TrainingCase[]>();
+  for (const entry of state.cases.filter(item => item.status === 'planning')) groups.set(entry.sessionId, [...(groups.get(entry.sessionId) || []), entry]);
+  return [...groups.values()];
+}
+
+export function upcomingSessions(state: DemoState): TrainingCase[][] {
+  const groups = new Map<string, TrainingCase[]>();
+  for (const entry of state.cases.filter(item => item.eventId && item.slotId && item.slotId !== 'SLOT-OLD' && item.status !== 'complete')) groups.set(entry.sessionId, [...(groups.get(entry.sessionId) || []), entry]);
+  return [...groups.values()].sort((a, b) => (state.slots.find(slot => slot.id === a[0].slotId)?.start || '').localeCompare(state.slots.find(slot => slot.id === b[0].slotId)?.start || ''));
+}
+
+export function attentionCases(state: DemoState): TrainingCase[] {
+  return state.cases.filter(item => !item.supersededByCaseId && (item.declined || item.status === 'assessed' || item.status === 'proof_ready'));
+}
+
+function demoSlot(id: string, daysAhead: number, hour: number, busy: string[]): Slot {
+  const anchor = new Date(Date.now() + daysAhead * 86400000);
+  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Zurich', year: 'numeric', month: '2-digit', day: '2-digit', timeZoneName: 'shortOffset' }).formatToParts(anchor);
+  const get = (type: string) => parts.find(part => part.type === type)?.value || '';
+  const shortOffset = get('timeZoneName').replace('GMT', '');
+  const offset = shortOffset === '+2' ? '+02:00' : '+01:00';
+  const date = `${get('year')}-${get('month')}-${get('day')}`;
+  const startHour = String(hour).padStart(2, '0');
+  const endHour = String(hour + 1).padStart(2, '0');
+  const dayLabel = new Intl.DateTimeFormat('de-CH', { timeZone: 'Europe/Zurich', weekday: 'short', day: 'numeric', month: 'short' }).format(anchor);
+  return { id, label: `${dayLabel} · ${startHour}:00–${endHour}:00 Europe/Zurich`, start: `${date}T${startHour}:00:00${offset}`, end: `${date}T${endHour}:00:00${offset}`, busy };
 }
 
 export function initialState(): DemoState {
   return {
     cases: [
-      makeCase('CASE-G-1', 'REQ-G', 'SES-G', 'WOHNUNG', 'TC_R027', 'group'),
-      makeCase('CASE-G-2', 'REQ-G', 'SES-G', 'SUMNER', 'TC_R027', 'group'),
+      { ...makeCase('CASE-G-1', 'REQ-G', 'SES-G', 'WOHNUNG', 'TC_R027', 'group'), status: 'invited', slotId: 'SLOT-1', eventId: 'DEMO-EVENT-SES-G' },
+      { ...makeCase('CASE-G-2', 'REQ-G', 'SES-G', 'SUMNER', 'TC_R027', 'group'), status: 'invited', slotId: 'SLOT-1', eventId: 'DEMO-EVENT-SES-G' },
       makeCase('CASE-S-1', 'REQ-S', 'SES-S', 'WOHNUNG', 'TC_R030', 'single'),
+      { ...makeCase('CASE-H-1', 'REQ-H', 'SES-H', 'WOHNUNG', 'TC_R033', 'group'), status: 'assessed', slotId: 'SLOT-OLD', eventId: 'DEMO-EVENT-SES-H', trainerPassed: false },
     ],
     slots: [
-      { id: 'SLOT-1', label: 'Do, 29. Okt · 09:00–10:00', start: '2026-10-29T09:00:00+01:00', end: '2026-10-29T10:00:00+01:00', busy: [] },
-      { id: 'SLOT-2', label: 'Fr, 30. Okt · 10:00–11:00', start: '2026-10-30T10:00:00+01:00', end: '2026-10-30T11:00:00+01:00', busy: ['MARIE'] },
-      { id: 'SLOT-3', label: 'Mo, 2. Nov · 14:00–15:00', start: '2026-11-02T14:00:00+01:00', end: '2026-11-02T15:00:00+01:00', busy: ['SUMNER'] },
+      demoSlot('SLOT-1', 1, 9, []),
+      demoSlot('SLOT-2', 2, 10, ['MARIE']),
+      demoSlot('SLOT-3', 5, 14, ['SUMNER']),
+      { id: 'SLOT-OLD', label: 'Di, 20. Okt · 09:00–10:00', start: '2026-10-20T09:00:00+02:00', end: '2026-10-20T10:00:00+02:00', busy: [] },
     ],
+    nextId: 1,
   };
 }
 
@@ -50,7 +119,7 @@ export function sessionCases(state: DemoState, entry: TrainingCase): TrainingCas
 
 export function slotAvailable(state: DemoState, entry: TrainingCase, slotId: string): boolean {
   const slot = state.slots.find(item => item.id === slotId);
-  if (!slot) return false;
+  if (!slot || slot.id === 'SLOT-OLD') return false;
   const linked = sessionCases(state, entry);
   return !slot.busy.some(key => key === entry.trainerKey || linked.some(item => item.personKey === key)) &&
     !state.cases.some(item => item.sessionId !== entry.sessionId && item.slotId === slotId && item.eventId);
@@ -69,6 +138,7 @@ export function evaluate(actionId: ActionId, role: Role, scope: Record<string, s
 }
 
 export function currentTask(entry: TrainingCase): CurrentTask {
+  if (entry.supersededByCaseId) return { action: 'reschedule', state: 'complete', reason: `Neuer Versuch ${entry.supersededByCaseId} angelegt`, canExecute: false };
   if (entry.declined) return { action: 'reschedule', state: 'blocked', reason: 'Teilnahme abgesagt; Person einzeln neu planen', canExecute: false };
   if (entry.status === 'assessed' && !entry.trainerPassed) return { action: 'trainer_review', state: 'blocked', reason: 'Trainerbeurteilung nicht bestanden; erneute Planung erforderlich', canExecute: false };
   if (entry.status === 'complete') return { action: 'complete', state: 'complete', reason: 'Synthetischer Ablauf abgeschlossen', canExecute: false };
@@ -85,7 +155,7 @@ export function currentTask(entry: TrainingCase): CurrentTask {
   return { action, state: 'suggested', reason, canExecute: false };
 }
 
-export function transition(state: DemoState, caseId: string, action: 'book' | 'pass' | 'fail' | 'acknowledge' | 'proof' | 'archive' | 'skill' | 'decline', slotId?: string): DemoState {
+export function transition(state: DemoState, caseId: string, action: 'book' | 'pass' | 'fail' | 'acknowledge' | 'proof' | 'archive' | 'skill' | 'decline' | 'retry', slotId?: string): DemoState {
   const selected = state.cases.find(item => item.id === caseId);
   if (!selected) throw new Error('Unknown case');
   const cases = state.cases.map(item => ({ ...item }));
@@ -96,7 +166,14 @@ export function transition(state: DemoState, caseId: string, action: 'book' | 'p
     const result = evaluate(id, role, scope, facts, values);
     if (!result.allowed) throw new Error(`Gate blocked: ${result.missing.join(', ')}`);
   }
-  if (action === 'book') {
+  if (action === 'retry') {
+    if (current.supersededByCaseId || !(current.declined || (current.status === 'assessed' && !current.trainerPassed))) throw new Error('Nur abgelehnte oder nicht bestandene Fälle neu planen');
+    const n = state.nextId || 1;
+    const id = `CASE-R-${n}`;
+    current.supersededByCaseId = id;
+    cases.push({ ...current, id, sessionId: `SES-R-${n}`, mode: 'single', status: 'planning', slotId: undefined, eventId: undefined, trainerPassed: undefined, acknowledgement: undefined, proofId: undefined, proofVersion: undefined, archiveReceipt: undefined, skillApplied: undefined, declined: false, previousCaseId: current.id, supersededByCaseId: undefined });
+    return { ...state, cases, nextId: n + 1 };
+  } else if (action === 'book') {
     if (current.status !== 'planning' || !slotId) throw new Error('Case is not ready to book');
     const available = slotAvailable(state, selected, slotId);
     requireGate('bookSession', 'process_quality', { sessionPlanned: true, slotAvailable: available, calendarError: false, slotConflict: !available, changedEvent: false });
