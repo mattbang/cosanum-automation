@@ -10,6 +10,8 @@ Set `apiOrigin` in `config.js` to the HTTPS origin of the reviewed API. Set `ide
 
 Keep the Google client ID public configuration only; never add a client secret or credential. Configure the hosted page's CSP to allow its own assets, the API origin for `connect-src`, and `https://accounts.google.com` for the identity script and frame. Use HTTPS for both the page and API. The page's `referrer` policy is `no-referrer` to avoid propagating invitation URLs.
 
+The current API does not set CORS headers or answer `OPTIONS` preflight. Host this page on the same origin as the API or use a same-origin reverse proxy for `/participant-links`, `/cases`, and `/actions`. A separate frontend/API origin needs an exact, reviewed CORS allowlist in the API before browser calls can work; do not use wildcard CORS for bearer-token requests.
+
 The empty API origin and client ID are intentional. Until both identity and API configuration are supplied, the view stays fail-closed. No OAuth consent flow or deployment is part of this source foundation.
 
 ## API behavior
