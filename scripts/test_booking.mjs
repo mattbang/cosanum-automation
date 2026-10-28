@@ -100,7 +100,7 @@ assert.equal(tables.Sessions[0].status,'invited');
 assert.equal(first.startUtc,theory.startUtc);
 assert.equal(first.endUtc,theory.endUtc);
 const savedEvent = gateway.events.get(first.eventId);
-assert.equal(savedEvent.summary,'[DEMO] Schulung: Wareneingang · Theorie');
+assert.equal(savedEvent.summary,'[DEMO] Schulung: '+fixture.Topics.find(row=>row[0]==='TC_R030')[1]+' · Theorie');
 assert.equal(savedEvent.guestsCanSeeOtherGuests,false);
 assert.equal(savedEvent.start.timeZone,zone);
 assert.equal(savedEvent.start.dateTime,theory.startLocal);

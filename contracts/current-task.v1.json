@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "kind": "cosanum.training.current-task",
+  "source": "persisted-audit-and-session-rows",
+  "required": ["requestId", "caseId", "personKey", "actorKey", "sessionId", "action", "state", "reasonCode", "reason", "canExecute"],
+  "actionEnum": ["plan", "booking", "reschedule", "trainer_review", "archive_review", "skill_review", "followup", "rsvp_review", "trainer_assessment", "participant_acknowledgement", "create_proof", "skill_update", "audit_review", "complete"],
+  "stateEnum": ["suggested", "blocked", "complete"],
+  "rules": {
+    "caseIsolation": "One output per selected person case; a group session never merges case status",
+    "assignment": "Trainer comes from the linked persisted session; participant comes from the person case; owner tasks use MATT",
+    "evidence": "Only accepted response IDs and verified archive status may advance the suggested action",
+    "authorization": "This projection is read-only and canExecute is always false; the action endpoint must re-read evidence and verify caller identity and assignment",
+    "freshness": "No cached link or projection grants a write; re-read persisted rows immediately before each action",
+    "conflict": "Missing assignment or contradictory completed evidence produces blocked audit_review"
+  }
+}

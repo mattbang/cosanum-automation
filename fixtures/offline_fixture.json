@@ -1,0 +1,249 @@
+{
+  "Topics": [
+    [
+      "TC_R030",
+      "Synthetic topic TC_R030",
+      "Synthetic training material",
+      true,
+      true,
+      60,
+      180,
+      "Praxis einzeln",
+      "0→1→2→3",
+      "[DEMO]",
+      ""
+    ],
+    [
+      "TC_R027",
+      "Synthetic topic TC_R027",
+      "Synthetic training material",
+      true,
+      true,
+      60,
+      180,
+      "Gruppe",
+      "0→1→2→3",
+      "[DEMO]",
+      ""
+    ],
+    [
+      "TC_R033",
+      "Synthetic topic TC_R033",
+      "Synthetic training material",
+      true,
+      true,
+      60,
+      180,
+      "Gruppe",
+      "fixed",
+      "[DEMO]",
+      1
+    ],
+    [
+      "TC_R052",
+      "Synthetic topic TC_R052",
+      "Synthetic training material",
+      true,
+      false,
+      60,
+      0,
+      "Gruppe",
+      "fixed",
+      "[DEMO]",
+      1
+    ],
+    [
+      "TC_R077",
+      "Synthetic topic TC_R077",
+      "Synthetic training material",
+      true,
+      true,
+      60,
+      180,
+      "Gruppe",
+      "fixed",
+      "[DEMO]",
+      1
+    ]
+  ],
+  "People": [
+    [
+      "MATT",
+      "quality@example.test",
+      "Process & Quality",
+      "[DEMO]",
+      "PERSON-1",
+      "Quality Lead"
+    ],
+    [
+      "MARIE",
+      "trainer@example.test",
+      "HCM Einzeltraining",
+      "[DEMO]",
+      "PERSON-2",
+      "Trainer"
+    ],
+    [
+      "WOHNUNG",
+      "learner-a@example.test",
+      "Mitarbeiter",
+      "[DEMO]",
+      "PERSON-3",
+      "Learner A"
+    ],
+    [
+      "SUMNER",
+      "learner-b@example.test",
+      "Mitarbeiter",
+      "[DEMO]",
+      "PERSON-4",
+      "Learner B"
+    ]
+  ],
+  "Skills": [
+    [
+      "MATT",
+      "TC_R030",
+      4,
+      "synthetic",
+      "[DEMO]"
+    ],
+    [
+      "MATT",
+      "TC_R027",
+      4,
+      "synthetic",
+      "[DEMO]"
+    ],
+    [
+      "MATT",
+      "TC_R033",
+      4,
+      "synthetic",
+      "[DEMO]"
+    ],
+    [
+      "MATT",
+      "TC_R052",
+      4,
+      "synthetic",
+      "[DEMO]"
+    ],
+    [
+      "MATT",
+      "TC_R077",
+      4,
+      "synthetic",
+      "[DEMO]"
+    ],
+    [
+      "MARIE",
+      "TC_R030",
+      4,
+      "synthetic",
+      "[DEMO]"
+    ],
+    [
+      "MARIE",
+      "TC_R027",
+      0,
+      "synthetic",
+      "[DEMO]"
+    ],
+    [
+      "MARIE",
+      "TC_R033",
+      4,
+      "synthetic",
+      "[DEMO]"
+    ],
+    [
+      "MARIE",
+      "TC_R052",
+      4,
+      "synthetic",
+      "[DEMO]"
+    ],
+    [
+      "MARIE",
+      "TC_R077",
+      4,
+      "synthetic",
+      "[DEMO]"
+    ],
+    [
+      "WOHNUNG",
+      "TC_R030",
+      0,
+      "synthetic",
+      "[DEMO]"
+    ],
+    [
+      "WOHNUNG",
+      "TC_R027",
+      1,
+      "synthetic",
+      "[DEMO]"
+    ],
+    [
+      "WOHNUNG",
+      "TC_R033",
+      0,
+      "synthetic",
+      "[DEMO]"
+    ],
+    [
+      "WOHNUNG",
+      "TC_R052",
+      "-",
+      "synthetic",
+      "[DEMO]"
+    ],
+    [
+      "WOHNUNG",
+      "TC_R077",
+      "",
+      "synthetic",
+      "[DEMO]"
+    ],
+    [
+      "SUMNER",
+      "TC_R030",
+      1,
+      "synthetic",
+      "[DEMO]"
+    ],
+    [
+      "SUMNER",
+      "TC_R027",
+      0,
+      "synthetic",
+      "[DEMO]"
+    ],
+    [
+      "SUMNER",
+      "TC_R033",
+      0,
+      "synthetic",
+      "[DEMO]"
+    ],
+    [
+      "SUMNER",
+      "TC_R052",
+      0,
+      "synthetic",
+      "[DEMO]"
+    ],
+    [
+      "SUMNER",
+      "TC_R077",
+      0,
+      "synthetic",
+      "[DEMO]"
+    ]
+  ],
+  "Requests": [],
+  "ParticipantCases": [],
+  "Sessions": [],
+  "SessionCases": []
+}
