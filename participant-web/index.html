@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="de-CH">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#155f56">
+    <meta name="referrer" content="no-referrer">
+    <title>Cosanum · Persönliche Schulung</title>
+    <link rel="stylesheet" href="./styles.css">
+    <script src="./config.js"></script>
+    <script type="module" src="./app.js"></script>
+  </head>
+  <body>
+    <main class="shell">
+      <header class="brand" aria-label="Cosanum Schulungsportal">
+        <span class="brand-mark" aria-hidden="true">C</span>
+        <span><strong>Cosanum</strong><small>Schulungsportal</small></span>
+      </header>
+
+      <section class="panel" aria-labelledby="page-title">
+        <p class="eyebrow">Persönliche Einladung</p>
+        <h1 id="page-title">Ihre Schulung</h1>
+        <p class="intro">Melden Sie sich mit dem für diese Einladung bestimmten Konto an. Ihre Aufgabe wird danach direkt aus dem geschützten Schulungsdienst geladen.</p>
+
+        <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+        <div id="error" class="notice notice-error" role="alert" hidden></div>
+
+        <div class="invite-meta">
+          <span class="meta-label">Fallnummer</span>
+          <strong id="case-id">Wird aus der Einladung übernommen</strong>
+        </div>
+
+        <div id="identity-status" class="identity-status">Die Anmeldung ist noch nicht erfolgt.</div>
+        <button id="sign-in" class="button button-primary" type="button">Sicher anmelden</button>
+        <div id="google-button" class="google-button" aria-label="Google-Anmeldung" hidden></div>
+
+        <section id="case-view" class="case-view" aria-labelledby="case-heading" hidden>
+          <div class="case-heading-row">
+            <div>
+              <p class="eyebrow">Zugeordneter Fall</p>
+              <h2 id="case-heading">Schulungsaufgabe</h2>
+            </div>
+            <span id="case-status" class="status-chip">Wird geladen</span>
+          </div>
+          <dl id="case-details" class="details"></dl>
+          <div id="action-state" class="action-state" aria-live="polite"></div>
+          <button id="complete-action" class="button button-primary" type="button" hidden>Serverseitige Bestätigung verarbeiten</button>
+          <p class="privacy-note">Der Fall und mögliche Änderungen werden vom Server geprüft. Diese Seite speichert weder Sitzung noch Fall lokal.</p>
+        </section>
+
+        <p class="footer-note">Fragen zur Einladung? Antworten Sie auf die E-Mail, mit der Sie diesen Link erhalten haben.</p>
+      </section>
+    </main>
+  </body>
+</html>

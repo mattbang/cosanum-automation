@@ -1,0 +1,10 @@
+{
+  "name": "cosanum-hosted-participant-view",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node --test test/*.test.mjs",
+    "check": "node --check app.js && node --check core.js && node --check test/core.test.mjs && node scripts/check-static.mjs"
+  }
+}
