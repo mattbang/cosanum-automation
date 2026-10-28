@@ -4,14 +4,15 @@ import { evaluate, type ActionId, type Role } from '../../mobile/src/workflow.ts
 export type Scope = { requestId: string; sessionId: string; caseId: string; proofId?: string; proofVersion?: string };
 export type Identity = { actorKey: string; role: Role; verifiedEmail: string };
 export type Evidence = { facts: Record<string, boolean>; values: Record<string, string> };
-export type Snapshot = { scope: Scope; personKey: string; trainerKey: string; ownerKey: string; revision: string; evidence: Evidence };
-export type ActionRequest = { actionId: ActionId; caseId: string; payload?: Record<string, unknown> };
+export type RequestContext = { requesterName: string; sourceTeam?: string; reason: 'new_training' | 'retraining' | 'process_change'; deadlineDate?: string };
+export type Snapshot = { scope: Scope; request?: RequestContext; personKey: string; trainerKey: string; ownerKey: string; revision: string; evidence: Evidence };
+export type ActionRequest = { actionId: ActionId; caseId: string; idempotencyKey: string; payload?: Record<string, unknown> };
 export type ActionResponse = { status: 'verified'; actionId: ActionId; caseId: string; revision: string };
 
 export interface IdentityProvider { authenticate(token: string): Promise<Identity | null> }
 export interface WorkflowGateway {
   load(caseId: string): Promise<Snapshot | null>;
-  execute(actionId: ActionId, snapshot: Snapshot, payload: Record<string, unknown>): Promise<void>;
+  execute(actionId: ActionId, snapshot: Snapshot, payload: Record<string, unknown>, actor: Identity, idempotencyKey: string): Promise<void>;
 }
 
 export class ActionError extends Error {
@@ -31,6 +32,8 @@ export class WorkflowService {
     if (!identity || !identity.verifiedEmail) throw new ActionError(401, 'Verified identity required');
     const action = workflow.actions.find(item => item.id === request.actionId);
     if (!action || !request.caseId) throw new ActionError(400, 'Unknown action or case');
+    const idempotencyKey = request.idempotencyKey?.trim();
+    if (!idempotencyKey || idempotencyKey.length > 200) throw new ActionError(400, 'A stable idempotency key is required');
     const before = await this.gateway.load(request.caseId);
     if (!before) throw new ActionError(404, 'Case not found');
     if (before.scope.caseId !== request.caseId) throw new ActionError(409, 'Case scope mismatch');
@@ -42,7 +45,7 @@ export class WorkflowService {
     const preflight = evaluate(request.actionId, identity.role, scope, before.evidence.facts, before.evidence.values);
     if (!preflight.allowed) throw new ActionError(409, `Evidence gate blocked: ${preflight.missing.join(', ')}`);
     // The gateway owns the conditional write and must re-read its persisted revision immediately before mutation.
-    await this.gateway.execute(request.actionId, before, request.payload ?? {});
+    await this.gateway.execute(request.actionId, before, request.payload ?? {}, identity, idempotencyKey);
     const after = await this.gateway.load(request.caseId);
     if (!after || !sameScope(before.scope, after.scope) || after.revision === before.revision)
       throw new ActionError(502, 'Write readback did not match case and revision');
