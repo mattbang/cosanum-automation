@@ -324,6 +324,7 @@ test('synthetic participant API and static asset rehearsal uses fake identities 
       const refreshedToken = await issue('CASE-UI', 'ui@example.test');
       await page.command('Page.navigate', { url: `${base}/?case=CASE-UI&fresh=2#link=${refreshedToken}` });
       await waitForPage(page, "document.readyState === 'complete' && !document.getElementById('sign-in').disabled", 'fresh trainer-pass invitation');
+      await page.evaluate<void>("window.__fakeCredential = 'fake-person-ui-token'");
       await page.evaluate<void>("document.getElementById('sign-in').click()");
       await waitForPage(page, "Boolean(document.getElementById('synthetic-identity-button'))", 'fresh synthetic identity button');
       await page.evaluate<void>("document.getElementById('synthetic-identity-button').click()");
