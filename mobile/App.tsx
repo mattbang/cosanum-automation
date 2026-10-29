@@ -42,7 +42,7 @@ function MatrixView({ onCreate }: { onCreate: (topicId: string) => void }) {
           : topic.fixedTarget && cell.level !== null && cell.level >= topic.fixedTarget ? `Zielstufe ${topic.fixedTarget} bereits erreicht` : training!.reason;
         return <Pressable key={key} accessibilityRole="button" onPress={() => setDetail(detail === key ? '' : key)} style={styles.matrixRow}>
           <View style={styles.rowTight}><Text style={styles.body}>{row.title}</Text><Text style={styles.matrixLevel}>{cell.label}</Text></View>
-          {detail === key ? <><Text style={styles.meta}>Person {row.personKey} · Thema {row.topicId} · {row.role}</Text><Text style={training?.eligible ? styles.meta : styles.warning}>{reason}</Text></> : null}
+          {detail === key ? <><Text style={styles.meta}>{row.role} · {topic.name}</Text><Text style={training?.eligible ? styles.meta : styles.warning}>{reason}</Text></> : null}
         </Pressable>;
       })}
     </Card>
@@ -78,7 +78,7 @@ function participantUrl(caseId: string) {
 function Participant({ entry, back, submit }: { entry: TrainingCase; back: () => void; submit: () => void }) {
   const [name, setName] = useState(''); const [yes, setYes] = useState(false);
   return <><Button title="Zurück" secondary onPress={back} /><Card><Text style={styles.title}>Teilnahme bestätigen</Text>
-    <Text style={styles.body}>{entry.personName} · {entry.topicName} · {entry.id}</Text>
+    <Text style={styles.body}>{entry.personName} · {entry.topicName}</Text>
     <Text style={styles.note}>Lokale synthetische Ansicht. Dieser Link bestätigt keine Identität und schreibt nichts in Google.</Text>
     {entry.status !== 'assessed' || !entry.trainerPassed ? <Text style={styles.warning}>Erst nach bestandener Trainerbeurteilung möglich.</Text> : <>
       <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: yes }} onPress={() => setYes(!yes)} style={styles.row}><Text style={styles.checkbox}>{yes ? '✓' : ''}</Text><Text style={styles.body}>Ich bestätige meine Teilnahme.</Text></Pressable>
@@ -227,8 +227,8 @@ export default function App() {
           { number: '01', title: 'Kompetenz prüfen', detail: 'Matrix nach Thema oder Person öffnen', target: 'matrix' as Screen },
           { number: '02', title: 'Bedarf erfassen', detail: 'Material wählen und Anfrage anlegen', target: 'catalogue' as Screen },
           { number: '03', title: 'Termin planen', detail: 'Verfügbarkeit vergleichen und buchen', target: 'requests' as Screen },
-          { number: '04', title: 'Personenfall begleiten', detail: 'Beurteilung, Bestätigung und Nachweis zeigen', target: 'sessions' as Screen },
-        ]).map(step => <Pressable key={step.number} accessibilityRole="button" onPress={() => setScreen(step.target)} style={styles.tourStep}><Text style={styles.tourNumber}>{step.number}</Text><View style={styles.sourceText}><Text style={styles.tourStepTitle}>{step.title}</Text><Text style={styles.meta}>{step.detail}</Text></View><Text style={styles.sourceArrow}>›</Text></Pressable>)}</View> : null}
+          { number: '04', title: 'Personenfall begleiten', detail: 'Trainerbeurteilung und nächste Schritte zeigen', target: 'sessions' as Screen },
+        ]).map(step => <Pressable key={step.number} accessibilityRole="button" onPress={() => { if (step.number === '04' && upcoming.length) openCase(upcoming[0][0].id); else setScreen(step.target); }} style={styles.tourStep}><Text style={styles.tourNumber}>{step.number}</Text><View style={styles.sourceText}><Text style={styles.tourStepTitle}>{step.title}</Text><Text style={styles.meta}>{step.detail}</Text></View><Text style={styles.sourceArrow}>›</Text></Pressable>)}</View> : null}
         <Text style={styles.section}>Drei Informationsquellen</Text>
         <View style={wide ? styles.sourceGrid : undefined}>
           <Pressable accessibilityRole="button" onPress={() => setScreen('matrix')} style={[styles.sourceRow, wide && styles.sourceCell]}><View style={styles.sourceText}><Text style={styles.cardTitle}>Kompetenzmatrix</Text><Text style={styles.meta}>5 Themen · 4 Demo-Personen · Stufen</Text></View><Text style={styles.sourceArrow}>›</Text></Pressable>
@@ -254,7 +254,7 @@ export default function App() {
         <Button title="Material für neuen Bedarf wählen" onPress={() => setScreen('catalogue')} />
       </> : null}
       {screen === 'requests' ? <>{requests.length ? requests.map(group => sessionCard(group, 'planning')) : <Text style={styles.note}>Keine Anfrage wartet auf einen Termin.</Text>}</> : null}
-      {screen === 'catalogue' ? <>{catalogue.map(item => <Card key={item.id}><Text style={styles.cardTitle}>{item.name}</Text><Text style={styles.meta}>{item.id} · {item.material} · {item.practiceIndividual ? 'Praxisphase einzeln' : 'Gruppe oder einzeln wählbar'}</Text><Button title="Schulungsbedarf erstellen" onPress={() => openTopic(item.id)} /></Card>)}</> : null}
+      {screen === 'catalogue' ? <>{catalogue.map(item => <Card key={item.id}><Text style={styles.cardTitle}>{item.name}</Text><Text style={styles.meta}>{item.material} · {item.practiceIndividual ? 'Praxisphase einzeln' : 'Gruppe oder einzeln wählbar'}</Text><Button title="Schulungsbedarf erstellen" onPress={() => openTopic(item.id)} /></Card>)}</> : null}
       {screen === 'sessions' ? <>{upcoming.length ? upcoming.map(group => sessionCard(group, 'upcoming')) : <Text style={styles.note}>Keine kommenden Sitzungen.</Text>}</> : null}
       {screen === 'attention' ? <>{attention.length ? attention.map(attentionCard) : <Text style={styles.note}>Keine offenen Hinweise.</Text>}
         {Platform.OS !== 'web' && attention.length ? <Card><Text style={styles.cardTitle}>Lokale Demo-Erinnerung</Text><Text style={styles.body}>Nur für die aktuell sichtbaren Hinweise auf diesem Gerät. Keine Push-Zustellung und kein Serverabruf.</Text><Button title="In 30 Sekunden erinnern" secondary onPress={() => { void scheduleAttentionReminder(); }} />{reminderStatus ? <Text style={styles.meta}>{reminderStatus}</Text> : null}</Card> : null}
@@ -285,24 +285,24 @@ export default function App() {
       {screen === 'case' ? selected ? <>
         <Button title="Zurück zur Übersicht" secondary onPress={() => setScreen('home')} />
         <Card><Text style={styles.cardTitle}>{selected.personName} · {selected.topicName}</Text>
-          <Text style={styles.meta}>{selected.requestId} · {selected.sessionId} · {selected.id} · Trainer {trainerName(selected.trainerKey)}</Text>
+          <Text style={styles.meta}>Trainer {trainerName(selected.trainerKey)} · {selected.mode === 'group' ? 'Gruppe' : 'Einzeln'}</Text>
           <Text style={styles.body}>Stufe {selected.originalLevel} → {selected.targetLevel} · {statusText(selected)}</Text>
           <Text style={styles.task}>{currentTask(selected).reason}</Text>
-          {selected.previousCaseId ? <Text style={styles.meta}>Neuer Versuch nach {selected.previousCaseId}; früherer Beleg bleibt erhalten.</Text> : null}
-          {selected.supersededByCaseId ? <Text style={styles.meta}>Neuer Versuch: {selected.supersededByCaseId}</Text> : null}
+          {selected.previousCaseId ? <Text style={styles.meta}>Neuer Versuch; der frühere Beleg bleibt erhalten.</Text> : null}
+          {selected.supersededByCaseId ? <Text style={styles.meta}>Ein neuer Versuch wurde für diese Person angelegt.</Text> : null}
         </Card>
         {selectedRequest ? <Card><Text style={styles.cardTitle}>Ursprüngliche Anfrage</Text>
           <Text style={styles.body}>Angefragt von {selectedRequest.requesterName}{selectedRequest.sourceTeam ? ` · ${selectedRequest.sourceTeam}` : ''}</Text>
           <Text style={styles.body}>Grund: {requestReasonLabels[selectedRequest.reason]}</Text>
           <Text style={styles.body}>Gewünschter Abschluss bis {deadlineLabel(selectedRequest.deadlineDate)}</Text>
-          <Text style={styles.meta}>{selected.mode === 'group' ? 'Gruppensitzung' : 'Einzelsitzung'} · {selected.requestId}</Text>
+          <Text style={styles.meta}>{selected.mode === 'group' ? 'Gruppensitzung' : 'Einzelsitzung'}</Text>
         </Card> : null}
         {selected.status === 'planning' ? <><Card><Text style={styles.cardTitle}>Termin und Verfügbarkeit</Text>
           <Text style={styles.body}>Verknüpfte Personen: {sessionCases(state, selected).map(item => item.personName).join(', ')}</Text></Card>
           <WeekAvailability state={state} personKeys={sessionCases(state, selected).map(item => item.personKey)} trainerKey={selected.trainerKey} selectedSlot={slotId} onSelect={setSlot} excludeSessionId={selected.sessionId} compact />
           <Button title="Synthetische Buchung prüfen" disabled={!slotAvailable(state, selected, slotId)} onPress={() => act(selected.id, 'book', slotId)} />
         </> : null}
-        {selected.status === 'invited' ? <Card><Text style={styles.cardTitle}>Einladung und Beurteilung</Text><Text style={styles.body}>Kalenderereignis: {selected.eventId}. Beurteilungen gelten pro Person.</Text>
+        {selected.status === 'invited' ? <Card><Text style={styles.cardTitle}>Einladung und Beurteilung</Text><Text style={styles.body}>Synthetische Buchung. Beurteilungen gelten pro Person.</Text>
           {selected.declined ? <Text style={styles.warning}>Diese Person hat abgesagt. Andere Fälle und das Gruppenereignis bleiben bestehen.</Text> : <><Button title="Bestanden (Trainer-Demo)" onPress={() => act(selected.id, 'pass')} /><Button title="Nicht bestanden" secondary onPress={() => act(selected.id, 'fail')} /><Button title="Absage dieser Person simulieren" secondary onPress={() => act(selected.id, 'decline')} /></>}
         </Card> : null}
         {!selected.supersededByCaseId && (selected.declined || (selected.status === 'assessed' && !selected.trainerPassed)) ? <Card><Text style={styles.cardTitle}>Ersatz / Nachschulung</Text><Text style={styles.body}>Ein neuer Einzeltermin wird nur für diese Person angelegt. Der vorige Versuch bleibt sichtbar.</Text><Button title="Neuen Einzeltermin planen" onPress={() => { act(selected.id, 'retry'); setScreen('requests'); }} /></Card> : null}
