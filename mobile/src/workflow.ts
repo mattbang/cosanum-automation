@@ -22,7 +22,8 @@ export type CurrentTask = { action: string; state: 'suggested' | 'blocked' | 'co
 
 const demoTitles: Record<string, string> = { TC_R030: 'Wareneingang · Demo', TC_R027: 'Modul A · Demo', TC_R033: 'Modul B · Demo', TC_R052: 'Hochregallager · Demo', TC_R077: 'Modul C · Demo' };
 export const catalogue = fixture.Topics.map(row => ({ id: String(row[0]), name: demoTitles[String(row[0])] || `Demo-Schulungsmodul ${row[0]}`, material: 'Übungsmaterial', practiceIndividual: String(row[7]) === 'Praxis einzeln', fixedTarget: String(row[8]) === 'fixed' ? Number(row[10]) : undefined }));
-const people = new Map(fixture.People.map(row => [String(row[0]), ({ MATT: 'Daniel / P&Q', MARIE: 'HCM4-Trainer:in', WOHNUNG: 'Person A', SUMNER: 'Person B' } as Record<string, string>)[String(row[0])] || String(row[5])]));
+// Presentation aliases only; the fixture uses example.test addresses and grants no real identity.
+const people = new Map(fixture.People.map(row => [String(row[0]), ({ MATT: 'Daniel / P&Q', MARIE: 'HCM4-Trainer:in', WOHNUNG: 'Matthew · Mitarbeiter 1', SUMNER: 'Annina · Mitarbeiter 2' } as Record<string, string>)[String(row[0])] || String(row[5])]));
 const topics = new Map(catalogue.map(topic => [topic.id, topic]));
 const levels = new Map(fixture.Skills.map(row => [`${row[0]}:${row[1]}`, row[2]]));
 export const requestReasonLabels: Record<RequestReason, string> = { new_training: 'Neue Schulung', retraining: 'Nachschulung', process_change: 'Prozessänderung' };

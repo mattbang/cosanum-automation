@@ -7,6 +7,7 @@ import { attentionCases, catalogue, createRequest, currentTask, deadlineLabel, d
 
 const plum = '#452347';
 const coral = '#b94355';
+const sharedDemoUrl = 'https://cosanum-shared-training-demo.mattbangle.chatgpt.site';
 const attentionChannel = 'demo-attention';
 const webStorageKey = demoStorageKey(new Date());
 if (Platform.OS !== 'web') Notifications.setNotificationHandler({ handleNotification: async () => ({ shouldShowBanner: false, shouldShowList: true, shouldPlaySound: false, shouldSetBadge: false }) });
@@ -169,6 +170,10 @@ export default function App() {
   function openParticipant(entry: TrainingCase) {
     const url = participantUrl(entry.id); if (url) void Linking.openURL(url); else setParticipant(entry.id);
   }
+  async function openHostedPage(path = '') {
+    try { await Linking.openURL(`${sharedDemoUrl}${path}`); setError(''); }
+    catch { setError('Die Online-Seite konnte nicht im Browser geöffnet werden.'); }
+  }
   function resetDemo() { setState(initialState()); setScreen('home'); select(null); setPeople([]); setRequesterName(''); setSourceTeam(''); setRequestReason(''); setDeadlineDate(''); setSlot(''); setCalendarSlot(''); setError(''); }
   async function scheduleAttentionReminder() {
     if (!attention.length) return;
@@ -209,13 +214,26 @@ export default function App() {
     { key: 'home', label: 'Übersicht' }, { key: 'matrix', label: 'Matrix' }, { key: 'catalogue', label: 'Material' }, { key: 'calendar', label: 'Kalender' },
   ];
   return <View style={styles.root}><StatusBar style="dark" /><ScrollView ref={scrollRef} contentContainerStyle={styles.page}>
-    <View style={styles.row}><Text style={styles.brand}>COSANUM · SCHULUNG</Text><Text style={styles.marker}>{Platform.OS === 'android' ? 'DEMO · BUILD 2' : 'LOKALE DEMO'}</Text></View>
+    <View style={styles.row}><Text style={styles.brand}>COSANUM · SCHULUNG</Text><Text style={styles.marker}>{Platform.OS === 'android' ? 'DEMO · BUILD 3' : 'LOKALE DEMO'}</Text></View>
     {participant ? <Participant key={participant.id} entry={participant} back={() => setParticipant(null)} submit={() => { act(participant.id, 'acknowledge'); setParticipant(null); }} /> : <>
       <Text style={styles.title}>{screen === 'home' ? 'Hallo Daniel' : screen === 'matrix' ? 'Kompetenzmatrix' : screen === 'calendar' ? 'Kalenderverfügbarkeit' : screen === 'catalogue' ? 'Trainingsmaterial' : screen === 'requests' ? 'Terminbedarf' : screen === 'sessions' ? 'Geplante Sitzungen' : screen === 'attention' ? 'Deine Hinweise' : screen === 'create' ? 'Schulungsbedarf erfassen' : 'Personenfall'}</Text>
       <Text style={styles.note}>Process & Quality · synthetische Daten · keine Google-Verbindung</Text>
       <View style={styles.nav}>{nav.map(item => <Pressable key={item.key} accessibilityRole="button" onPress={() => { setScreen(item.key); setError(''); }} style={[styles.navItem, screen === item.key && styles.navActive]}><Text style={[styles.navText, screen === item.key && styles.navActiveText]}>{item.label}</Text></Pressable>)}</View>
       {error ? <Text style={styles.warning}>{error}</Text> : null}
       {screen === 'home' ? <>
+        <View style={styles.sharedCard}>
+          <Text style={styles.sharedEyebrow}>GEMEINSAME ONLINE-DEMO · ZWEI GERÄTE</Text>
+          <Text style={styles.sharedTitle}>Training gemeinsam vorführen</Text>
+          <Text style={styles.sharedBody}>Öffne die geteilte Demo im Browser. Eine mögliche Google-Anmeldung erfolgt dort. Die Tour in dieser App bleibt lokal und synthetisch.</Text>
+          <Pressable accessibilityRole="link" accessibilityLabel="Gemeinsame Zwei-Geräte-Demo im Browser öffnen" accessibilityHint="Öffnet eine externe Website. Die lokale Demo bleibt erhalten." onPress={() => void openHostedPage()} style={styles.sharedButton}>
+            <Text style={styles.sharedButtonText}>Gemeinsame Zwei-Geräte-Demo öffnen  ↗</Text>
+          </Pressable>
+          <View style={styles.hostedLinks}>
+            <Pressable accessibilityRole="link" accessibilityLabel="Online-Materialien vorab im Browser ansehen" onPress={() => void openHostedPage('/materials/index.html')} style={styles.hostedLink}><Text style={styles.hostedLinkText}>Materialien vorab  ↗</Text></Pressable>
+            <Pressable accessibilityRole="link" accessibilityLabel="Quellenregister als JSON im Browser ansehen" onPress={() => void openHostedPage('/api/sources')} style={styles.hostedLink}><Text style={styles.hostedLinkText}>Quellenregister  ↗</Text></Pressable>
+          </View>
+          <Text style={styles.sharedFootnote}>Externe Website · separate Online-Demo</Text>
+        </View>
         <View style={styles.hero}><Text style={styles.heroEyebrow}>DEIN NÄCHSTER SCHRITT</Text><Text style={styles.heroTitle}>{attention.length ? `${attention.length} ${attention.length === 1 ? 'Fall braucht' : 'Fälle brauchen'} deine Prüfung` : requests.length ? `${requests.length} ${requests.length === 1 ? 'Anfrage wartet' : 'Anfragen warten'} auf einen Termin` : 'Alles im Blick'}</Text><Text style={styles.heroBody}>{attention.length ? 'Prüfe den offenen Personenfall und plane bei Bedarf den nächsten Versuch.' : requests.length ? 'Sieh dir den Bedarf an und finde einen gemeinsamen Termin.' : 'Starte mit der Kompetenzmatrix oder erfasse einen neuen Bedarf.'}</Text><Pressable accessibilityRole="button" onPress={() => attention.length ? openCase(attention[0].id) : requests.length ? openCase(requests[0][0].id) : setScreen('matrix')} style={styles.heroButton}><Text style={styles.heroButtonText}>{attention.length ? 'Fall jetzt ansehen' : requests.length ? 'Termin planen' : 'Matrix ansehen'}  →</Text></Pressable></View>
         <View style={styles.queueLinks}>
           <Pressable accessibilityRole="button" accessibilityLabel={`${requests.length} Anfragen ohne Termin ansehen`} onPress={() => setScreen('requests')} style={styles.queueLink}><Text style={styles.queueNumber}>{requests.length}</Text><Text style={styles.queueLinkLabel}>Terminbedarf</Text></Pressable>
@@ -322,6 +340,8 @@ const styles = StyleSheet.create({
   brand: { color: plum, fontSize: 14, letterSpacing: 0.8, fontWeight: '800' }, marker: { color: plum, backgroundColor: '#efe4f1', fontWeight: '800', fontSize: 10, paddingHorizontal: 10, paddingVertical: 7, borderRadius: 99 },
   title: { color: plum, fontSize: 27, fontWeight: '800', marginBottom: 4 }, section: { color: plum, fontSize: 18, fontWeight: '700', marginTop: 24, marginBottom: 10 }, sectionCount: { color: coral },
   nav: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginBottom: 16 }, navItem: { backgroundColor: '#fff', borderColor: '#e6dce8', borderWidth: 1, paddingHorizontal: 12, minHeight: 44, justifyContent: 'center', borderRadius: 10 }, navActive: { backgroundColor: plum }, navText: { color: plum, fontSize: 12, fontWeight: '700' }, navActiveText: { color: '#fff' },
+  sharedCard: { backgroundColor: '#efe4f1', borderColor: '#d6c3dc', borderWidth: 1, borderRadius: 18, padding: 19, marginBottom: 12 }, sharedEyebrow: { color: coral, fontSize: 10, fontWeight: '800', letterSpacing: 0.8 }, sharedTitle: { color: plum, fontSize: 20, fontWeight: '800', marginTop: 8 }, sharedBody: { color: '#49394f', fontSize: 13, lineHeight: 19, marginTop: 8 }, sharedButton: { backgroundColor: coral, borderRadius: 10, minHeight: 48, justifyContent: 'center', alignItems: 'center', marginTop: 15, paddingHorizontal: 12, paddingVertical: 9 }, sharedButtonText: { color: '#fff', fontSize: 14, fontWeight: '800', textAlign: 'center' }, sharedFootnote: { color: '#635669', fontSize: 11, marginTop: 10, textAlign: 'center' },
+  hostedLinks: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 9 }, hostedLink: { flexGrow: 1, minHeight: 44, borderColor: '#d6c3dc', borderWidth: 1, borderRadius: 9, backgroundColor: '#fff', paddingHorizontal: 10, paddingVertical: 10, justifyContent: 'center', alignItems: 'center' }, hostedLinkText: { color: plum, fontSize: 12, fontWeight: '700', textAlign: 'center' },
   hero: { backgroundColor: plum, borderRadius: 20, padding: 21, marginBottom: 12 }, heroEyebrow: { color: '#f6b7c2', fontSize: 10, fontWeight: '800', letterSpacing: 1.2 }, heroTitle: { color: '#fff', fontSize: 22, fontWeight: '800', lineHeight: 28, marginTop: 8 }, heroBody: { color: '#e9dce9', fontSize: 13, lineHeight: 19, marginTop: 8 }, heroButton: { backgroundColor: '#fff', borderRadius: 10, minHeight: 46, justifyContent: 'center', alignItems: 'center', marginTop: 17, paddingHorizontal: 12 }, heroButtonText: { color: plum, fontWeight: '800', fontSize: 14 },
   queueLinks: { flexDirection: 'row', gap: 8, marginBottom: 12 }, queueLink: { flex: 1, minHeight: 82, backgroundColor: '#fff', borderColor: '#e6dce8', borderWidth: 1, borderRadius: 14, alignItems: 'center', justifyContent: 'center', padding: 7 }, queueNumber: { color: plum, fontSize: 24, fontWeight: '800' }, queueLinkLabel: { color: '#635669', fontSize: 11, textAlign: 'center', fontWeight: '700', marginTop: 1 },
   tourToggle: { backgroundColor: '#f1e9f1', borderRadius: 14, paddingHorizontal: 16, minHeight: 62, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, tourEyebrow: { color: coral, fontWeight: '800', fontSize: 9, letterSpacing: 1 }, tourTitle: { color: plum, fontWeight: '800', fontSize: 15, marginTop: 4 }, tourArrow: { color: plum, fontSize: 23, fontWeight: '700' }, tourSteps: { marginTop: 7, backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: '#e6dce8', overflow: 'hidden' }, tourStep: { flexDirection: 'row', alignItems: 'center', minHeight: 68, paddingHorizontal: 14, paddingVertical: 9, borderBottomColor: '#f0e9f0', borderBottomWidth: 1, gap: 12 }, tourNumber: { color: coral, fontSize: 15, fontWeight: '800' }, tourStepTitle: { color: plum, fontWeight: '700', fontSize: 14 },
