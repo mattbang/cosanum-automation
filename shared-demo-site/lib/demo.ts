@@ -1,5 +1,7 @@
 export type Stage = 'draft' | 'invited' | 'confirmed' | 'in_progress' | 'trainer_reported' | 'completed' | 'cancelled' | 'needs_reschedule';
+export type TrainingRequest = { id:string; topic:string; participant:string; requestedBy:string; source:string; reason:string; deadline:string; targetLevel:number };
 export type DemoCase = {
+  request?: TrainingRequest;
   id: string;
   topic: string;
   participant: string;
@@ -15,9 +17,10 @@ export type DemoCase = {
 };
 export type SkillStatus = { level: number; status: string };
 export type SkillMatrix = Record<string, Record<string, SkillStatus>>;
-export type DemoState = { active: DemoCase | null; history: DemoCase[]; skillMatrix?: SkillMatrix };
+export type DemoState = { active: DemoCase | null; history: DemoCase[]; skillMatrix?: SkillMatrix; requests?: TrainingRequest[] };
 export type DemoAction =
-  | { type: 'invite'; topic: string; participant: string; offers: string[]; targetLevel: number }
+  | { type: 'invite'; requestId?:string; topic: string; participant: string; offers: string[]; targetLevel: number }
+  | { type: 'reschedule'; offers: string[] }
   | { type: 'reject_offer'; offer: string }
   | { type: 'accept_offer'; offer: string }
   | { type: 'start_early' }
@@ -53,7 +56,7 @@ export function currentSkillMatrix(state: DemoState): SkillMatrix {
   return Object.fromEntries(PARTICIPANTS.map(person => [person, { ...DEMO_SKILL_MATRIX[person], ...(state.skillMatrix?.[person] || {}) }]));
 }
 
-export function initialState(): DemoState { return { active: null, history: [], skillMatrix: currentSkillMatrix({ active: null, history: [] }) }; }
+export function initialState(): DemoState { return { active: null, history: [], skillMatrix: currentSkillMatrix({ active: null, history: [] }), requests:[{ id:'REQ-DEMO-01', topic:TOPICS[0], participant:LIVE_PARTICIPANT, requestedBy:'Annina', source:'CCS / Leitstand', reason:'Nachschulung', deadline:new Date(Date.now()+10*86400000).toISOString().slice(0,10), targetLevel:2 }] }; }
 
 function event(actor: 'Daniel' | 'Teilnehmer:in', label: string, at: string) { return { at, actor, label }; }
 function assert(condition: unknown, message: string): asserts condition { if (!condition) throw new Error(message); }
@@ -71,9 +74,14 @@ export function transition(state: DemoState, actor: 'host' | 'guest', action: De
     assert(action.participant === LIVE_PARTICIPANT, 'Für Annina und Marko ist noch kein Demo-Konto zugewiesen. Bitte Matthew wählen.');
     assert(action.offers.length >= 1 && action.offers.length <= 3, 'Bitte ein bis drei Termine wählen.');
     assert(new Set(action.offers).size === action.offers.length && action.offers.every(value => validOffer(value, now)), 'Termine müssen eindeutig und in den nächsten 30 Tagen liegen.');
-    assert(Number.isInteger(action.targetLevel) && action.targetLevel >= 1 && action.targetLevel <= 4, 'Ungültiges Zielniveau.');
+    assert(Number.isInteger(action.targetLevel) && action.targetLevel >= 1 && action.targetLevel <= 3, 'Ungültiges Zielniveau.');
+    const request = action.requestId ? state.requests?.find(item => item.id === action.requestId) : undefined;
+    if (action.requestId) {
+      assert(request && request.topic === action.topic && request.participant === action.participant, 'Die Anfrage passt nicht zu dieser Planung.');
+      assert(![...(state.active ? [state.active] : []), ...state.history].some(item => item.request?.id === action.requestId && item.stage !== 'cancelled'), 'Diese Anfrage wurde bereits eingeplant.');
+    }
     const next: DemoCase = {
-      id: crypto.randomUUID(), topic: action.topic, participant: action.participant.trim(), offers: action.offers,
+      request, id: crypto.randomUUID(), topic: action.topic, participant: action.participant.trim(), offers: action.offers,
       rejectedOffers: [], acceptedOffer: null, stage: 'invited', report: '', result: null,
       targetLevel: action.targetLevel, participantConfirmed: false,
       events: [event('Daniel', 'Einladung mit Terminvorschlägen erstellt', now)],
@@ -81,6 +89,11 @@ export function transition(state: DemoState, actor: 'host' | 'guest', action: De
     return { ...state, active: next, history: current ? [current, ...state.history].slice(0, 20) : state.history };
   }
   assert(current, 'Es gibt noch keinen aktiven Fall.');
+  if (action.type === 'reschedule') {
+    assert(actor === 'host' && ['invited', 'confirmed', 'needs_reschedule'].includes(current.stage), 'Neue Termine können nur vor dem Training vorgeschlagen werden.');
+    assert(action.offers.length >= 1 && action.offers.length <= 3 && new Set(action.offers).size === action.offers.length && action.offers.every(value => validOffer(value, now)), 'Bitte ein bis drei gültige neue Termine wählen.');
+    return { ...state, active: { ...current, offers: action.offers, rejectedOffers: [], acceptedOffer: null, stage: 'invited', events: [...current.events, event('Daniel', 'Neue Termine vorgeschlagen; erneute Terminwahl nötig', now)] } };
+  }
   if (action.type === 'reject_offer') {
     assert(actor === 'guest' && current.stage === 'invited', 'Dieser Vorschlag kann nicht mehr abgelehnt werden.');
     assert(current.offers.includes(action.offer), 'Unbekannter Terminvorschlag.');

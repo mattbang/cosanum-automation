@@ -1,5 +1,6 @@
 import { env } from 'cloudflare:workers';
 import { initialState } from '../../../lib/demo';
+import { roomCookie } from '../../../lib/room-access';
 import { verifyGoogleIdToken } from '../../../lib/google-auth';
 
 export const runtime = 'edge';
@@ -11,7 +12,7 @@ async function sha256(value: string) {
 
 export async function POST(request: Request) {
   if (!env.DB) return Response.json({ error: 'Datenbank nicht bereit.' }, { status: 503 });
-  if (!env.DEMO_CREATOR_CODE || request.headers.get('X-Demo-Code') !== env.DEMO_CREATOR_CODE)
+  if (!env.GOOGLE_CLIENT_ID && (!env.DEMO_CREATOR_CODE || request.headers.get('X-Demo-Code') !== env.DEMO_CREATOR_CODE))
     return Response.json({ error: 'Startcode ungültig.' }, { status: 403 });
   if (env.GOOGLE_CLIENT_ID) {
     try {
@@ -26,5 +27,5 @@ export async function POST(request: Request) {
   const now = new Date().toISOString();
   await env.DB.prepare('INSERT INTO demo_rooms (id, host_token_hash, guest_token_hash, state_json, revision, created_at, updated_at) VALUES (?, ?, ?, ?, 1, ?, ?)')
     .bind(id, await sha256(hostToken), await sha256(guestToken), JSON.stringify(initialState()), now, now).run();
-  return Response.json({ id, hostToken, guestToken }, { headers: { 'Cache-Control': 'no-store' } });
+  return Response.json({ id, hostToken, guestToken }, { headers: { 'Cache-Control': 'no-store', 'Set-Cookie': roomCookie(request, id, hostToken) } });
 }

@@ -44,3 +44,24 @@ test('unassigned employees cannot receive the live participant link', () => {
     assert.throws(() => transition(initialState(), 'host', { type: 'invite', topic: 'Wareneingang', participant, offers: [first], targetLevel: 2 }, now), /kein Demo-Konto/);
   }
 });
+
+test('reschedule clears prior acceptance and requires a fresh participant choice', () => {
+ let state = transition(initialState(), 'host', {type:'invite',topic:'Wareneingang',participant:LIVE_PARTICIPANT,offers:[first],targetLevel:2},now);
+ state=transition(state,'guest',{type:'accept_offer',offer:first},now);
+ assert.throws(()=>transition(state,'guest',{type:'reschedule',offers:[second]},now));
+ state=transition(state,'host',{type:'reschedule',offers:[second]},now);
+ assert.equal(state.active?.stage,'invited'); assert.equal(state.active?.acceptedOffer,null);
+ assert.throws(()=>transition(state,'guest',{type:'accept_offer',offer:first},now));
+ state=transition(state,'guest',{type:'accept_offer',offer:second},now);
+ assert.equal(state.active?.acceptedOffer,second);
+});
+
+test('request planning preserves requester and deadline and rejects mismatched topic',()=>{
+ const initial=initialState(),request=initial.requests![0];
+ assert.throws(()=>transition(initial,'host',{type:'invite',requestId:request.id,topic:'Kommissionierung',participant:LIVE_PARTICIPANT,offers:[first],targetLevel:2},now));
+ let state=transition(initial,'host',{type:'invite',requestId:request.id,topic:request.topic,participant:request.participant,offers:[first],targetLevel:2},now);
+ assert.equal(state.active?.request?.requestedBy,'Annina');assert.equal(state.active?.request?.deadline,request.deadline);
+ state=transition(state,'host',{type:'cancel'},now);
+ state=transition(state,'host',{type:'invite',requestId:request.id,topic:request.topic,participant:request.participant,offers:[second],targetLevel:2},now);
+ assert.equal(state.active?.stage,'invited');assert.equal(state.history[0].stage,'cancelled');
+});

@@ -1,6 +1,7 @@
 import { env } from 'cloudflare:workers';
 import { transition, type DemoAction, type DemoState } from '../../../../lib/demo';
 import { verifyGoogleIdToken } from '../../../../lib/google-auth';
+import { roomToken, roomCookie } from '../../../../lib/room-access';
 
 export const runtime = 'edge';
 type Context = { params: Promise<{ id: string }> };
@@ -12,7 +13,7 @@ function fail(message: string, status: number) { return Response.json({ error: m
 async function load(request: Request, context: Context) {
   if (!env.DB) return { error: fail('Datenbank nicht bereit.', 503) };
   const { id } = await context.params;
-  const token = request.headers.get('Authorization')?.replace(/^Bearer /, '') || '';
+  const token = roomToken(request, id);
   if (!token || !/^[a-f0-9-]{72}$/.test(token)) return { error: fail('Zugangslink fehlt.', 401) };
   const room = await env.DB.prepare('SELECT * FROM demo_rooms WHERE id = ?').bind(id).first<Record<string, unknown>>();
   if (!room) return { error: fail('Demo nicht gefunden.', 404) };
@@ -28,13 +29,13 @@ async function load(request: Request, context: Context) {
         return { error: fail('Dieses Google-Konto ist für die Rolle nicht zugewiesen.', 403) };
     } catch { return { error: fail('Bitte mit dem zugewiesenen Google-Konto anmelden.', 401) }; }
   }
-  return { room, role, id } as const;
+  return { room, role, id, token, participantEmail: role === 'host' ? env.GOOGLE_PARTICIPANT_EMAIL : undefined } as const;
 }
 
 export async function GET(request: Request, context: Context) {
   const loaded = await load(request, context);
   if ('error' in loaded) return loaded.error;
-  return Response.json({ role: loaded.role, revision: loaded.room.revision, state: JSON.parse(String(loaded.room.state_json)) }, { headers: { 'Cache-Control': 'no-store' } });
+  return Response.json({ role: loaded.role, participantEmail: loaded.participantEmail, revision: loaded.room.revision, state: JSON.parse(String(loaded.room.state_json)) }, { headers: { 'Cache-Control': 'no-store', 'Set-Cookie': roomCookie(request, loaded.id, loaded.token) } });
 }
 
 export async function POST(request: Request, context: Context) {
@@ -52,5 +53,5 @@ export async function POST(request: Request, context: Context) {
   const updated = await db.prepare('UPDATE demo_rooms SET state_json = ?, revision = revision + 1, updated_at = ? WHERE id = ? AND revision = ?')
     .bind(JSON.stringify(next), new Date().toISOString(), loaded.id, body.revision).run();
   if (updated.meta.changes !== 1) return fail('Der Fall wurde auf dem anderen Gerät geändert. Bitte neu laden.', 409);
-  return Response.json({ role: loaded.role, revision: Number(loaded.room.revision) + 1, state: next }, { headers: { 'Cache-Control': 'no-store' } });
+  return Response.json({ role: loaded.role, participantEmail: loaded.participantEmail, revision: Number(loaded.room.revision) + 1, state: next }, { headers: { 'Cache-Control': 'no-store', 'Set-Cookie': roomCookie(request, loaded.id, loaded.token) } });
 }
