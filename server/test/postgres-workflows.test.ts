@@ -74,3 +74,12 @@ test('request ID cannot be reused with a changed deadline, case set, or malforme
   await assert.rejects(repository.createRequest({ ...input, cases: [{ ...input.cases[0]!, participantEmail: 'person@example.test' }] }, actor), WorkflowConflictError);
   await assert.rejects(repository.createRequest({ ...input, deadlineDate: '2026-02-31' }, actor), WorkflowInputError);
 });
+
+test('request creation rejects an owner key different from the authenticated Process & Quality actor before SQL', async () => {
+  const db = repositoryDb();
+  const repository = new PostgresWorkflowRepository(db.pool);
+  await assert.rejects(repository.createRequest({
+    ...input, cases: [{ ...input.cases[0]!, ownerKey: 'OTHER-OWNER' }],
+  }, actor), /Case owner must match/);
+  assert.equal(db.calls.length, 0);
+});

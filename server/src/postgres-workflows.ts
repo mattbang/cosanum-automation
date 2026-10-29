@@ -55,6 +55,8 @@ export class PostgresWorkflowRepository {
           (item.attributes !== undefined && (!item.attributes || typeof item.attributes !== 'object' || Array.isArray(item.attributes))) ||
           typeof item.trainerKey !== 'string' || !item.trainerKey || typeof item.ownerKey !== 'string' || !item.ownerKey))
       throw new WorkflowInputError('Invalid request, deadline, session, or case data');
+    if (input.cases.some(entry => entry.ownerKey !== actor.actorKey))
+      throw new WorkflowConflictError('Case owner must match the authenticated Process & Quality identity');
     const dateCheck = new Date(`${input.deadlineDate}T00:00:00Z`);
     if (Number.isNaN(dateCheck.valueOf()) || dateCheck.toISOString().slice(0, 10) !== input.deadlineDate)
       throw new WorkflowInputError('Deadline must be a real calendar date');

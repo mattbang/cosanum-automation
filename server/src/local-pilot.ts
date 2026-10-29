@@ -9,8 +9,9 @@ import { PostgresIdentityProvider, normalizeEmail, type BearerTokenVerifier, typ
 import { HostedParticipantLinks } from './participant-links.ts';
 import { PostgresProcessQualityDashboard } from './postgres-dashboard.ts';
 import { PostgresWorkflowGateway } from './postgres-gateway.ts';
-import { PostgresWorkflowRepository } from './postgres-workflows.ts';
+import { PostgresWorkflowRepository, WorkflowInputError, type CreateRequestInput } from './postgres-workflows.ts';
 import { ActionError, type Identity } from './service.ts';
+import topics from '../../contracts/demo-resources/v1/topics.json' with { type: 'json' };
 
 /** A local, synthetic identity is deliberately unrelated to a real Google account. */
 export type LocalPilotIdentity = {
@@ -81,8 +82,9 @@ export function validateLocalDatabaseUrl(connectionString: string): string {
   try { parsed = new URL(connectionString); }
   catch { throw new Error('Local pilot requires a loopback PostgreSQL URL'); }
   if (!['postgres:', 'postgresql:'].includes(parsed.protocol) ||
-      !['127.0.0.1', '[::1]'].includes(parsed.hostname) || parsed.search || parsed.hash || !parsed.pathname || parsed.pathname === '/')
-    throw new Error('Local pilot requires a loopback PostgreSQL URL without connection options');
+      !['127.0.0.1', '[::1]'].includes(parsed.hostname) || parsed.search || parsed.hash || parsed.pathname !== '/cosanum_local' ||
+      parsed.username !== 'cosanum_api_local' || !parsed.password)
+    throw new Error('Local pilot requires the restricted cosanum_api_local role and cosanum_local database on loopback without connection options');
   return connectionString;
 }
 
@@ -113,6 +115,8 @@ export async function initializeLocalPilotConfig(path: string): Promise<void> {
     identities: [
       identity('daniel', 'daniel@cosanum.test', 'DANIEL', 'process_quality'),
       identity('matthew', 'matthew@cosanum.test', 'MATTHEW', 'assigned_participant'),
+      identity('annina', 'annina@cosanum.test', 'ANNINA', 'assigned_participant'),
+      identity('marko', 'marko@cosanum.test', 'MARKO', 'assigned_participant'),
       identity('hcm4', 'hcm4@cosanum.test', 'HCM4', 'assigned_trainer'),
     ],
   };
@@ -173,14 +177,47 @@ function respond(response: ServerResponse, status: number, body: unknown): void 
 
 /** Local-only API composition. External writes cannot return evidence or modify case history. */
 export function createLocalPilotHandler(pool: SqlPool, source: LocalPilotConfig) {
-  const verifier = localVerifier(source);
+  const config = validateConfig(source);
+  const verifier = localVerifier(config);
+  const repository = new PostgresWorkflowRepository(pool);
+  const topicNames = new Map(topics.map(item => [item.topic_id, item.topic]));
+  const participants = new Map(config.identities.filter(item => item.role === 'assigned_participant').map(item => [item.actorKey, item]));
+  const trainers = new Set(config.identities.filter(item => item.role === 'assigned_trainer').map(item => item.actorKey));
+  const localRequests = {
+    createRequest(input: CreateRequestInput, actor: Identity) {
+      if (Array.isArray(input?.sessions) && input.sessions.every(item => item && typeof item === 'object') &&
+          Array.isArray(input?.cases) && input.cases.every(item => item && typeof item === 'object')) {
+        const sessions = new Map(input.sessions.map(item => [item.sessionId, item]));
+        for (const session of input.sessions) {
+          const attrs = session.attributes || {};
+          if (typeof attrs.topicId !== 'string' || topicNames.get(attrs.topicId) !== attrs.topicName ||
+              !['single', 'group'].includes(String(attrs.mode)))
+            throw new WorkflowInputError('Local pilot session must use a catalogued synthetic topic and mode');
+          const participantCount = input.cases.filter(entry => entry.sessionId === session.sessionId).length;
+          if (participantCount !== 1)
+            throw new WorkflowInputError('Local pilot supports one participant per session until the group trainer role is connected');
+        }
+        for (const entry of input.cases) {
+          const participant = participants.get(entry.participantKey);
+          const session = sessions.get(entry.sessionId);
+          const attrs = entry.attributes || {};
+          if (!participant || entry.participantEmail !== participant.email || !trainers.has(entry.trainerKey) ||
+              !session || attrs.topicId !== session.attributes?.topicId || attrs.topicName !== session.attributes?.topicName ||
+              attrs.mode !== session.attributes?.mode || !Number.isInteger(attrs.targetLevel) ||
+              Number(attrs.targetLevel) < 1 || Number(attrs.targetLevel) > 3)
+            throw new WorkflowInputError('Local pilot case must use assigned synthetic people, trainer, topic, and target level');
+        }
+      }
+      return repository.createRequest(input, actor);
+    },
+  };
   const api = createApiHandler({
     tokenVerifier: verifier,
     identities: new PostgresIdentityProvider(pool, verifier),
     gateway: new PostgresWorkflowGateway(pool, {
       async execute() { throw new ActionError(503, 'External Calendar, Sheets, mail, and skill actions are disabled in the local pilot'); },
     }),
-    requests: new PostgresWorkflowRepository(pool),
+    requests: localRequests,
     participantLinks: new HostedParticipantLinks(pool),
     processQualityDashboard: new PostgresProcessQualityDashboard(pool),
   });

@@ -47,7 +47,7 @@ test('local pilot config stays private and PostgreSQL target stays loopback', as
     await initializeLocalPilotConfig(path);
     const stored = await loadLocalPilotConfig(path);
     assert.equal(stored.kind, 'cosanum-local-synthetic-v1');
-    assert.equal(stored.identities.length, 3);
+    assert.equal(stored.identities.length, 5);
     assert.ok(stored.identities.every(item => item.email.endsWith('.test') && item.token.length >= 43));
     assert.ok((await readFile(path, 'utf8')).includes('daniel@cosanum.test'));
     await assert.rejects(initializeLocalPilotConfig(path));
@@ -56,14 +56,16 @@ test('local pilot config stays private and PostgreSQL target stays loopback', as
   } finally {
     await rm(directory, { recursive: true, force: true });
   }
-  assert.equal(validateLocalDatabaseUrl('postgresql://pilot:private@127.0.0.1:55432/cosanum_local'),
-    'postgresql://pilot:private@127.0.0.1:55432/cosanum_local');
+  assert.equal(validateLocalDatabaseUrl('postgresql://cosanum_api_local:private@127.0.0.1:55432/cosanum_local'),
+    'postgresql://cosanum_api_local:private@127.0.0.1:55432/cosanum_local');
   for (const url of [
-    'postgresql://pilot:private@db.example.test/cosanum_local',
-    'postgresql://pilot:private@localhost:55432/cosanum_local',
-    'postgresql://pilot:private@127.0.0.1:55432/cosanum_local?host=db.example.test',
+    'postgresql://cosanum_api_local:private@db.example.test/cosanum_local',
+    'postgresql://cosanum_api_local:private@localhost:55432/cosanum_local',
+    'postgresql://cosanum_api_local:private@127.0.0.1:55432/cosanum_local?host=db.example.test',
+    'postgresql://cosanum_api_local:private@127.0.0.1:55432/other_database',
+    'postgresql://cosanum_local:private@127.0.0.1:55432/cosanum_local',
     'postgresql:///cosanum_local',
-  ]) assert.throws(() => validateLocalDatabaseUrl(url), /loopback/);
+  ]) assert.throws(() => validateLocalDatabaseUrl(url), /restricted cosanum_api_local role/);
 });
 
 test('local pilot serves durable assigned cases while external actions remain disabled', async () => {
@@ -90,12 +92,46 @@ test('local pilot serves durable assigned cases while external actions remain di
 
     const input = {
       id: 'REQ-LOCAL-1', requesterName: 'Synthetic CCS request', sourceTeam: 'CCS', reason: 'new_training', deadlineDate: '2026-11-20',
-      sessions: [{ sessionId: 'SES-LOCAL-1', attributes: { topicId: 'T-1', topicName: 'Synthetic topic', mode: 'single' } }],
+      sessions: [{ sessionId: 'SES-LOCAL-1', attributes: { topicId: 'TR-1', topicName: 'Wareneingang', mode: 'single' } }],
       cases: [{ caseId: 'CASE-LOCAL-1', sessionId: 'SES-LOCAL-1', participantKey: participant.actorKey,
         participantEmail: participant.email, trainerKey: 'HCM4', ownerKey: owner.actorKey,
-        attributes: { topicId: 'T-1', topicName: 'Synthetic topic', mode: 'single', targetLevel: 2 } }],
+        attributes: { topicId: 'TR-1', topicName: 'Wareneingang', mode: 'single', targetLevel: 2 } }],
     };
     assert.equal((await call(base, '/requests', { method: 'POST', token: participant.token, body: input })).status, 409);
+    const wrongOwner = await call(base, '/requests', { method: 'POST', token: owner.token, body: {
+      ...input, id: 'REQ-LOCAL-ORPHAN', sessions: [{ ...input.sessions[0], sessionId: 'SES-LOCAL-ORPHAN' }],
+      cases: [{ ...input.cases[0], caseId: 'CASE-LOCAL-ORPHAN', sessionId: 'SES-LOCAL-ORPHAN', ownerKey: 'UNKNOWN-OWNER' }],
+    } });
+    assert.equal(wrongOwner.status, 409);
+    assert.equal((await pool.query("SELECT count(*)::int AS count FROM workflow_requests WHERE request_id = 'REQ-LOCAL-ORPHAN'")).rows[0].count, 0);
+    const unknownTopic = await call(base, '/requests', { method: 'POST', token: owner.token, body: {
+      ...input, id: 'REQ-LOCAL-BAD-TOPIC', sessions: [{ ...input.sessions[0], sessionId: 'SES-LOCAL-BAD-TOPIC', attributes: { topicId: 'TR-X', topicName: 'Unknown', mode: 'single' } }],
+      cases: [{ ...input.cases[0], caseId: 'CASE-LOCAL-BAD-TOPIC', sessionId: 'SES-LOCAL-BAD-TOPIC' }],
+    } });
+    assert.equal(unknownTopic.status, 400);
+    assert.equal((await pool.query("SELECT count(*)::int AS count FROM workflow_requests WHERE request_id = 'REQ-LOCAL-BAD-TOPIC'")).rows[0].count, 0);
+    const unsupportedGroup = await call(base, '/requests', { method: 'POST', token: owner.token, body: {
+      ...input, id: 'REQ-LOCAL-GROUP', sessions: [{ sessionId: 'SES-LOCAL-GROUP', attributes: { topicId: 'TR-1', topicName: 'Wareneingang', mode: 'group' } }],
+      cases: [
+        { ...input.cases[0], caseId: 'CASE-LOCAL-GROUP-1', sessionId: 'SES-LOCAL-GROUP', attributes: { topicId: 'TR-1', topicName: 'Wareneingang', mode: 'group', targetLevel: 2 } },
+        { ...input.cases[0], caseId: 'CASE-LOCAL-GROUP-2', sessionId: 'SES-LOCAL-GROUP', participantKey: other.actorKey, participantEmail: other.email,
+          attributes: { topicId: 'TR-1', topicName: 'Wareneingang', mode: 'group', targetLevel: 2 } },
+      ],
+    } });
+    assert.equal(unsupportedGroup.status, 400);
+    assert.equal((await pool.query("SELECT count(*)::int AS count FROM workflow_requests WHERE request_id = 'REQ-LOCAL-GROUP'")).rows[0].count, 0);
+    const unknownPerson = await call(base, '/requests', { method: 'POST', token: owner.token, body: {
+      ...input, id: 'REQ-LOCAL-UNKNOWN', sessions: [{ ...input.sessions[0], sessionId: 'SES-LOCAL-UNKNOWN' }],
+      cases: [{ ...input.cases[0], caseId: 'CASE-LOCAL-UNKNOWN', sessionId: 'SES-LOCAL-UNKNOWN', participantKey: 'UNKNOWN' }],
+    } });
+    assert.equal(unknownPerson.status, 400);
+    const onePersonGroup = await call(base, '/requests', { method: 'POST', token: owner.token, body: {
+      ...input, id: 'REQ-LOCAL-GROUP-ONE', sessions: [{ sessionId: 'SES-LOCAL-GROUP-ONE', attributes: { topicId: 'TR-1', topicName: 'Wareneingang', mode: 'group' } }],
+      cases: [{ ...input.cases[0], caseId: 'CASE-LOCAL-GROUP-ONE', sessionId: 'SES-LOCAL-GROUP-ONE',
+        attributes: { topicId: 'TR-1', topicName: 'Wareneingang', mode: 'group', targetLevel: 2 } }],
+    } });
+    assert.equal(onePersonGroup.status, 201);
+    assert.equal((await call(base, '/cases/CASE-LOCAL-GROUP-ONE', { token: owner.token })).body.trainerKey, 'HCM4');
     assert.equal((await call(base, '/requests', { method: 'POST', token: owner.token, body: input })).status, 201);
     const replay = await call(base, '/requests', { method: 'POST', token: owner.token, body: input });
     assert.equal(replay.status, 200);
