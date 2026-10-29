@@ -141,7 +141,7 @@ export default function Home() {
     void navigator.clipboard.writeText(value).then(() => setNotice('Link kopiert.')).catch(() => setError('Kopieren fehlgeschlagen.'));
   }
   return <main className="shell">
-    <header className="mast"><div className="brand"><span>C</span><div><strong>Cosanum</strong><small>Training · Live-Demo</small></div></div><b className="pill">[DEMO] · SYNTHETISCH</b></header>
+    <header className="mast"><div className="brand"><span>C</span><div><strong>Cosanum</strong><small>Training · Demo 0.7</small></div></div><b className="pill">[DEMO] · SYNTHETISCH</b></header>
     <div className="wrap">
       <section className="hero"><small>ZWEI GERÄTE · EIN TRAININGSFALL</small><h1>{data ? (host ? 'Daniels Trainingszentrale' : 'Matthews Trainingsbereich') : 'Gemeinsame Trainingsdemo'}</h1><p>{data ? (host ? 'Plane eine Einzelschulung und verfolge jeden Schritt live auf beiden Geräten.' : 'Wähle einen Termin und bestätige nach dem Training deine Teilnahme.') : 'Öffne deinen persönlichen Link und melde dich mit dem zugewiesenen Google-Konto an.'}</p></section>
       {!data && <nav className="public-links" aria-label="Öffentliche Demo-Unterlagen"><a className="secondary" href="/presentation/index.html">Demoablauf & Quellen ↗</a><a className="secondary" href="/materials/index.html">Schulungsunterlagen ↗</a></nav>}

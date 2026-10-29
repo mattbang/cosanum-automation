@@ -4,7 +4,7 @@ from pathlib import Path
 from html import escape
 import re
 ROOT=Path(__file__).resolve().parents[2]; DOC=ROOT/'docs/demo-day'; OUT=ROOT/'shared-demo-site/public/presentation'
-LINKS={'FRICTION_REGISTER_DE.md':'friction.html','SOURCE_REGISTER_DE.md':'sources.html','RUNBOOK_DE.md':'runbook.html','MODEL_NOTES.md':'index.html'}
+LINKS={'FRICTION_REGISTER_DE.md':'friction.html','SOURCE_REGISTER_DE.md':'sources.html','RUNBOOK_DE.md':'runbook.html','MODEL_NOTES.md':'index.html','NOTIFICATION_CATALOGUE_DE.md':'messages.html'}
 def inline(raw):
  # Recognize explicit Markdown tokens while escaping every plain-text fragment.
  pattern=r'(`[^`]+`|\*\*[^*]+\*\*|\[[^\]]+\]\([^)]+\))'; result=[]
@@ -41,8 +41,8 @@ def convert(src):
   else:paragraph.append(line)
  flushpara();flushtable();return '\n'.join(out)
 STYLE='''body{font:18px/1.6 system-ui,-apple-system,sans-serif;color:#38233e;background:#faf8fb;margin:0}main,nav{max-width:1400px;margin:auto;padding:24px}nav{display:flex;gap:20px;flex-wrap:wrap;border-bottom:1px solid #d9cddd}a{color:#70436e}h1{font-size:2rem;line-height:1.25}h2{margin-top:2rem}p{max-width:100ch}table{border-collapse:collapse;width:100%;background:white;font-size:16px;line-height:1.5}th,td{text-align:left;vertical-align:top;padding:14px;border:1px solid #d9cddd}th{background:#eee4f2}tr:nth-child(even){background:#fcfafc}.table-scroll{overflow:auto}code{font-size:.9em;overflow-wrap:anywhere}pre{padding:18px;background:#eee4f2;overflow:auto}.notice{border-left:5px solid #bd695c;padding:16px;background:#fff0db}@media print{nav{display:none}body{font-size:11pt;background:white}main{padding:0}table{font-size:9pt}.table-scroll{overflow:visible}tr{break-inside:avoid}}'''
-for source,target in [('RUNBOOK_DE.md','runbook.html'),('FRICTION_REGISTER_DE.md','friction.html'),('SOURCE_REGISTER_DE.md','sources.html')]:
+for source,target in [('RUNBOOK_DE.md','runbook.html'),('FRICTION_REGISTER_DE.md','friction.html'),('SOURCE_REGISTER_DE.md','sources.html'),('NOTIFICATION_CATALOGUE_DE.md','messages.html')]:
  raw=(DOC/source).read_text();title=raw.splitlines()[0].lstrip('# ')
- html='<!doctype html>\n<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+escape(title)+'</title><style>'+STYLE+'</style></head><body><nav aria-label="Präsentationsunterlagen"><a href="index.html">Übersicht</a><a href="runbook.html">Vorführplan</a><a href="friction.html">Reibungspunkte</a><a href="sources.html">Quellen</a><a href="process-flow.svg">Gesamtprozess</a></nav><main>'+convert(raw)+'</main></body></html>\n'
+ html='<!doctype html>\n<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+escape(title)+'</title><style>'+STYLE+'</style></head><body><nav aria-label="Präsentationsunterlagen"><a href="index.html">Übersicht</a><a href="runbook.html">Vorführplan</a><a href="friction.html">Reibungspunkte</a><a href="sources.html">Quellen</a><a href="messages.html">Nachrichten</a><a href="process-flow.svg">Gesamtprozess</a></nav><main>'+convert(raw)+'</main></body></html>\n'
  (OUT/target).write_text(html)
-print('Rendered three escaped, dependency-free HTML handouts')
+print('Rendered four escaped, dependency-free HTML handouts')
