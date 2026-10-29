@@ -11,8 +11,14 @@ const compiled = new Module(source, module);
 compiled.filename = source;
 compiled.paths = Module._nodeModulePaths(path.dirname(source));
 compiled._compile(js, source);
-const { attentionCases, catalogue, createRequest, deadlineLabel, demoWeekSlots, eligibility, futureDeadline, initialState, matrixEntry, matrixPeople, planningSessions, requestForCase, selectionAvailability, sessionCases, slotAvailable, trainerChoices, transition, upcomingSessions } = compiled.exports;
+const { attentionCases, catalogue, createRequest, deadlineLabel, demoStorageKey, demoWeekSlots, eligibility, futureDeadline, initialState, matrixEntry, matrixPeople, planningSessions, requestForCase, selectionAvailability, sessionCases, slotAvailable, trainerChoices, transition, upcomingSessions } = compiled.exports;
 const requestInput = () => ({ requesterName: 'Person F', sourceTeam: 'CCS', reason: 'process_change', deadlineDate: futureDeadline(14) });
+
+test('web demo progress is reused within a Zurich day and resets after local midnight', () => {
+  const before = demoStorageKey(new Date('2026-10-28T22:59:00Z'));
+  assert.equal(before, demoStorageKey(new Date('2026-10-28T09:00:00Z')));
+  assert.notEqual(before, demoStorageKey(new Date('2026-10-28T23:01:00Z')));
+});
 
 test('home selectors group shared requests and sessions, and show actionable exceptions', () => {
   const state = initialState();

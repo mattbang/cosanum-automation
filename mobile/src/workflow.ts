@@ -22,7 +22,7 @@ export type CurrentTask = { action: string; state: 'suggested' | 'blocked' | 'co
 
 const demoTitles: Record<string, string> = { TC_R030: 'Wareneingang · Demo', TC_R052: 'Hochregallager · Demo' };
 export const catalogue = fixture.Topics.map(row => ({ id: String(row[0]), name: demoTitles[String(row[0])] || `Demo-Schulungsmodul ${row[0]}`, material: 'Übungsmaterial', practiceIndividual: String(row[7]) === 'Praxis einzeln', fixedTarget: String(row[8]) === 'fixed' ? Number(row[10]) : undefined }));
-const people = new Map(fixture.People.map(row => [String(row[0]), ({ MATT: 'Daniel / P&Q', MARIE: 'Marie / HCM4', WOHNUNG: 'Person A', SUMNER: 'Person B' } as Record<string, string>)[String(row[0])] || String(row[5])]));
+const people = new Map(fixture.People.map(row => [String(row[0]), ({ MATT: 'Daniel / P&Q', MARIE: 'HCM4-Trainer:in', WOHNUNG: 'Person A', SUMNER: 'Person B' } as Record<string, string>)[String(row[0])] || String(row[5])]));
 const topics = new Map(catalogue.map(topic => [topic.id, topic]));
 const levels = new Map(fixture.Skills.map(row => [`${row[0]}:${row[1]}`, row[2]]));
 export const requestReasonLabels: Record<RequestReason, string> = { new_training: 'Neue Schulung', retraining: 'Nachschulung', process_change: 'Prozessänderung' };
@@ -31,6 +31,7 @@ function zurichDate(date: Date): string {
   const part = (type: string) => parts.find(item => item.type === type)?.value || '';
   return `${part('year')}-${part('month')}-${part('day')}`;
 }
+export function demoStorageKey(date: Date): string { return `cosanum-synthetic-mobile-v5-${zurichDate(date)}`; }
 export function futureDeadline(daysAhead: number): string { return zurichDate(new Date(Date.now() + daysAhead * 86400000)); }
 export function deadlineLabel(date: string): string {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return date;

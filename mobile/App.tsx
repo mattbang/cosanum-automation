@@ -3,11 +3,12 @@ import { Linking, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, 
 import { StatusBar } from 'expo-status-bar';
 import * as Notifications from 'expo-notifications';
 import { participantCaseFromLink, participantDemoLink } from './src/deepLink';
-import { attentionCases, catalogue, createRequest, currentTask, deadlineLabel, demoWeekSlots, eligibility, initialState, learners, matrixEntry, matrixPeople, planningSessions, requestForCase, requestReasonLabels, selectionAvailability, sessionCases, slotAvailable, trainerChoices, transition, upcomingSessions, type DemoState, type RequestReason, type TrainingCase } from './src/workflow';
+import { attentionCases, catalogue, createRequest, currentTask, deadlineLabel, demoStorageKey, demoWeekSlots, eligibility, initialState, learners, matrixEntry, matrixPeople, planningSessions, requestForCase, requestReasonLabels, selectionAvailability, sessionCases, slotAvailable, trainerChoices, transition, upcomingSessions, type DemoState, type RequestReason, type TrainingCase } from './src/workflow';
 
 const plum = '#452347';
 const coral = '#b94355';
 const attentionChannel = 'demo-attention';
+const webStorageKey = demoStorageKey(new Date());
 if (Platform.OS !== 'web') Notifications.setNotificationHandler({ handleNotification: async () => ({ shouldShowBanner: false, shouldShowList: true, shouldPlaySound: false, shouldSetBadge: false }) });
 type Screen = 'home' | 'matrix' | 'calendar' | 'catalogue' | 'requests' | 'sessions' | 'attention' | 'create' | 'case';
 function statusText(entry: TrainingCase) {
@@ -17,7 +18,7 @@ function statusText(entry: TrainingCase) {
   if (entry.status === 'assessed') return entry.trainerPassed ? 'Bestätigung offen' : 'nicht bestanden';
   return ({ acknowledged: 'bestätigt', proof_ready: 'Archivprüfung offen', archived_verified: 'Kompetenzstand offen', complete: 'abgeschlossen' } as Record<string, string>)[entry.status] || entry.status;
 }
-function trainerName(key: string) { return key === 'MATT' ? 'Daniel / P&Q' : key === 'MARIE' ? 'Marie / HCM4' : key; }
+function trainerName(key: string) { return key === 'MATT' ? 'Daniel / P&Q' : key === 'MARIE' ? 'HCM4-Trainer:in' : key; }
 function Button({ title, onPress, secondary, disabled }: { title: string; onPress: () => void; secondary?: boolean; disabled?: boolean }) {
   return <Pressable accessibilityRole="button" disabled={disabled} onPress={onPress} style={[styles.button, secondary && styles.secondary, disabled && styles.disabled]}><Text style={[styles.buttonText, secondary && styles.secondaryText]}>{title}</Text></Pressable>;
 }
@@ -92,7 +93,7 @@ export default function App() {
   const [state, setState] = useState<DemoState>(() => {
     if (Platform.OS === 'web' && typeof window !== 'undefined') {
       try {
-        const saved = window.localStorage.getItem('cosanum-synthetic-mobile-v4');
+        const saved = window.localStorage.getItem(webStorageKey);
         if (saved) {
           const parsed = JSON.parse(saved);
           if (Array.isArray(parsed.requests) && Array.isArray(parsed.cases) && Array.isArray(parsed.slots)) return parsed as DemoState;
@@ -102,9 +103,10 @@ export default function App() {
     return initialState();
   });
   useEffect(() => {
-    if (Platform.OS === 'web' && typeof window !== 'undefined') window.localStorage.setItem('cosanum-synthetic-mobile-v4', JSON.stringify(state));
+    if (Platform.OS === 'web' && typeof window !== 'undefined') window.localStorage.setItem(webStorageKey, JSON.stringify(state));
   }, [state]);
   const [screen, setScreen] = useState<Screen>('home');
+  const [tourOpen, setTourOpen] = useState(false);
   const [selectedId, select] = useState<string | null>(null);
   const [topicId, setTopic] = useState(catalogue[0].id);
   const [mode, setMode] = useState<'group' | 'single'>('group');
@@ -185,45 +187,59 @@ export default function App() {
   }
   function sessionCard(group: TrainingCase[], kind: 'planning' | 'upcoming') {
     const first = group[0]; const slot = state.slots.find(item => item.id === first.slotId); const request = requestForCase(state, first);
-    return <Card key={first.sessionId}>
+    return <View key={first.sessionId} style={[styles.queueCard, kind === 'planning' ? styles.planningCard : styles.upcomingCard]}>
+      <View style={styles.cardTop}><Text style={[styles.badge, kind === 'planning' ? styles.planningBadge : styles.upcomingBadge]}>{kind === 'planning' ? 'TERMIN OFFEN' : 'GEBUCHT'}</Text><Text style={styles.cardKicker}>{first.mode === 'group' ? 'Gruppe' : 'Einzeln'}</Text></View>
       <Text style={styles.cardTitle}>{first.topicName}</Text>
       {kind === 'planning' ? <>
         <Text style={styles.body}>Angefragt von {request?.requesterName || 'Unbekannt'}{request?.sourceTeam ? ` · ${request.sourceTeam}` : ''}</Text>
-        <Text style={styles.meta}>{first.mode === 'group' ? 'Gruppe' : 'Einzeln'} · {request ? requestReasonLabels[request.reason] : 'Grund offen'} · Abschluss bis {request ? deadlineLabel(request.deadlineDate) : 'offen'}</Text>
-        <Text style={styles.meta}>{group.map(item => item.personName).join(', ')} · Termin offen</Text>
-      </> : <><Text style={styles.meta}>{first.requestId} · {first.mode === 'group' ? 'Gruppe' : 'Einzeln'}</Text><Text style={styles.body}>{slot?.label || 'Termin gebucht'} · Trainer {trainerName(first.trainerKey)}</Text><Text style={styles.meta}>{group.map(item => `${item.personName}: ${statusText(item)}`).join(' · ')}</Text></>}
-      <Button title={kind === 'planning' ? 'Anfrage ansehen und Termin planen' : 'Sitzung ansehen'} secondary onPress={() => openCase(first.id)} />
-    </Card>;
+        <Text style={styles.meta}>{request ? requestReasonLabels[request.reason] : 'Grund offen'} · Abschluss bis {request ? deadlineLabel(request.deadlineDate) : 'offen'}</Text>
+        <Text style={styles.meta}>{group.map(item => item.personName).join(', ')}</Text>
+      </> : <><Text style={styles.body}>{slot?.label || 'Termin gebucht'}</Text><Text style={styles.meta}>Trainer {trainerName(first.trainerKey)}</Text><Text style={styles.meta}>{group.map(item => `${item.personName}: ${statusText(item)}`).join(' · ')}</Text></>}
+      <Button title={kind === 'planning' ? 'Termin planen  →' : 'Sitzung ansehen  →'} secondary onPress={() => openCase(first.id)} />
+    </View>;
   }
   function attentionCard(entry: TrainingCase) {
-    return <Card key={entry.id}><Text style={styles.cardTitle}>{entry.personName} · {entry.topicName}</Text>
-      <Text style={styles.task}>{currentTask(entry).reason}</Text><Text style={styles.meta}>{entry.requestId} · {entry.id}</Text>
-      <Button title={entry.declined || (entry.status === 'assessed' && !entry.trainerPassed) ? 'Erneut planen' : 'Fall prüfen'} secondary onPress={() => openCase(entry.id)} />
-    </Card>;
+    return <View key={entry.id} style={[styles.queueCard, styles.attentionCard]}><View style={styles.cardTop}><Text style={[styles.badge, styles.attentionBadge]}>JETZT PRÜFEN</Text><Text style={styles.cardKicker}>Personenfall</Text></View>
+      <Text style={styles.cardTitle}>{entry.personName} · {entry.topicName}</Text>
+      <Text style={styles.task}>{currentTask(entry).reason}</Text>
+      <Button title={entry.declined || (entry.status === 'assessed' && !entry.trainerPassed) ? 'Erneut planen  →' : 'Fall prüfen  →'} secondary onPress={() => openCase(entry.id)} />
+    </View>;
   }
   const nav: { key: Screen; label: string }[] = [
     { key: 'home', label: 'Übersicht' }, { key: 'matrix', label: 'Matrix' }, { key: 'catalogue', label: 'Material' }, { key: 'calendar', label: 'Kalender' },
-    { key: 'requests', label: 'Terminbedarf' }, { key: 'sessions', label: 'Sitzungen' }, { key: 'attention', label: 'Hinweise' },
   ];
   return <View style={styles.root}><StatusBar style="dark" /><ScrollView ref={scrollRef} contentContainerStyle={styles.page}>
-    <View style={styles.row}><Text style={styles.brand}>COSANUM · SCHULUNG</Text><Text style={styles.marker}>LOKALE DEMO</Text></View>
+    <View style={styles.row}><Text style={styles.brand}>COSANUM · SCHULUNG</Text><Text style={styles.marker}>{Platform.OS === 'android' ? 'DEMO · BUILD 2' : 'LOKALE DEMO'}</Text></View>
     {participant ? <Participant key={participant.id} entry={participant} back={() => setParticipant(null)} submit={() => { act(participant.id, 'acknowledge'); setParticipant(null); }} /> : <>
-      <Text style={styles.title}>{screen === 'home' ? 'Guten Morgen, Daniel' : screen === 'matrix' ? 'Kompetenzmatrix' : screen === 'calendar' ? 'Kalenderverfügbarkeit' : screen === 'catalogue' ? 'Trainingsmaterial' : screen === 'requests' ? 'Terminbedarf' : screen === 'sessions' ? 'Geplante Sitzungen' : screen === 'attention' ? 'Deine Hinweise' : screen === 'create' ? 'Schulungsbedarf erfassen' : 'Personenfall'}</Text>
+      <Text style={styles.title}>{screen === 'home' ? 'Hallo Daniel' : screen === 'matrix' ? 'Kompetenzmatrix' : screen === 'calendar' ? 'Kalenderverfügbarkeit' : screen === 'catalogue' ? 'Trainingsmaterial' : screen === 'requests' ? 'Terminbedarf' : screen === 'sessions' ? 'Geplante Sitzungen' : screen === 'attention' ? 'Deine Hinweise' : screen === 'create' ? 'Schulungsbedarf erfassen' : 'Personenfall'}</Text>
       <Text style={styles.note}>Process & Quality · synthetische Daten · keine Google-Verbindung</Text>
       <View style={styles.nav}>{nav.map(item => <Pressable key={item.key} accessibilityRole="button" onPress={() => { setScreen(item.key); setError(''); }} style={[styles.navItem, screen === item.key && styles.navActive]}><Text style={[styles.navText, screen === item.key && styles.navActiveText]}>{item.label}</Text></Pressable>)}</View>
       {error ? <Text style={styles.warning}>{error}</Text> : null}
       {screen === 'home' ? <>
+        <View style={styles.hero}><Text style={styles.heroEyebrow}>DEIN NÄCHSTER SCHRITT</Text><Text style={styles.heroTitle}>{attention.length ? `${attention.length} ${attention.length === 1 ? 'Fall braucht' : 'Fälle brauchen'} deine Prüfung` : requests.length ? `${requests.length} ${requests.length === 1 ? 'Anfrage wartet' : 'Anfragen warten'} auf einen Termin` : 'Alles im Blick'}</Text><Text style={styles.heroBody}>{attention.length ? 'Prüfe den offenen Personenfall und plane bei Bedarf den nächsten Versuch.' : requests.length ? 'Sieh dir den Bedarf an und finde einen gemeinsamen Termin.' : 'Starte mit der Kompetenzmatrix oder erfasse einen neuen Bedarf.'}</Text><Pressable accessibilityRole="button" onPress={() => attention.length ? openCase(attention[0].id) : requests.length ? openCase(requests[0][0].id) : setScreen('matrix')} style={styles.heroButton}><Text style={styles.heroButtonText}>{attention.length ? 'Fall jetzt ansehen' : requests.length ? 'Termin planen' : 'Matrix ansehen'}  →</Text></Pressable></View>
+        <View style={styles.queueLinks}>
+          <Pressable accessibilityRole="button" accessibilityLabel={`${requests.length} Anfragen ohne Termin ansehen`} onPress={() => setScreen('requests')} style={styles.queueLink}><Text style={styles.queueNumber}>{requests.length}</Text><Text style={styles.queueLinkLabel}>Terminbedarf</Text></Pressable>
+          <Pressable accessibilityRole="button" accessibilityLabel={`${upcoming.length} geplante Sitzungen ansehen`} onPress={() => setScreen('sessions')} style={styles.queueLink}><Text style={styles.queueNumber}>{upcoming.length}</Text><Text style={styles.queueLinkLabel}>Sitzungen</Text></Pressable>
+          <Pressable accessibilityRole="button" accessibilityLabel={`${attention.length} Hinweise ansehen`} onPress={() => setScreen('attention')} style={styles.queueLink}><Text style={styles.queueNumber}>{attention.length}</Text><Text style={styles.queueLinkLabel}>Hinweise</Text></Pressable>
+        </View>
+        <Pressable accessibilityRole="button" accessibilityState={{ expanded: tourOpen }} onPress={() => setTourOpen(!tourOpen)} style={styles.tourToggle}><View><Text style={styles.tourEyebrow}>FÜR DIE VORFÜHRUNG</Text><Text style={styles.tourTitle}>Demo in vier Schritten</Text></View><Text style={styles.tourArrow}>{tourOpen ? '⌃' : '⌄'}</Text></Pressable>
+        {tourOpen ? <View style={styles.tourSteps}>{([
+          { number: '01', title: 'Kompetenz prüfen', detail: 'Matrix nach Thema oder Person öffnen', target: 'matrix' as Screen },
+          { number: '02', title: 'Bedarf erfassen', detail: 'Material wählen und Anfrage anlegen', target: 'catalogue' as Screen },
+          { number: '03', title: 'Termin planen', detail: 'Verfügbarkeit vergleichen und buchen', target: 'requests' as Screen },
+          { number: '04', title: 'Personenfall begleiten', detail: 'Beurteilung, Bestätigung und Nachweis zeigen', target: 'sessions' as Screen },
+        ]).map(step => <Pressable key={step.number} accessibilityRole="button" onPress={() => setScreen(step.target)} style={styles.tourStep}><Text style={styles.tourNumber}>{step.number}</Text><View style={styles.sourceText}><Text style={styles.tourStepTitle}>{step.title}</Text><Text style={styles.meta}>{step.detail}</Text></View><Text style={styles.sourceArrow}>›</Text></Pressable>)}</View> : null}
         <Text style={styles.section}>Drei Informationsquellen</Text>
         <View style={wide ? styles.sourceGrid : undefined}>
           <Pressable accessibilityRole="button" onPress={() => setScreen('matrix')} style={[styles.sourceRow, wide && styles.sourceCell]}><View style={styles.sourceText}><Text style={styles.cardTitle}>Kompetenzmatrix</Text><Text style={styles.meta}>5 Themen · 4 Demo-Personen · Stufen</Text></View><Text style={styles.sourceArrow}>›</Text></Pressable>
           <Pressable accessibilityRole="button" onPress={() => setScreen('catalogue')} style={[styles.sourceRow, wide && styles.sourceCell]}><View style={styles.sourceText}><Text style={styles.cardTitle}>Trainingsmaterial</Text><Text style={styles.meta}>5 Module · Bedarf erstellen</Text></View><Text style={styles.sourceArrow}>›</Text></Pressable>
           <Pressable accessibilityRole="button" onPress={() => setScreen('calendar')} style={[styles.sourceRow, wide && styles.sourceCell]}><View style={styles.sourceText}><Text style={styles.cardTitle}>Kalenderverfügbarkeit</Text><Text style={styles.meta}>Demo-Woche · frei/belegt</Text></View><Text style={styles.sourceArrow}>›</Text></Pressable>
         </View>
-        <Text style={styles.section}>Anfragen ohne Termin · {requests.length}</Text>
+        <Text style={styles.section}>Anfragen ohne Termin <Text style={styles.sectionCount}>{requests.length}</Text></Text>
         {requests.length ? requests.map(group => sessionCard(group, 'planning')) : <Text style={styles.note}>Alle Anfragen haben einen Termin.</Text>}
-        <Text style={styles.section}>Geplante Sitzungen · {upcoming.length}</Text>
+        <Text style={styles.section}>Geplante Sitzungen <Text style={styles.sectionCount}>{upcoming.length}</Text></Text>
         {upcoming.length ? upcoming.map(group => sessionCard(group, 'upcoming')) : <Text style={styles.note}>Noch keine kommenden Sitzungen.</Text>}
-        <Text style={styles.section}>Braucht Aufmerksamkeit · {attention.length}</Text>
+        <Text style={styles.section}>Braucht Aufmerksamkeit <Text style={styles.sectionCount}>{attention.length}</Text></Text>
         {attention.length ? attention.map(attentionCard) : <Text style={styles.note}>Keine offenen Hinweise.</Text>}
         <Button title="Demo zurücksetzen" secondary onPress={resetDemo} />
       </> : null}
@@ -301,13 +317,17 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#f7f4f8' }, page: { width: '100%', maxWidth: 1120, alignSelf: 'center', padding: 18, paddingTop: 48, paddingBottom: 80 },
-  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 16, flexWrap: 'wrap' },
-  brand: { color: plum, fontSize: 15, fontWeight: '800' }, marker: { color: '#fff', backgroundColor: plum, fontWeight: '800', fontSize: 11, padding: 7, borderRadius: 6 },
-  title: { color: plum, fontSize: 30, fontWeight: '800', marginBottom: 7 }, section: { color: plum, fontSize: 19, fontWeight: '700', marginTop: 19, marginBottom: 9 },
-  nav: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginBottom: 16 }, navItem: { backgroundColor: '#fff', borderColor: '#e6dce8', borderWidth: 1, paddingHorizontal: 11, paddingVertical: 9, borderRadius: 8 }, navActive: { backgroundColor: plum }, navText: { color: plum, fontSize: 12, fontWeight: '600' }, navActiveText: { color: '#fff' },
+  root: { flex: 1, backgroundColor: '#f8f6f8' }, page: { width: '100%', maxWidth: 1120, alignSelf: 'center', padding: 16, paddingTop: 26, paddingBottom: 80 },
+  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 12, flexWrap: 'wrap' },
+  brand: { color: plum, fontSize: 14, letterSpacing: 0.8, fontWeight: '800' }, marker: { color: plum, backgroundColor: '#efe4f1', fontWeight: '800', fontSize: 10, paddingHorizontal: 10, paddingVertical: 7, borderRadius: 99 },
+  title: { color: plum, fontSize: 27, fontWeight: '800', marginBottom: 4 }, section: { color: plum, fontSize: 18, fontWeight: '700', marginTop: 24, marginBottom: 10 }, sectionCount: { color: coral },
+  nav: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginBottom: 16 }, navItem: { backgroundColor: '#fff', borderColor: '#e6dce8', borderWidth: 1, paddingHorizontal: 12, minHeight: 44, justifyContent: 'center', borderRadius: 10 }, navActive: { backgroundColor: plum }, navText: { color: plum, fontSize: 12, fontWeight: '700' }, navActiveText: { color: '#fff' },
+  hero: { backgroundColor: plum, borderRadius: 20, padding: 21, marginBottom: 12 }, heroEyebrow: { color: '#f6b7c2', fontSize: 10, fontWeight: '800', letterSpacing: 1.2 }, heroTitle: { color: '#fff', fontSize: 22, fontWeight: '800', lineHeight: 28, marginTop: 8 }, heroBody: { color: '#e9dce9', fontSize: 13, lineHeight: 19, marginTop: 8 }, heroButton: { backgroundColor: '#fff', borderRadius: 10, minHeight: 46, justifyContent: 'center', alignItems: 'center', marginTop: 17, paddingHorizontal: 12 }, heroButtonText: { color: plum, fontWeight: '800', fontSize: 14 },
+  queueLinks: { flexDirection: 'row', gap: 8, marginBottom: 12 }, queueLink: { flex: 1, minHeight: 82, backgroundColor: '#fff', borderColor: '#e6dce8', borderWidth: 1, borderRadius: 14, alignItems: 'center', justifyContent: 'center', padding: 7 }, queueNumber: { color: plum, fontSize: 24, fontWeight: '800' }, queueLinkLabel: { color: '#635669', fontSize: 11, textAlign: 'center', fontWeight: '700', marginTop: 1 },
+  tourToggle: { backgroundColor: '#f1e9f1', borderRadius: 14, paddingHorizontal: 16, minHeight: 62, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, tourEyebrow: { color: coral, fontWeight: '800', fontSize: 9, letterSpacing: 1 }, tourTitle: { color: plum, fontWeight: '800', fontSize: 15, marginTop: 4 }, tourArrow: { color: plum, fontSize: 23, fontWeight: '700' }, tourSteps: { marginTop: 7, backgroundColor: '#fff', borderRadius: 14, borderWidth: 1, borderColor: '#e6dce8', overflow: 'hidden' }, tourStep: { flexDirection: 'row', alignItems: 'center', minHeight: 68, paddingHorizontal: 14, paddingVertical: 9, borderBottomColor: '#f0e9f0', borderBottomWidth: 1, gap: 12 }, tourNumber: { color: coral, fontSize: 15, fontWeight: '800' }, tourStepTitle: { color: plum, fontWeight: '700', fontSize: 14 },
   sourceGrid: { flexDirection: 'row', gap: 10 }, sourceCell: { flex: 1, minWidth: 0 }, sourceRow: { backgroundColor: '#fff', borderColor: '#e6dce8', borderWidth: 1, borderRadius: 12, padding: 14, marginBottom: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, minHeight: 76 }, sourceText: { flex: 1 }, sourceArrow: { color: plum, fontSize: 26, fontWeight: '700' },
   card: { backgroundColor: '#fff', borderColor: '#e6dce8', borderWidth: 1, borderRadius: 15, padding: 17, marginBottom: 12 },
+  queueCard: { backgroundColor: '#fff', borderRadius: 16, padding: 17, marginBottom: 11, borderWidth: 1, borderColor: '#e6dce8', borderLeftWidth: 4 }, planningCard: { borderLeftColor: '#c88145' }, upcomingCard: { borderLeftColor: '#5c8296' }, attentionCard: { borderLeftColor: coral, backgroundColor: '#fffafb' }, cardTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 9, gap: 8 }, badge: { borderRadius: 99, paddingHorizontal: 9, paddingVertical: 5, fontSize: 9, fontWeight: '800', overflow: 'hidden', letterSpacing: 0.5 }, planningBadge: { color: '#875124', backgroundColor: '#fff0dc' }, upcomingBadge: { color: '#365f74', backgroundColor: '#e5f1f6' }, attentionBadge: { color: '#982c40', backgroundColor: '#fce6e9' }, cardKicker: { color: '#7b7080', fontSize: 11, fontWeight: '600' },
   cardTitle: { color: '#302536', fontSize: 18, fontWeight: '700' }, body: { color: '#302536', fontSize: 15, lineHeight: 22, marginTop: 7 },
   note: { color: '#635669', fontSize: 14, lineHeight: 21, marginBottom: 16 }, meta: { color: '#635669', fontSize: 12, lineHeight: 18, marginTop: 6 }, task: { color: plum, fontSize: 14, fontWeight: '600', marginTop: 12 },
   button: { backgroundColor: coral, minHeight: 44, paddingHorizontal: 15, paddingVertical: 11, borderRadius: 9, alignItems: 'center', justifyContent: 'center', marginTop: 13 },
