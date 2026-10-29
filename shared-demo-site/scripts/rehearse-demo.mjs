@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
 const base = process.argv[2] || 'http://127.0.0.1:4176';
+const creatorCode = process.env.DEMO_CREATOR_CODE || 'local-rehearsal';
 assert.ok(new URL(base).hostname === '127.0.0.1', 'Rehearsal only runs against loopback');
 const checks=[];
 const req=async(path,options={})=>{const r=await fetch(base+path,options);return {status:r.status,body:await r.json(),cookie:r.headers.get('set-cookie')?.split(';')[0]};};
 assert.equal((await req('/api/rooms',{method:'POST'})).status,403); checks.push('local creation code required');
-const made=await req('/api/rooms',{method:'POST',headers:{'X-Demo-Code':'local-rehearsal'}});assert.equal(made.status,200); assert.ok(made.cookie); const {id,hostToken,guestToken}=made.body;
+const made=await req('/api/rooms',{method:'POST',headers:{'X-Demo-Code':creatorCode}});assert.equal(made.status,200); assert.ok(made.cookie); const {id,hostToken,guestToken}=made.body;
 const url='/api/rooms/'+id;
 assert.equal((await req(url)).status,401);
 let host=await req(url,{headers:{Authorization:'Bearer '+hostToken}});assert.equal(host.body.role,'host');

@@ -22,7 +22,7 @@ export function resolveNativePostgresTarget(connectionString, schemaName) {
 /** Confirms that unqualified migrations can see only the requested empty schema. */
 export async function assertEmptyNativeSchema(pool, schemaName) {
   const path = await pool.query(
-    `SELECT current_schema() AS current_schema, current_schemas(false) AS schemas,
+    `SELECT current_schema() AS current_schema, to_json(current_schemas(false)) AS schemas,
             current_setting('search_path') AS search_path`,
   );
   const target = path.rows[0];

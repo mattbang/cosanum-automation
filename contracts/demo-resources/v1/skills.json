@@ -1,0 +1,98 @@
+[
+  {
+    "employee_id": "EMP-001",
+    "topic_id": "TR-1",
+    "topic": "Wareneingang",
+    "level": 1,
+    "status": "Grundschulung abgeschlossen",
+    "synthetic": true
+  },
+  {
+    "employee_id": "EMP-001",
+    "topic_id": "TR-2",
+    "topic": "Kommissionierung",
+    "level": 0,
+    "status": "Noch nicht geschult",
+    "synthetic": true
+  },
+  {
+    "employee_id": "EMP-001",
+    "topic_id": "TR-3",
+    "topic": "Qualitätskontrolle",
+    "level": 1,
+    "status": "Grundschulung abgeschlossen",
+    "synthetic": true
+  },
+  {
+    "employee_id": "EMP-001",
+    "topic_id": "TR-4",
+    "topic": "Prozessänderung",
+    "level": 0,
+    "status": "Schulung geplant",
+    "synthetic": true
+  },
+  {
+    "employee_id": "EMP-002",
+    "topic_id": "TR-1",
+    "topic": "Wareneingang",
+    "level": 2,
+    "status": "Training abgeschlossen",
+    "synthetic": true
+  },
+  {
+    "employee_id": "EMP-002",
+    "topic_id": "TR-2",
+    "topic": "Kommissionierung",
+    "level": 3,
+    "status": "Training abgeschlossen",
+    "synthetic": true
+  },
+  {
+    "employee_id": "EMP-002",
+    "topic_id": "TR-3",
+    "topic": "Qualitätskontrolle",
+    "level": 1,
+    "status": "Auffrischung vorgesehen",
+    "synthetic": true
+  },
+  {
+    "employee_id": "EMP-002",
+    "topic_id": "TR-4",
+    "topic": "Prozessänderung",
+    "level": 0,
+    "status": "Noch nicht geschult",
+    "synthetic": true
+  },
+  {
+    "employee_id": "EMP-003",
+    "topic_id": "TR-1",
+    "topic": "Wareneingang",
+    "level": 3,
+    "status": "Training abgeschlossen",
+    "synthetic": true
+  },
+  {
+    "employee_id": "EMP-003",
+    "topic_id": "TR-2",
+    "topic": "Kommissionierung",
+    "level": 2,
+    "status": "Training abgeschlossen",
+    "synthetic": true
+  },
+  {
+    "employee_id": "EMP-003",
+    "topic_id": "TR-3",
+    "topic": "Qualitätskontrolle",
+    "level": 2,
+    "status": "Training abgeschlossen",
+    "synthetic": true
+  },
+  {
+    "employee_id": "EMP-003",
+    "topic_id": "TR-4",
+    "topic": "Prozessänderung",
+    "level": 1,
+    "status": "Nachschulung vorgesehen",
+    "synthetic": true
+  }
+]

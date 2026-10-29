@@ -4,10 +4,10 @@ Stand 29.10.2026 · öffentliche Demo enthält nur synthetische Daten. Dieses Re
 
 | Quelle | Heute in der gemeinsamen Site | Führender Stand / Zugriff | Fehlende Verbindung und Zielbild |
 | --- | --- | --- | --- |
-| Mitarbeitende | Matthew, Annina, Marko aus `lib/demo.ts`; nur Matthew zugewiesen | Synthetischer Quellcode; Raumrolle serverseitig prüfen | Produktiver Personalstamm, Eintritt/Austritt und weitere Kontenzuordnung geplant |
-| Schulungskatalog | Vier feste Themen aus `lib/demo.ts`, Lernpakete aus `lib/materials.ts` | Öffentliche, neu erstellte Demo-Unterlagen | Freigegebener Themenkatalog mit Verantwortlichen und Versionen geplant |
+| Mitarbeitende | Matthew, Annina, Marko aus `contracts/demo-resources/v1/people.json`; nur Matthew zugewiesen | Versionierte synthetische Quelle; Raumrolle serverseitig prüfen | Produktiver Personalstamm, Eintritt/Austritt und weitere Kontenzuordnung geplant |
+| Schulungskatalog | Vier Themen aus `contracts/demo-resources/v1/topics.json`, Lernpakete aus `materials.json` | Getrennte versionierte synthetische Quellen und öffentliche Demo-Unterlagen | Freigegebener Themenkatalog mit Verantwortlichen und Versionen geplant |
 | Materialordner | Synthetisches Kurzmaterial und Vorbereitungsblatt im öffentlichen Site-Bestand | Links des Demo-Katalogs; keine privaten Originale | Betrieblicher Drive-Ordner mit Zugriffsrechten und freigegebenen Arbeitsanweisungen geplant |
-| Kompetenzmatrix | Fiktiver Ausgangsstand; bestandener, persönlich bestätigter Fall aktualisiert Raumzustand | Synthetische D1-Raumdaten; kein Google-Sheet-Schreibzugriff | Produktive Matrix mit Versions-/Konfliktprüfung und Nachweisbindung geplant |
+| Kompetenzmatrix | Fiktiver Ausgangsstand aus `contracts/demo-resources/v1/skills.json`; bestandener, persönlich bestätigter Fall aktualisiert Raumzustand | Versionierte Basis und synthetische D1-Raumdaten; kein Google-Sheet-Schreibzugriff | Produktive Matrix mit Versions-/Konfliktprüfung und Nachweisbindung geplant |
 | Workflow und Audit | Angebote, Antworten, Start, Absage, Bericht, Bestätigung; gemeinsamer Verlauf | Cloud-D1-Raumzustand; beide Geräte lesen etwa alle 3 Sekunden | Kein revisionssicheres Audit, keine Doc/PDF-Belege oder verifizierten Archivkopien |
 | Kalender | Synthetische Frei-/Belegt-Fenster von Daniel und Matthew für die nächsten fünf Arbeitstage | Gemeinsam freie Demo-Fenster, Zürich-Zeit/DST und Wochenende berücksichtigt; keine Google-Free/Busy-Abfrage oder Ereignisbuchung | Zugeordnete Google-Kalender, Verfügbarkeitsprüfung und Buchungsreadback geplant |
 | Externe Anfragen | Keine automatische Übernahme | Bedarf wird durch Daniel eingegeben | Anfragen aus Änderungen, Qualität oder weiteren Kanälen mit Herkunft, Prüfung und Dublettenschutz geplant |
@@ -18,7 +18,7 @@ Die private Apps-Script-Anwendung ist ein eigener Arbeitsstrang. Ihre dokumentie
 
 ## Spaltenzuordnung für getrennte Zielquellen
 
-Die drei öffentlichen CSV-Endpunkte sind synthetische Cloud-Dateien, keine verbundenen Google Sheets. `/api/sources` liefert Metadaten; `/api/sources/employees`, `/api/sources/catalogue` und `/api/sources/matrix` liefern CSV. `/materials/index.html` erschliesst die neuen Demo-Unterlagen. Die Matrix-CSV zeigt den fiktiven Ausgangsstand; die dynamische Raum-Matrix muss im Raum geprüft werden.
+Die drei öffentlichen CSV-Endpunkte sind synthetische Cloud-Dateien, keine verbundenen Google Sheets. `/api/sources` liefert Metadaten; `/api/sources/employees`, `/api/sources/catalogue` und `/api/sources/matrix` liefern CSV aus den getrennten versionierten Quellen. `/materials/index.html` erschliesst die neuen Demo-Unterlagen. Die Matrix-CSV zeigt den fiktiven Ausgangsstand; die dynamische Raum-Matrix muss im Raum geprüft werden. `sync-site.mjs` kopiert die vier Dateien für die eigenständige Site-Paketierung.
 
 | Bestehendes Schema (`apps-script/Schema.gs`) | Getrennte Zielquelle / Übernahmeplan | Heutige Site-CSV |
 | --- | --- | --- |

@@ -1,10 +1,28 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { currentSkillMatrix, initialState, LIVE_PARTICIPANT, PARTICIPANTS, transition } from './demo.ts';
+import { currentSkillMatrix, DEMO_SKILL_MATRIX, initialState, LIVE_PARTICIPANT, PARTICIPANTS, TOPICS, transition } from './demo.ts';
+import { MATERIALS } from './materials.ts';
+import { sourceRows } from './sources.ts';
 
 const now = '2026-10-29T12:00:00.000Z';
 const first = '2026-10-30T09:00:00.000Z';
 const second = '2026-10-31T09:00:00.000Z';
+
+test('roster, catalogue, skill matrix and material exports share the same synthetic source', () => {
+  const employees = sourceRows('employees')!;
+  const catalogue = sourceRows('catalogue')!;
+  const matrix = sourceRows('matrix')!;
+  assert.deepEqual(employees.slice(1, 4).map(row => `${row[1]} · ${row[2]}`), PARTICIPANTS);
+  assert.deepEqual(catalogue.slice(1).map(row => row[1]), TOPICS);
+  assert.deepEqual(MATERIALS.map(item => item.topic), TOPICS);
+  assert.equal(matrix.length, 13);
+  for (const row of matrix.slice(1)) {
+    const person = employees.find(item => item[0] === row[0]);
+    assert.ok(person);
+    const displayName = `${person[1]} · ${person[2]}`;
+    assert.deepEqual(DEMO_SKILL_MATRIX[displayName][String(row[2])], { level: row[3], status: row[4] });
+  }
+});
 
 test('two-device path rejects one slot, accepts another, records proof and skill', () => {
   let state = transition(initialState(), 'host', { type: 'invite', topic: 'Wareneingang', participant: LIVE_PARTICIPANT, offers: [first, second], targetLevel: 2 }, now);

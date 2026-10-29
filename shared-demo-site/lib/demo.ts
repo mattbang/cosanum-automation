@@ -1,3 +1,7 @@
+import people from './demo-resources/v1/people.json' with { type: 'json' };
+import topics from './demo-resources/v1/topics.json' with { type: 'json' };
+import skills from './demo-resources/v1/skills.json' with { type: 'json' };
+
 export type Stage = 'draft' | 'invited' | 'confirmed' | 'in_progress' | 'trainer_reported' | 'completed' | 'cancelled' | 'needs_reschedule';
 export type TrainingRequest = { id:string; topic:string; participant:string; requestedBy:string; source:string; reason:string; deadline:string; targetLevel:number };
 export type DemoCase = {
@@ -28,29 +32,22 @@ export type DemoAction =
   | { type: 'report'; report: string; result: 'passed' | 'failed' }
   | { type: 'confirm_participation' };
 
-export const TOPICS = ['Wareneingang', 'Kommissionierung', 'Qualitätskontrolle', 'Prozessänderung'];
-export const PARTICIPANTS = ['Matthew · Mitarbeiter 1', 'Annina · Mitarbeiter 2', 'Marko · Mitarbeiter 3'];
-export const LIVE_PARTICIPANT = PARTICIPANTS[0];
-export const DEMO_SKILL_MATRIX: SkillMatrix = {
-  [PARTICIPANTS[0]]: {
-    Wareneingang: { level: 1, status: 'Grundschulung abgeschlossen' },
-    Kommissionierung: { level: 0, status: 'Noch nicht geschult' },
-    Qualitätskontrolle: { level: 1, status: 'Grundschulung abgeschlossen' },
-    Prozessänderung: { level: 0, status: 'Schulung geplant' },
-  },
-  [PARTICIPANTS[1]]: {
-    Wareneingang: { level: 2, status: 'Training abgeschlossen' },
-    Kommissionierung: { level: 3, status: 'Training abgeschlossen' },
-    Qualitätskontrolle: { level: 1, status: 'Auffrischung vorgesehen' },
-    Prozessänderung: { level: 0, status: 'Noch nicht geschult' },
-  },
-  [PARTICIPANTS[2]]: {
-    Wareneingang: { level: 3, status: 'Training abgeschlossen' },
-    Kommissionierung: { level: 2, status: 'Training abgeschlossen' },
-    Qualitätskontrolle: { level: 2, status: 'Training abgeschlossen' },
-    Prozessänderung: { level: 1, status: 'Nachschulung vorgesehen' },
-  },
-};
+export const TOPICS = topics.map(item => item.topic);
+export const PARTICIPANTS = people.filter(item => item.role.startsWith('Mitarbeiter '))
+  .sort((a, b) => a.employee_id.localeCompare(b.employee_id)).map(item => `${item.name} · ${item.role}`);
+const assignedDemoPerson = people.find(item => item.employee_id === 'EMP-001');
+if (!assignedDemoPerson) throw new Error('Assigned synthetic participant EMP-001 is missing');
+export const LIVE_PARTICIPANT = `${assignedDemoPerson.name} · ${assignedDemoPerson.role}`;
+const namesById = new Map(people.map(item => [item.employee_id, `${item.name} · ${item.role}`]));
+const topicsById = new Map(topics.map(item => [item.topic_id, item.topic]));
+export const DEMO_SKILL_MATRIX: SkillMatrix = Object.fromEntries(PARTICIPANTS.map(person => [person, {}]));
+for (const cell of skills) {
+  const person = namesById.get(cell.employee_id);
+  const topic = topicsById.get(cell.topic_id);
+  if (person && topic && DEMO_SKILL_MATRIX[person]) {
+    DEMO_SKILL_MATRIX[person][topic] = { level: cell.level, status: cell.status };
+  }
+}
 
 export function currentSkillMatrix(state: DemoState): SkillMatrix {
   return Object.fromEntries(PARTICIPANTS.map(person => [person, { ...DEMO_SKILL_MATRIX[person], ...(state.skillMatrix?.[person] || {}) }]));

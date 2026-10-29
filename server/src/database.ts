@@ -31,8 +31,7 @@ export async function inTransaction<T>(pool: SqlPool, operation: (connection: Sq
 }
 
 export async function runMigrations(pool: SqlPool): Promise<void> {
-  const directory = join(dirname(fileURLToPath(import.meta.url)), '../migrations');
-  const files = (await readdir(directory)).filter(file => /^\d+_[a-z0-9_-]+\.sql$/.test(file)).sort();
+  const { directory, files } = await migrationFiles();
   await pool.query(`CREATE TABLE IF NOT EXISTS schema_migrations (
     migration_id text PRIMARY KEY,
     checksum_sha256 text NOT NULL,
@@ -51,4 +50,23 @@ export async function runMigrations(pool: SqlPool): Promise<void> {
       await connection.query('INSERT INTO schema_migrations (migration_id, checksum_sha256) VALUES ($1, $2)', [file, checksum]);
     });
   }
+}
+
+/** Runtime check for a least-privilege API role. Migration DDL runs separately as an admin. */
+export async function verifyMigrations(pool: SqlPool): Promise<void> {
+  const { directory, files } = await migrationFiles();
+  for (const file of files) {
+    const sql = await readFile(join(directory, file), 'utf8');
+    const checksum = createHash('sha256').update(sql).digest('hex');
+    const result = await pool.query<{ checksum_sha256: string }>(
+      'SELECT checksum_sha256 FROM schema_migrations WHERE migration_id = $1', [file],
+    );
+    if (result.rows[0]?.checksum_sha256 !== checksum) throw new Error(`Migration missing or changed: ${file}`);
+  }
+}
+
+async function migrationFiles(): Promise<{ directory: string; files: string[] }> {
+  const directory = join(dirname(fileURLToPath(import.meta.url)), '../migrations');
+  const files = (await readdir(directory)).filter(file => /^\d+_[a-z0-9_-]+\.sql$/.test(file)).sort();
+  return { directory, files };
 }

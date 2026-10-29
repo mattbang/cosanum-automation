@@ -13,7 +13,7 @@ The assigned trainer starts a room after verified Google sign-in, chooses a topi
 The site returns separate presenter and participant links. A participant can reject
 one proposed window and accept another. Both views poll the same persisted room
 every three seconds. Daniel can start early, cancel, or file a trainer report.
-The participant then confirms participation; a passed result updates the
+The participant then confirms participation; a passed result updates
 Matthew's synthetic skill status. Both views show the activity timeline and
 completed training history. Annina (Mitarbeiter 2) and Marko (Mitarbeiter 3)
 appear with fictitious skill statuses but cannot receive the live participant
@@ -56,6 +56,6 @@ Worker. Keep `.dev.vars`, tokens, and account identifiers out of source.
 
 ## Demo-day presentation
 
-`/presentation/index.html` explains the process and sources, including planned capabilities. `/materials/index.html` serves eight synthetic lesson/preparation documents before sign-in. `/api/sources` registers separate employee, catalogue, and competency-matrix CSV exports. These are fictitious baseline snapshots; room outcomes remain in D1 and do not rewrite these snapshots or a Google Sheet. The five-day calendar is synthetic; its mutually free proposals skip weekends and retain Europe/Zurich wall-clock times. Employee targets are 1–3; trainer qualification is a separate future rule.
+`/presentation/index.html` explains the process and sources, including planned capabilities. `/materials/index.html` serves eight synthetic lesson/preparation documents before sign-in. `/api/sources` registers separate employee, catalogue, and competency-matrix CSV exports. The roster, catalogue, starting matrix, and material cards are copied from the four separate versioned resources in `../contracts/demo-resources/v1/`; `npm run build` checks for stale copies in this repository. These are fictitious baseline snapshots; room outcomes remain in D1 and do not rewrite these snapshots or a Google Sheet. The five-day calendar is synthetic; its mutually free proposals skip weekends and retain Europe/Zurich wall-clock times. Employee targets are 1–3; trainer qualification is a separate future rule.
 
-Run `node scripts/rehearse-demo.mjs` against a loopback preview on port 4176 configured with `DEMO_CREATOR_CODE=local-rehearsal`. It validates role cookies and the shared synthetic path without Google credentials or outbound delivery. Google acceptance, automatic email, native push, production Calendar/Sheets, and iPhone signing remain separate gates.
+Run `node scripts/rehearse-demo.mjs` against a loopback preview on port 4176 configured with a private `DEMO_CREATOR_CODE`. The script reads that code from the local environment. For the built Worker preview, Wrangler reads `.dev.vars` from `dist/server/`; copy the local private file there with mode `0600` for the rehearsal and remove that copy afterward. The rehearsal validates role cookies and the shared synthetic path without Google credentials or outbound delivery. Google acceptance, automatic email, native push, production Calendar/Sheets, and iPhone signing remain separate gates.
