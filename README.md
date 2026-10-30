@@ -2,6 +2,8 @@
 
 This project tests an end-to-end logistics training workflow with synthetic people and five representative topics. Process & Quality enters a need, checks skill prerequisites and calendars, books a session, collects a trainer result and each participant's own acknowledgement, then verifies an individual proof in both Google Drive and a local archive before updating the demo skill matrix.
 
+**Source consolidation, 30 October 2026:** The [branch resolution roadmap](docs/BRANCH_RESOLUTION_2026-10-30.md) and [code review record](docs/INTEGRATION_REVIEW_2026-10-30.md) cover the mobile app, durable backend, participant page, shared D1 demo, notification intents and contributor tooling. The hosted shared demo remains the documented two-device path; PostgreSQL is a local pilot and service foundation. Device, connected-service, proof/archive and delivery acceptance remain open.
+
 **Current status, 24 October 2026:** [PR #39](https://github.com/mattbang/cosanum-automation/pull/39) integrated the training-app source, and the dedicated demo account now runs owner-only version 6. The numbered deployment has not passed a fresh complete workflow run. The earlier personal-account prototype remains historical. The [feature register](docs/FEATURE_REGISTER.md) distinguishes implemented, deployed, and connected-accepted behavior.
 
 ## Start here

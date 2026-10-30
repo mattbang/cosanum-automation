@@ -71,3 +71,10 @@ Proof creation and the verified `proof_id`/`proof_version` transition are not im
 `server/Dockerfile` and `server/deploy/cloud-run-service.yaml` are deployment templates. Replace the project, region, instance, repository, image tag, and runtime service account placeholders. Provision Cloud SQL, a Secret Manager value named `cosanum-api-database-url`, and the required least-privilege IAM bindings separately. The secret's PostgreSQL URL must use the Cloud SQL Unix socket path `/cloudsql/PROJECT:REGION:INSTANCE` as its `host` parameter. Apply migrations through a reviewed one-off job before routing traffic.
 
 The service template does not grant public Cloud Run invocation. Keep that IAM boundary explicit. Do not point the template at the historical root clasp project or the Apps Script deployment. No OAuth flow, Google API scope, cloud service, deployment, or connected write was created by this work.
+
+
+## Integrated source review · 30 October 2026
+
+The [integration review](../docs/INTEGRATION_REVIEW_2026-10-30.md) combines the backend, participant rehearsal, local pilot and notification-intent branches. Request creation now locks the exact active identity inside its transaction; hosted acknowledgements require the assessed stage for a new response; participant-link registration requires one exact active directory mapping even under a concurrent conflict. The native PostgreSQL 18.4 harness passed separate-backend revocation and conflicting/inactive registration races, booking conflict, response replay and rollback on the integrated source.
+
+There are now three checksum-tracked migrations. A pilot database containing only 001/002 needs migration 003 applied separately by its admin before the least-privilege runtime starts. Do not run migration DDL as the pilot API role. Notification intents still have no delivery route or worker; production identity, Google actions, proof registration and connected deployment retain the gates in `docs/CONNECTED_HANDOFF.md`.
