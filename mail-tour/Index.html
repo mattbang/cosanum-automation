@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Schulungsdemo · E-Mail-Rundgang</title><style>
+:root{color-scheme:light;--plum:#452347;--rose:#ca5864;--paper:#f7f4f8;--line:#e9e0ea;--ink:#352b38}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.5 system-ui,sans-serif}
+main{max-width:720px;margin:auto;padding:22px 16px 60px}h1{color:var(--plum);line-height:1.2}
+.marker{display:inline-block;background:#ffe0a3;color:#543600;font-weight:800;padding:3px 8px;border-radius:5px}
+.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:22px;margin-top:18px}
+label.field{display:block;margin:16px 0 5px;font-weight:650}input,select,button{font:inherit;min-height:44px;padding:8px 10px;border-radius:9px}
+input[type=email],select{width:100%;border:1px solid #a8bac8;background:white}.checks label{display:block;padding:6px 0}
+input[type=checkbox]{min-height:auto;width:19px;height:19px;vertical-align:middle}.muted{color:#706273}.status{padding:10px 14px;background:#fbf4f5;border-left:4px solid var(--rose);margin-top:16px}
+button{background:var(--rose);color:white;border:0;margin-top:16px;cursor:pointer}button:disabled{opacity:.55;cursor:default}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--plum);outline-offset:2px}[hidden]{display:none!important}
+</style></head><body><main><span class="marker">[DEMO]</span><h1>E-Mail-Rundgang selbst testen</h1>
+<p>Alle Rollen, Termine und Nachrichten sind erfunden. Nach Ihrer Bestätigung erhalten Sie die gesamte Nachrichtenfolge an Ihre eigene Adresse. Die Betreffzeile zeigt jeweils die gemeinte Rolle.</p>
+<section id="request" class="card"><h2>Beispiel auswählen</h2><form id="tour-form">
+<label class="field" for="email">Ihre E-Mail-Adresse</label><input id="email" type="email" required autocomplete="email" maxlength="254">
+<label class="field" for="mode">Schulungsmodus</label><select id="mode"><option value="group">Gruppenschulung</option><option value="individual">Einzeltraining</option></select>
+<label class="field" for="trainer">Schulende Rolle</label><select id="trainer"><option value="pq">Process &amp; Quality</option><option value="lead">Gruppenleitung</option><option value="hcm4">HCM4</option></select>
+<div class="field">Teilnehmende Rollen</div><div class="checks" id="participants"><label><input type="checkbox" value="ma1" checked> Mitarbeiter 1</label><label><input type="checkbox" value="ma2" checked> Mitarbeiter 2</label><label><input type="checkbox" value="ma3"> Mitarbeiter 3</label></div>
+<label class="field" for="day">Tag in der kommenden Woche</label><select id="day"><option value="0">Montag</option><option value="1">Dienstag</option><option value="2">Mittwoch</option><option value="3">Donnerstag</option><option value="4">Freitag</option></select>
+<label class="field" for="hour">Gemeinsame freie Zeit (Europe/Zurich)</label><select id="hour"></select>
+<p id="selection" class="muted" role="status"></p><button id="request-button" type="submit">Bestätigungs-E-Mail anfordern</button></form>
+<p class="muted">Der Link in der Bestätigungs-E-Mail gilt 20 Minuten. Erst ein weiterer Klick auf der Bestätigungsseite startet die Demo-Nachrichten. Pro Adresse ist eine Anfrage am Tag möglich.</p>
+<p id="request-status" class="status" role="status" hidden></p></section>
+<section id="confirm" class="card" hidden><h2>Adresse bestätigen</h2><p>Wenn Sie diese E-Mail angefordert haben, starten Sie jetzt den Versand der synthetischen Nachrichten. Der Bestätigungslink kann nur einmal genutzt werden.</p><button id="confirm-button" type="button">Demo-Nachrichten senden</button><p id="confirm-status" class="status" role="status" hidden></p></section>
+<p class="muted">Diese Seite erstellt keine Schulung, Kalendereinladung, Formantwort oder Skilländerung.</p>
+<input id="token" type="hidden" value="<?= token ?>">
+</main><script>
+const BUSY={hcm4:[[10,14],[9,13],[11,15],[10,16],[13]],pq:[[9,15],[11,14],[10],[13,16],[9,14]],lead:[[11,16],[10,14],[9,15],[13],[9,16]],ma1:[[9,15],[11,14],[10],[13,16],[9,14]],ma2:[[11,16],[10,15],[9,13],[14],[10]],ma3:[[13],[9,14],[10,16],[11,15],[9,13]]};
+const HOURS=[9,10,11,13,14,15,16];
+const $=id=>document.getElementById(id);
+const participants=()=>[...document.querySelectorAll('#participants input:checked')].map(input=>input.value);
+function update(){
+  const people=participants(),mode=$('mode').value,trainer=$('trainer');
+  trainer.querySelector('[value=hcm4]').disabled=mode==='group'&&people.length>1;
+  if(trainer.value==='hcm4'&&people.length>1&&mode==='group')trainer.value='pq';
+  const valid=people.length>0&&(mode==='group'||people.length===1);
+  const selected=[trainer.value,...people],day=Number($('day').value),previous=$('hour').value;
+  $('hour').replaceChildren();
+  if(valid)HOURS.filter(hour=>selected.every(role=>!BUSY[role][day].includes(hour))).forEach(hour=>{
+    const option=document.createElement('option');option.value=String(hour);option.textContent=String(hour).padStart(2,'0')+':00–'+String(hour+1).padStart(2,'0')+':00';$('hour').append(option);
+  });
+  if([...$('hour').options].some(option=>option.value===previous))$('hour').value=previous;
+  $('request-button').disabled=!valid||!$('hour').options.length;
+  $('selection').textContent=!valid?'Für Einzeltraining genau eine Person wählen.':!$('hour').options.length?'Kein gemeinsamer freier Block an diesem Tag.':'Nur die gewählten Rollen zählen für den Beispieltermin.';
+}
+['mode','trainer','day'].forEach(id=>$(id).addEventListener('change',update));$('participants').addEventListener('change',update);
+function show(id,message){$(id).textContent=message;$(id).hidden=false;}
+const token=$('token').value;
+if(token){$('request').hidden=true;$('confirm').hidden=false;}
+else update();
+$('tour-form').addEventListener('submit',event=>{
+  event.preventDefault();const button=$('request-button');button.disabled=true;show('request-status','Bestätigungs-E-Mail wird angefordert …');
+  const input={email:$('email').value,mode:$('mode').value,trainer:$('trainer').value,participants:participants(),day:Number($('day').value),hour:Number($('hour').value)};
+  google.script.run.withSuccessHandler(result=>{show('request-status',result.message);button.disabled=!!result.ok;if(!result.ok)update();})
+    .withFailureHandler(()=>{show('request-status','Der Dienst ist gerade nicht erreichbar. Bitte später erneut versuchen.');update();}).requestTour(input);
+});
+$('confirm-button').addEventListener('click',()=>{
+  const button=$('confirm-button');button.disabled=true;show('confirm-status','Demo-Nachrichten werden gesendet …');
+  google.script.run.withSuccessHandler(result=>show('confirm-status',result.message))
+    .withFailureHandler(()=>show('confirm-status','Der Versandstatus ist unklar. Bitte den Link nicht erneut verwenden.')).confirmTour(token);
+});
+</script></body></html>
