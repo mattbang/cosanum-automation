@@ -30,4 +30,3 @@ Use synthetic data only. Keep OAuth credentials, account-specific configuration,
 ## Start developing
 
 From a clean checkout with Node 24 and Python 3.11 or newer, run `npm run check` for credential-free local checks, then `npm run dev` and open `http://127.0.0.1:4173/` for the synthetic read-only Demo Hub. No package install or Google login is needed. The [contributor guide](docs/CONTRIBUTING.md) covers the expected result, common setup failures, the optional container, and the separate connected-verification handoff.
-
