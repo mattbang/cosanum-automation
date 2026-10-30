@@ -1,0 +1,25 @@
+{
+  "unscheduledRequests": [
+    {
+      "requestId": "REQ-1", "requesterName": "Example Requester", "sourceTeam": "CCS", "reason": "process_change", "deadlineDate": "2026-10-28", "revision": "4", "sessionId": "SES-1", "sessionRevision": "2",
+      "cases": [{ "caseId": "CASE-1", "participantKey": "person-a", "trainerKey": "trainer-a", "status": "planning", "revision": "8", "topicId": "TOPIC-1", "mode": "group", "declined": false }]
+    },
+    {
+      "requestId": "REQ-1", "requesterName": "Example Requester", "sourceTeam": "CCS", "reason": "process_change", "deadlineDate": "2026-10-28", "revision": "4", "sessionId": "SES-RETRY", "sessionRevision": "1",
+      "cases": [{ "caseId": "CASE-2", "participantKey": "person-b", "trainerKey": "trainer-a", "status": "open", "revision": "1", "topicId": "TOPIC-1", "mode": "single", "declined": false }]
+    }
+  ],
+  "upcomingSessions": [
+    {
+      "requestId": "REQ-2", "requesterName": "Example Requester", "reason": "new_training", "deadlineDate": "2026-11-10", "sessionId": "SES-2", "sessionRevision": "3", "startsAt": "2026-10-25T00:30:00.000Z", "endsAt": "2026-10-25T01:30:00.000Z",
+      "cases": [{ "caseId": "CASE-3", "participantKey": "person-c", "trainerKey": "trainer-b", "status": "invited", "revision": "6", "topicName": "Example Topic", "mode": "group", "declined": false }]
+    }
+  ],
+  "attentionCases": [
+    { "requestId": "REQ-3", "requesterName": "Example Requester", "reason": "retraining", "deadlineDate": "2026-11-12", "caseId": "CASE-4", "participantKey": "person-d", "trainerKey": "trainer-a", "status": "invited", "revision": "2", "declined": true, "attentionAction": "reschedule" },
+    { "requestId": "REQ-3", "requesterName": "Example Requester", "reason": "retraining", "deadlineDate": "2026-11-12", "caseId": "CASE-5", "participantKey": "person-e", "trainerKey": "trainer-a", "status": "assessed", "revision": "3", "trainerPassed": false, "declined": false, "attentionAction": "reschedule" },
+    { "requestId": "REQ-3", "requesterName": "Example Requester", "reason": "retraining", "deadlineDate": "2026-11-12", "caseId": "CASE-6", "participantKey": "person-f", "trainerKey": "trainer-a", "status": "assessed", "revision": "4", "trainerPassed": true, "declined": false, "attentionAction": "participant_acknowledgement" },
+    { "requestId": "REQ-3", "requesterName": "Example Requester", "reason": "retraining", "deadlineDate": "2026-11-12", "caseId": "CASE-7", "participantKey": "person-g", "trainerKey": "trainer-a", "status": "assessed", "revision": "5", "declined": false, "attentionAction": "trainer_review" },
+    { "requestId": "REQ-3", "requesterName": "Example Requester", "reason": "retraining", "deadlineDate": "2026-11-12", "caseId": "CASE-8", "participantKey": "person-h", "trainerKey": "trainer-a", "status": "proof_ready", "revision": "6", "declined": false, "attentionAction": "archive_review" }
+  ]
+}
