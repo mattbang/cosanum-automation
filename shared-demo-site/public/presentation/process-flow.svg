@@ -1,0 +1,195 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="5250" viewBox="0 0 1800 5250"><defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8" fill="#6a566e"/></marker></defs><style>text{font-family:Arial,sans-serif;fill:#322333}.title{font-size:28px;font-weight:bold}.label{font-size:19px}.edge{font-size:16px;paint-order:stroke;stroke:#faf8fb;stroke-width:6px;stroke-linejoin:round}</style><rect width="1800" height="5250" fill="#faf8fb"/><text x="25" y="38" class="title">Ein Trainingsfall · Entscheidungen und Wiederanlauf</text><text x="25" y="70" class="label">Synthetische Demo · nicht ausführbares Kommunikationsmodell · 29.10.2026</text><g transform="translate(0,110)">
+<rect x="0" y="0" width="600" height="5100" fill="none" stroke="#cdbed1"/><text x="120" y="35" class="label" font-weight="bold">Daniel · Process &amp; Quality</text>
+<rect x="600" y="0" width="600" height="5100" fill="none" stroke="#cdbed1"/><text x="720" y="35" class="label" font-weight="bold">Anwendung · synthetischer Raum</text>
+<rect x="1200" y="0" width="600" height="5100" fill="none" stroke="#cdbed1"/><text x="1320" y="35" class="label" font-weight="bold">Matthew · Teilnehmer</text>
+<path d="M 900.0,130.0 L 900.0,250.0" fill="none" stroke="#6a566e" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 900.0,350.0 L 900.0,470.0" fill="none" stroke="#6a566e" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 900.0,530.0 L 900,600 L 300,600 L 300.0,650.0" fill="none" stroke="#6a566e" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="600.0" y="590.0" class="edge" text-anchor="middle">Ja</text>
+<path d="M 930.0,500.0 L 1370.0,500.0" fill="none" stroke="#6a566e" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="1150.0" y="490.0" class="edge" text-anchor="middle">Nein</text>
+<path d="M 1500.0,550.0 L 1500.0,670.0" fill="none" stroke="#6a566e" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 1530.0,700.0 L 1770,700 L 1770,300 L 1030.0,300.0" fill="none" stroke="#6a566e" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="1400.0" y="290.0" class="edge" text-anchor="middle">Ja</text>
+<path d="M 1500.0,730.0 L 1500.0,880.0" fill="none" stroke="#6a566e" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="1512.0" y="795.0" class="edge" text-anchor="start">Nein</text>
+<path d="M 300.0,750.0 L 300.0,950.0" fill="none" stroke="#6a566e" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 430.0,1000.0 L 770.0,1000.0" fill="none" stroke="#6a566e" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 900.0,1050.0 L 900.0,1170.0" fill="none" stroke="#6a566e" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 930.0,1200.0 L 1200,1200 L 1200,1100 L 1470.0,1100.0" fill="none" stroke="#6a566e" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="1065.0" y="1190.0" class="edge" text-anchor="middle">Antwort abwarten</text>
+<path d="M 1500.0,1130.0 L 1500.0,1220.0" fill="none" stroke="#6a566e" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 870.0,1200.0 L 500,1200 L 500,1950 L 330.0,1950.0" fill="none" stroke="#6a566e" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="512.0" y="1565.0" class="edge" text-anchor="start">Absagen</text>
+<path d="M 900.0,1230.0 L 900,1320 L 300,1320 L 300.0,1400.0" fill="none" stroke="#6a566e" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="600.0" y="1310.0" class="edge" text-anchor="middle">Neue Angebote</text>
+<path d="M 1530.0,1250.0 L 1750,1250 L 1750,1750 L 1630.0,1750.0" fill="none" stroke="#6a566e" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="1762.0" y="1490.0" class="edge" text-anchor="end">Annehmen</text>
+<path d="M 1500.0,1280.0 L 1500.0,1400.0" fill="none" stroke="#6a566e" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="1512.0" y="1330.0" class="edge" text-anchor="start">Ablehnen</text>
+<path d="M 1370.0,1450.0 L 930.0,1450.0" fill="none" stroke="#6a566e" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 900.0,1480.0 L 900,1550 L 1780,1550 L 1780,1100 L 1530.0,1100.0" fill="none" stroke="#6a566e" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="1340.0" y="1540.0" class="edge" text-anchor="middle">Ja</text>
+<path d="M 870.0,1450.0 L 430.0,1450.0" fill="none" stroke="#6a566e" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="650.0" y="1440.0" class="edge" text-anchor="middle">Nein: alle abgelehnt</text>
+<path d="M 170.0,1450.0 L 70,1450 L 70,1120 L 900,1120 L 900.0,1050.0" fill="none" stroke="#6a566e" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="485.0" y="1110.0" class="edge" text-anchor="middle">Annahme zurückgesetzt</text>
+<path d="M 1370.0,1750.0 L 1030.0,1750.0" fill="none" stroke="#6a566e" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 770.0,1750.0 L 330.0,1750.0" fill="none" stroke="#6a566e" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 300.0,1780.0 L 300.0,1920.0" fill="none" stroke="#6a566e" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="312.0" y="1840.0" class="edge" text-anchor="start">Ja</text>
+<path d="M 300.0,1980.0 L 300.0,2000.0" fill="none" stroke="#6a566e" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 430.0,2050.0 L 880.0,2050.0" fill="none" stroke="#6a566e" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 270.0,1750.0 L 70,1750 L 70,2220 L 900,2220 L 900.0,2320.0" fill="none" stroke="#6a566e" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="485.0" y="2210.0" class="edge" text-anchor="middle">Nein</text>
+<path d="M 870.0,2350.0 L 430.0,2350.0" fill="none" stroke="#6a566e" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="650.0" y="2340.0" class="edge" text-anchor="middle">Vorzeitig</text>
+<path d="M 300.0,2400.0 L 300.0,2600.0" fill="none" stroke="#6a566e" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 900.0,2380.0 L 900.0,2600.0" fill="none" stroke="#6a566e" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="912.0" y="2480.0" class="edge" text-anchor="start">Zum Termin</text>
+<path d="M 770.0,2650.0 L 430.0,2650.0" fill="none" stroke="#6a566e" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 300.0,2700.0 L 300,2820 L 900,2820 L 900.0,2900.0" fill="none" stroke="#6a566e" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 770.0,2950.0 L 330.0,2950.0" fill="none" stroke="#6a566e" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 300.0,2980.0 L 300.0,3200.0" fill="none" stroke="#6a566e" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="312.0" y="3080.0" class="edge" text-anchor="start">Ja</text>
+<path d="M 430.0,3250.0 L 880.0,3250.0" fill="none" stroke="#6a566e" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 270.0,2950.0 L 70,2950 L 70,3550 L 170.0,3550.0" fill="none" stroke="#6a566e" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="82.0" y="3240.0" class="edge" text-anchor="start">Nein</text>
+<path d="M 300.0,3500.0 L 300,3350 L 1500,3350 L 1500.0,3420.0" fill="none" stroke="#6a566e" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 1500.0,3480.0 L 1500.0,3500.0" fill="none" stroke="#6a566e" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 1370.0,3550.0 L 930.0,3550.0" fill="none" stroke="#6a566e" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 900.0,3580.0 L 900.0,3800.0" fill="none" stroke="#6a566e" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="912.0" y="3680.0" class="edge" text-anchor="start">Noch nicht</text>
+<path d="M 1030.0,3850.0 L 1200,3850 L 1200,3450 L 1470.0,3450.0" fill="none" stroke="#6a566e" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="1212.0" y="3640.0" class="edge" text-anchor="start">Spätere Antwort</text>
+<path d="M 870.0,3550.0 L 650,3550 L 650,4020 L 900,4020 L 900.0,4120.0" fill="none" stroke="#6a566e" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="662.0" y="3775.0" class="edge" text-anchor="start">Ja</text>
+<path d="M 900.0,4180.0 L 900.0,4400.0" fill="none" stroke="#6a566e" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="912.0" y="4280.0" class="edge" text-anchor="start">Ja</text>
+<path d="M 900.0,4500.0 L 900.0,4700.0" fill="none" stroke="#6a566e" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 900.0,4800.0 L 900.0,4950.0" fill="none" stroke="#6a566e" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 870.0,4150.0 L 430.0,4150.0" fill="none" stroke="#6a566e" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="650.0" y="4140.0" class="edge" text-anchor="middle">Nein</text>
+<path d="M 300.0,4200.0 L 300.0,4400.0" fill="none" stroke="#6a566e" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 170.0,4450.0 L 35,4450 L 35,700 L 170.0,700.0" fill="none" stroke="#6a566e" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="47.0" y="2565.0" class="edge" text-anchor="start">Neuer Zyklus</text>
+<path d="M 300.0,1720.0 L 300,1580 L 300.0,1500.0" fill="none" stroke="#6a566e" stroke-width="2" marker-end="url(#arrow)"/>
+<text x="312.0" y="1640.0" class="edge" text-anchor="start">Neue Angebote</text>
+<circle cx="900.0" cy="110.0" r="20" fill="white" stroke="#664c6b" stroke-width="2"/>
+<text x="795.0" y="156.0" class="label">Demo öffnen</text>
+<rect x="770.0" y="250.0" width="260" height="100" rx="10" fill="#eee4f2" stroke="#664c6b" stroke-width="2"/>
+<text x="782.0" y="274.0" class="label">Raumzugang und</text>
+<text x="782.0" y="297.0" class="label">Google-Anmeldung prüfen,</text>
+<text x="782.0" y="320.0" class="label">falls eingerichtet</text>
+<path d="M900.0,470.0 L930.0,500.0 L900.0,530.0 L870.0,500.0 Z" fill="white" stroke="#664c6b" stroke-width="2"/><path d="M892.0,492.0 L908.0,508.0 M908.0,492.0 L892.0,508.0" stroke="#664c6b" stroke-width="2"/>
+<text x="785.0" y="556.0" class="label">Zugang gültig?</text>
+<rect x="1370.0" y="450.0" width="260" height="100" rx="10" fill="#fff0db" stroke="#664c6b" stroke-width="2"/>
+<text x="1382.0" y="474.0" class="label">[MANUELL] Konto, Rolle und</text>
+<text x="1382.0" y="497.0" class="label">gespeicherten Link prüfen</text>
+<path d="M1500.0,670.0 L1530.0,700.0 L1500.0,730.0 L1470.0,700.0 Z" fill="white" stroke="#664c6b" stroke-width="2"/><path d="M1492.0,692.0 L1508.0,708.0 M1508.0,692.0 L1492.0,708.0" stroke="#664c6b" stroke-width="2"/>
+<text x="1385.0" y="756.0" class="label">Gültiger Link vorhanden?</text>
+<circle cx="1500.0" cy="900.0" r="20" fill="white" stroke="#664c6b" stroke-width="4"/>
+<text x="1395.0" y="946.0" class="label">Neuen Raum vorbereiten</text>
+<rect x="170.0" y="650.0" width="260" height="100" rx="10" fill="#eee4f2" stroke="#664c6b" stroke-width="2"/>
+<text x="182.0" y="674.0" class="label">Daniel: Thema, Matthew und</text>
+<text x="182.0" y="697.0" class="label">Zielniveau 1–3 wählen</text>
+<rect x="170.0" y="950.0" width="260" height="100" rx="10" fill="#eee4f2" stroke="#664c6b" stroke-width="2"/>
+<text x="182.0" y="974.0" class="label">Daniel: 1–3 gemeinsame</text>
+<text x="182.0" y="997.0" class="label">freie Demo-Fenster wählen</text>
+<rect x="770.0" y="950.0" width="260" height="100" rx="10" fill="#eee4f2" stroke="#664c6b" stroke-width="2"/>
+<text x="782.0" y="974.0" class="label">Einladung und getrennte</text>
+<text x="782.0" y="997.0" class="label">Rollenlinks speichern</text>
+<path d="M900.0,1170.0 L930.0,1200.0 L900.0,1230.0 L870.0,1200.0 Z" fill="white" stroke="#664c6b" stroke-width="2"/><path d="M892.0,1192.0 L908.0,1208.0 M908.0,1192.0 L892.0,1208.0" stroke="#664c6b" stroke-width="2"/>
+<text x="785.0" y="1256.0" class="label">Daniel: nächster Schritt?</text>
+<path d="M1500.0,1070.0 L1530.0,1100.0 L1500.0,1130.0 L1470.0,1100.0 Z" fill="white" stroke="#664c6b" stroke-width="2"/><path d="M1492.0,1092.0 L1508.0,1108.0 M1508.0,1092.0 L1492.0,1108.0" stroke="#664c6b" stroke-width="2"/>
+<path d="M1500.0,3420.0 L1530.0,3450.0 L1500.0,3480.0 L1470.0,3450.0 Z" fill="white" stroke="#664c6b" stroke-width="2"/><path d="M1492.0,3442.0 L1508.0,3458.0 M1508.0,3442.0 L1492.0,3458.0" stroke="#664c6b" stroke-width="2"/>
+<path d="M300.0,1920.0 L330.0,1950.0 L300.0,1980.0 L270.0,1950.0 Z" fill="white" stroke="#664c6b" stroke-width="2"/><path d="M292.0,1942.0 L308.0,1958.0 M308.0,1942.0 L292.0,1958.0" stroke="#664c6b" stroke-width="2"/>
+<path d="M1500.0,1220.0 L1530.0,1250.0 L1500.0,1280.0 L1470.0,1250.0 Z" fill="white" stroke="#664c6b" stroke-width="2"/><path d="M1492.0,1242.0 L1508.0,1258.0 M1508.0,1242.0 L1492.0,1258.0" stroke="#664c6b" stroke-width="2"/>
+<text x="1385.0" y="1306.0" class="label">Matthews Antwort?</text>
+<rect x="1370.0" y="1400.0" width="260" height="100" rx="10" fill="#eee4f2" stroke="#664c6b" stroke-width="2"/>
+<text x="1382.0" y="1424.0" class="label">Matthew: Angebot ablehnen</text>
+<path d="M900.0,1420.0 L930.0,1450.0 L900.0,1480.0 L870.0,1450.0 Z" fill="white" stroke="#664c6b" stroke-width="2"/><path d="M892.0,1442.0 L908.0,1458.0 M908.0,1442.0 L892.0,1458.0" stroke="#664c6b" stroke-width="2"/>
+<text x="785.0" y="1506.0" class="label">Weiteres Angebot offen?</text>
+<rect x="170.0" y="1400.0" width="260" height="100" rx="10" fill="#eee4f2" stroke="#664c6b" stroke-width="2"/>
+<text x="182.0" y="1424.0" class="label">Daniel: 1–3 Angebote</text>
+<text x="182.0" y="1447.0" class="label">ersetzen; erneute Wahl</text>
+<text x="182.0" y="1470.0" class="label">erforderlich</text>
+<rect x="1370.0" y="1700.0" width="260" height="100" rx="10" fill="#eee4f2" stroke="#664c6b" stroke-width="2"/>
+<text x="1382.0" y="1724.0" class="label">Matthew: offenes Angebot</text>
+<text x="1382.0" y="1747.0" class="label">annehmen</text>
+<rect x="770.0" y="1700.0" width="260" height="100" rx="10" fill="#eee4f2" stroke="#664c6b" stroke-width="2"/>
+<text x="782.0" y="1724.0" class="label">Termin bestätigen; Hinweis</text>
+<text x="782.0" y="1747.0" class="label">in beiden Ansichten</text>
+<path d="M300.0,1720.0 L330.0,1750.0 L300.0,1780.0 L270.0,1750.0 Z" fill="white" stroke="#664c6b" stroke-width="2"/><path d="M292.0,1742.0 L308.0,1758.0 M308.0,1742.0 L292.0,1758.0" stroke="#664c6b" stroke-width="2"/>
+<text x="185.0" y="1806.0" class="label">Daniel: vor Start absagen?</text>
+<rect x="170.0" y="2000.0" width="260" height="100" rx="10" fill="#eee4f2" stroke="#664c6b" stroke-width="2"/>
+<text x="182.0" y="2024.0" class="label">Daniel: vor Beginn absagen</text>
+<circle cx="900.0" cy="2050.0" r="20" fill="white" stroke="#664c6b" stroke-width="4"/>
+<text x="795.0" y="2096.0" class="label">Abgesagt; kein Skillgewinn</text>
+<path d="M900.0,2320.0 L930.0,2350.0 L900.0,2380.0 L870.0,2350.0 Z" fill="white" stroke="#664c6b" stroke-width="2"/><path d="M892.0,2342.0 L908.0,2358.0 M908.0,2342.0 L892.0,2358.0" stroke="#664c6b" stroke-width="2"/>
+<text x="785.0" y="2406.0" class="label">Startzeitpunkt?</text>
+<rect x="170.0" y="2300.0" width="260" height="100" rx="10" fill="#eee4f2" stroke="#664c6b" stroke-width="2"/>
+<text x="182.0" y="2324.0" class="label">Daniel: vorzeitigen</text>
+<text x="182.0" y="2347.0" class="label">Demostart wählen</text>
+<rect x="770.0" y="2600.0" width="260" height="100" rx="10" fill="#fff0db" stroke="#664c6b" stroke-width="2"/>
+<text x="782.0" y="2624.0" class="label">[MANUELL] Bis Termin</text>
+<text x="782.0" y="2647.0" class="label">warten; kein automatischer</text>
+<text x="782.0" y="2670.0" class="label">Start</text>
+<rect x="170.0" y="2600.0" width="260" height="100" rx="10" fill="#eee4f2" stroke="#664c6b" stroke-width="2"/>
+<text x="182.0" y="2624.0" class="label">Daniel: Start ausdrücklich</text>
+<text x="182.0" y="2647.0" class="label">auslösen</text>
+<rect x="770.0" y="2900.0" width="260" height="100" rx="10" fill="#eee4f2" stroke="#664c6b" stroke-width="2"/>
+<text x="782.0" y="2924.0" class="label">Training läuft; Start im</text>
+<text x="782.0" y="2947.0" class="label">Verlauf protokolliert</text>
+<path d="M300.0,2920.0 L330.0,2950.0 L300.0,2980.0 L270.0,2950.0 Z" fill="white" stroke="#664c6b" stroke-width="2"/><path d="M292.0,2942.0 L308.0,2958.0 M308.0,2942.0 L292.0,2958.0" stroke="#664c6b" stroke-width="2"/>
+<text x="185.0" y="3006.0" class="label">Daniel: während Training</text>
+<text x="185.0" y="3029.0" class="label">absagen?</text>
+<rect x="170.0" y="3200.0" width="260" height="100" rx="10" fill="#eee4f2" stroke="#664c6b" stroke-width="2"/>
+<text x="182.0" y="3224.0" class="label">Daniel: laufenden Fall</text>
+<text x="182.0" y="3247.0" class="label">absagen</text>
+<circle cx="900.0" cy="3250.0" r="20" fill="white" stroke="#664c6b" stroke-width="4"/>
+<text x="795.0" y="3296.0" class="label">Abgesagt; kein Skillgewinn</text>
+<rect x="170.0" y="3500.0" width="260" height="100" rx="10" fill="#eee4f2" stroke="#664c6b" stroke-width="2"/>
+<text x="182.0" y="3524.0" class="label">Daniel: Bericht und</text>
+<text x="182.0" y="3547.0" class="label">Ergebnis einreichen</text>
+<rect x="1370.0" y="3500.0" width="260" height="100" rx="10" fill="#eee4f2" stroke="#664c6b" stroke-width="2"/>
+<text x="1382.0" y="3524.0" class="label">Matthew: Erklärung lesen,</text>
+<text x="1382.0" y="3547.0" class="label">Checkbox und Teilnahme</text>
+<text x="1382.0" y="3570.0" class="label">bestätigen</text>
+<path d="M900.0,3520.0 L930.0,3550.0 L900.0,3580.0 L870.0,3550.0 Z" fill="white" stroke="#664c6b" stroke-width="2"/><path d="M892.0,3542.0 L908.0,3558.0 M908.0,3542.0 L892.0,3558.0" stroke="#664c6b" stroke-width="2"/>
+<text x="785.0" y="3606.0" class="label">Bestätigung gespeichert?</text>
+<rect x="770.0" y="3800.0" width="260" height="100" rx="10" fill="#e3ecf8" stroke="#664c6b" stroke-width="2"/>
+<text x="782.0" y="3824.0" class="label">Fall offen halten; auf</text>
+<text x="782.0" y="3847.0" class="label">spätere Antwort warten</text>
+<path d="M900.0,4120.0 L930.0,4150.0 L900.0,4180.0 L870.0,4150.0 Z" fill="white" stroke="#664c6b" stroke-width="2"/><path d="M892.0,4142.0 L908.0,4158.0 M908.0,4142.0 L892.0,4158.0" stroke="#664c6b" stroke-width="2"/>
+<text x="785.0" y="4206.0" class="label">Bericht bestanden?</text>
+<rect x="170.0" y="4100.0" width="260" height="100" rx="10" fill="#eee4f2" stroke="#664c6b" stroke-width="2"/>
+<text x="182.0" y="4124.0" class="label">Daniel: unveränderte Stufe</text>
+<text x="182.0" y="4147.0" class="label">und Nachschulungsbedarf</text>
+<text x="182.0" y="4170.0" class="label">prüfen</text>
+<rect x="170.0" y="4400.0" width="260" height="100" rx="10" fill="#fff0db" stroke="#664c6b" stroke-width="2"/>
+<text x="182.0" y="4424.0" class="label">[MANUELL] Neuen</text>
+<text x="182.0" y="4447.0" class="label">Nachschulungsfall anlegen</text>
+<rect x="770.0" y="4400.0" width="260" height="100" rx="10" fill="#eee4f2" stroke="#664c6b" stroke-width="2"/>
+<text x="782.0" y="4424.0" class="label">Synthetische</text>
+<text x="782.0" y="4447.0" class="label">Raum-Kompetenz</text>
+<text x="782.0" y="4470.0" class="label">aktualisieren</text>
+<rect x="770.0" y="4700.0" width="260" height="100" rx="10" fill="#eee4f2" stroke="#664c6b" stroke-width="2"/>
+<text x="782.0" y="4724.0" class="label">Abschluss und Verlauf</text>
+<text x="782.0" y="4747.0" class="label">zeigen; Historie beim</text>
+<text x="782.0" y="4770.0" class="label">Folgefall</text>
+<circle cx="900.0" cy="4970.0" r="20" fill="white" stroke="#664c6b" stroke-width="4"/>
+<text x="795.0" y="5016.0" class="label">Demo-Fall abgeschlossen</text>
+<rect x="1320" y="3800" width="400" height="150" fill="#ffe2df" stroke="#a44339" stroke-dasharray="7 5"/>
+<text x="1332" y="3828" class="label">[GEPLANT] Automatische Erinnerung /</text>
+<text x="1332" y="3851" class="label">Eskalation bei fehlender Bestätigung.</text>
+<text x="1332" y="3874" class="label">Heute nur In-App-Hinweise.</text>
+<rect x="1260" y="2140" width="480" height="140" fill="#fff0db" stroke="#a44339" stroke-dasharray="7 5"/>
+<text x="1272" y="2168" class="label">[MANUELL] Mailentwurf öffnen und selbst</text>
+<text x="1272" y="2191" class="label">senden. Kein automatischer Mailversand /</text>
+<text x="1272" y="2214" class="label">Push.</text>
+<rect x="50" y="60" width="480" height="160" fill="#fff0db" stroke="#a44339" stroke-dasharray="7 5"/>
+<text x="62" y="88" class="label">Synthetisch: gemeinsame freie Fenster</text>
+<text x="62" y="111" class="label">der nächsten fünf Arbeitstage. Keine</text>
+<text x="62" y="134" class="label">Google-Kalenderbuchung.</text>
+</g><text x="25" y="5230" class="label">Lila = implementiert · Orange = manuell · Blau = offen · Koralle gestrichelt = geplant. Kein produktiver Datenaustausch.</text></svg>

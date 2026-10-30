@@ -25,22 +25,22 @@ function fixture() {
 
 test('rejects unverified caller and wrong assignment before any write', async () => {
   const testCase = fixture();
-  await assert.rejects(testCase.service.act('invalid', { actionId: 'bookSession', caseId: 'CASE-1' }), (error: unknown) => error instanceof ActionError && error.status === 401);
+  await assert.rejects(testCase.service.act('invalid', { actionId: 'bookSession', caseId: 'CASE-1', idempotencyKey: 'book-attempt-1' }), (error: unknown) => error instanceof ActionError && error.status === 401);
   testCase.setCurrent({ ...testCase.row, ownerKey: 'OTHER' });
-  await assert.rejects(testCase.service.act('valid', { actionId: 'bookSession', caseId: 'CASE-1' }), (error: unknown) => error instanceof ActionError && error.status === 403);
+  await assert.rejects(testCase.service.act('valid', { actionId: 'bookSession', caseId: 'CASE-1', idempotencyKey: 'book-attempt-2' }), (error: unknown) => error instanceof ActionError && error.status === 403);
   assert.equal(testCase.writes, 0);
 });
 
 test('ignores client facts and fails closed when server evidence is missing', async () => {
   const testCase = fixture();
   testCase.setCurrent({ ...testCase.row, evidence: { facts: { ...testCase.row.evidence.facts, slotAvailable: false }, values: {} } });
-  await assert.rejects(testCase.service.act('valid', { actionId: 'bookSession', caseId: 'CASE-1', payload: { facts: { slotAvailable: true } } }), (error: unknown) => error instanceof ActionError && error.status === 409);
+  await assert.rejects(testCase.service.act('valid', { actionId: 'bookSession', caseId: 'CASE-1', idempotencyKey: 'book-attempt-3', payload: { facts: { slotAvailable: true } } }), (error: unknown) => error instanceof ActionError && error.status === 409);
   assert.equal(testCase.writes, 0);
 });
 
 test('reports verified result only after same-scope persisted readback', async () => {
   const testCase = fixture();
-  const result = await testCase.service.act('valid', { actionId: 'bookSession', caseId: 'CASE-1' });
+  const result = await testCase.service.act('valid', { actionId: 'bookSession', caseId: 'CASE-1', idempotencyKey: 'book-attempt-4' });
   assert.deepEqual(result, { status: 'verified', actionId: 'bookSession', caseId: 'CASE-1', revision: '2' });
   assert.equal(testCase.writes, 1);
 });

@@ -1,0 +1,581 @@
+<?xml version='1.0' encoding='utf-8'?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_Demo" targetNamespace="https://example.invalid/cosanum/demo-day" exporter="Cosanum synthetic communication model" exporterVersion="1">
+  <bpmn:process id="Process_0" name="Erfolgspfad" isExecutable="false">
+    <bpmn:documentation>Unabhängiges Kommunikationsszenario. IMPLEMENTIERT bezeichnet Site-Quellcode; GEPLANT ist keine ausgeführte Funktion. Startvoraussetzungen stehen im Runbook. Keine Google-Kalender-, Mail-, Push- oder produktiven Datenzugriffe.</bpmn:documentation>
+    <bpmn:startEvent id="N_0_0" name="Start" />
+    <bpmn:task id="N_0_1" name="Daniel: Thema / Matthew / Ziel">
+      <bpmn:documentation>IMPLEMENTIERT in synthetischer Site; aktueller Gerätecheck gesondert.</bpmn:documentation>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="F_0_1" sourceRef="N_0_0" targetRef="N_0_1" />
+    <bpmn:task id="N_0_2" name="Daniel: 1–3 Angebote / Einladung">
+      <bpmn:documentation>IMPLEMENTIERT in synthetischer Site; aktueller Gerätecheck gesondert.</bpmn:documentation>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="F_0_2" sourceRef="N_0_1" targetRef="N_0_2" />
+    <bpmn:task id="N_0_3" name="Matthew: erstes ablehnen">
+      <bpmn:documentation>IMPLEMENTIERT in synthetischer Site; aktueller Gerätecheck gesondert.</bpmn:documentation>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="F_0_3" sourceRef="N_0_2" targetRef="N_0_3" />
+    <bpmn:task id="N_0_4" name="Matthew: zweites annehmen">
+      <bpmn:documentation>IMPLEMENTIERT in synthetischer Site; aktueller Gerätecheck gesondert.</bpmn:documentation>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="F_0_4" sourceRef="N_0_3" targetRef="N_0_4" />
+    <bpmn:task id="N_0_5" name="Daniel: Training starten">
+      <bpmn:documentation>IMPLEMENTIERT in synthetischer Site; aktueller Gerätecheck gesondert.</bpmn:documentation>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="F_0_5" sourceRef="N_0_4" targetRef="N_0_5" />
+    <bpmn:task id="N_0_6" name="Daniel: bestanden berichten">
+      <bpmn:documentation>IMPLEMENTIERT in synthetischer Site; aktueller Gerätecheck gesondert.</bpmn:documentation>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="F_0_6" sourceRef="N_0_5" targetRef="N_0_6" />
+    <bpmn:task id="N_0_7" name="Matthew: Teilnahme bestätigen">
+      <bpmn:documentation>IMPLEMENTIERT in synthetischer Site; aktueller Gerätecheck gesondert.</bpmn:documentation>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="F_0_7" sourceRef="N_0_6" targetRef="N_0_7" />
+    <bpmn:task id="N_0_8" name="System: Demo-Skill / Verlauf">
+      <bpmn:documentation>IMPLEMENTIERT in synthetischer Site; aktueller Gerätecheck gesondert.</bpmn:documentation>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="F_0_8" sourceRef="N_0_7" targetRef="N_0_8" />
+    <bpmn:endEvent id="N_0_9" name="Ende" />
+    <bpmn:sequenceFlow id="F_0_9" sourceRef="N_0_8" targetRef="N_0_9" />
+  </bpmn:process>
+  <bpmn:process id="Process_1" name="Absage vor Trainingsbeginn" isExecutable="false">
+    <bpmn:documentation>Unabhängiges Kommunikationsszenario. IMPLEMENTIERT bezeichnet Site-Quellcode; GEPLANT ist keine ausgeführte Funktion. Startvoraussetzungen stehen im Runbook. Keine Google-Kalender-, Mail-, Push- oder produktiven Datenzugriffe.</bpmn:documentation>
+    <bpmn:startEvent id="N_1_0" name="Start" />
+    <bpmn:task id="N_1_1" name="Daniel: Einladung / Termin">
+      <bpmn:documentation>IMPLEMENTIERT in synthetischer Site; aktueller Gerätecheck gesondert.</bpmn:documentation>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="F_1_1" sourceRef="N_1_0" targetRef="N_1_1" />
+    <bpmn:task id="N_1_2" name="Daniel: vor Start absagen">
+      <bpmn:documentation>IMPLEMENTIERT in synthetischer Site; aktueller Gerätecheck gesondert.</bpmn:documentation>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="F_1_2" sourceRef="N_1_1" targetRef="N_1_2" />
+    <bpmn:task id="N_1_3" name="System: abgesagt / kein Skillgewinn">
+      <bpmn:documentation>IMPLEMENTIERT in synthetischer Site; aktueller Gerätecheck gesondert.</bpmn:documentation>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="F_1_3" sourceRef="N_1_2" targetRef="N_1_3" />
+    <bpmn:endEvent id="N_1_4" name="Ende" />
+    <bpmn:sequenceFlow id="F_1_4" sourceRef="N_1_3" targetRef="N_1_4" />
+  </bpmn:process>
+  <bpmn:process id="Process_2" name="Absage während Training" isExecutable="false">
+    <bpmn:documentation>Unabhängiges Kommunikationsszenario. IMPLEMENTIERT bezeichnet Site-Quellcode; GEPLANT ist keine ausgeführte Funktion. Startvoraussetzungen stehen im Runbook. Keine Google-Kalender-, Mail-, Push- oder produktiven Datenzugriffe.</bpmn:documentation>
+    <bpmn:startEvent id="N_2_0" name="Start" />
+    <bpmn:task id="N_2_1" name="Matthew: Termin bestätigen">
+      <bpmn:documentation>IMPLEMENTIERT in synthetischer Site; aktueller Gerätecheck gesondert.</bpmn:documentation>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="F_2_1" sourceRef="N_2_0" targetRef="N_2_1" />
+    <bpmn:task id="N_2_2" name="Daniel: Training starten">
+      <bpmn:documentation>IMPLEMENTIERT in synthetischer Site; aktueller Gerätecheck gesondert.</bpmn:documentation>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="F_2_2" sourceRef="N_2_1" targetRef="N_2_2" />
+    <bpmn:task id="N_2_3" name="Daniel: laufendes Training absagen">
+      <bpmn:documentation>IMPLEMENTIERT in synthetischer Site; aktueller Gerätecheck gesondert.</bpmn:documentation>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="F_2_3" sourceRef="N_2_2" targetRef="N_2_3" />
+    <bpmn:task id="N_2_4" name="System: abgesagt / kein Skillgewinn">
+      <bpmn:documentation>IMPLEMENTIERT in synthetischer Site; aktueller Gerätecheck gesondert.</bpmn:documentation>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="F_2_4" sourceRef="N_2_3" targetRef="N_2_4" />
+    <bpmn:endEvent id="N_2_5" name="Ende" />
+    <bpmn:sequenceFlow id="F_2_5" sourceRef="N_2_4" targetRef="N_2_5" />
+  </bpmn:process>
+  <bpmn:process id="Process_3" name="Alle Vorschläge abgelehnt" isExecutable="false">
+    <bpmn:documentation>Unabhängiges Kommunikationsszenario. IMPLEMENTIERT bezeichnet Site-Quellcode; GEPLANT ist keine ausgeführte Funktion. Startvoraussetzungen stehen im Runbook. Keine Google-Kalender-, Mail-, Push- oder produktiven Datenzugriffe.</bpmn:documentation>
+    <bpmn:startEvent id="N_3_0" name="Start" />
+    <bpmn:task id="N_3_1" name="Matthew: alle Angebote ablehnen">
+      <bpmn:documentation>IMPLEMENTIERT in synthetischer Site; aktueller Gerätecheck gesondert.</bpmn:documentation>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="F_3_1" sourceRef="N_3_0" targetRef="N_3_1" />
+    <bpmn:task id="N_3_2" name="System: Neuplanung nötig">
+      <bpmn:documentation>IMPLEMENTIERT in synthetischer Site; aktueller Gerätecheck gesondert.</bpmn:documentation>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="F_3_2" sourceRef="N_3_1" targetRef="N_3_2" />
+    <bpmn:task id="N_3_3" name="Daniel: neue Angebote setzen">
+      <bpmn:documentation>IMPLEMENTIERT in synthetischer Site; aktueller Gerätecheck gesondert.</bpmn:documentation>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="F_3_3" sourceRef="N_3_2" targetRef="N_3_3" />
+    <bpmn:task id="N_3_4" name="Matthew: erneut Termin wählen">
+      <bpmn:documentation>IMPLEMENTIERT in synthetischer Site; aktueller Gerätecheck gesondert.</bpmn:documentation>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="F_3_4" sourceRef="N_3_3" targetRef="N_3_4" />
+    <bpmn:task id="N_3_5" name="[GEPLANT] Verfügbarkeit automatisch suchen">
+      <bpmn:documentation>GEPLANT; nicht in der Site implementiert.</bpmn:documentation>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="F_3_5" sourceRef="N_3_4" targetRef="N_3_5" />
+    <bpmn:endEvent id="N_3_6" name="Ende" />
+    <bpmn:sequenceFlow id="F_3_6" sourceRef="N_3_5" targetRef="N_3_6" />
+  </bpmn:process>
+  <bpmn:process id="Process_4" name="Vorzeitiger Start" isExecutable="false">
+    <bpmn:documentation>Unabhängiges Kommunikationsszenario. IMPLEMENTIERT bezeichnet Site-Quellcode; GEPLANT ist keine ausgeführte Funktion. Startvoraussetzungen stehen im Runbook. Keine Google-Kalender-, Mail-, Push- oder produktiven Datenzugriffe.</bpmn:documentation>
+    <bpmn:startEvent id="N_4_0" name="Start" />
+    <bpmn:task id="N_4_1" name="Matthew: Termin bestätigen">
+      <bpmn:documentation>IMPLEMENTIERT in synthetischer Site; aktueller Gerätecheck gesondert.</bpmn:documentation>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="F_4_1" sourceRef="N_4_0" targetRef="N_4_1" />
+    <bpmn:task id="N_4_2" name="System: In-App-Erinnerung">
+      <bpmn:documentation>IMPLEMENTIERT in synthetischer Site; aktueller Gerätecheck gesondert.</bpmn:documentation>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="F_4_2" sourceRef="N_4_1" targetRef="N_4_2" />
+    <bpmn:task id="N_4_3" name="Daniel: vorzeitig starten">
+      <bpmn:documentation>IMPLEMENTIERT in synthetischer Site; aktueller Gerätecheck gesondert.</bpmn:documentation>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="F_4_3" sourceRef="N_4_2" targetRef="N_4_3" />
+    <bpmn:task id="N_4_4" name="System: Start protokollieren">
+      <bpmn:documentation>IMPLEMENTIERT in synthetischer Site; aktueller Gerätecheck gesondert.</bpmn:documentation>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="F_4_4" sourceRef="N_4_3" targetRef="N_4_4" />
+    <bpmn:endEvent id="N_4_5" name="Ende" />
+    <bpmn:sequenceFlow id="F_4_5" sourceRef="N_4_4" targetRef="N_4_5" />
+  </bpmn:process>
+  <bpmn:process id="Process_5" name="Nicht bestanden / Nachschulung" isExecutable="false">
+    <bpmn:documentation>Unabhängiges Kommunikationsszenario. IMPLEMENTIERT bezeichnet Site-Quellcode; GEPLANT ist keine ausgeführte Funktion. Startvoraussetzungen stehen im Runbook. Keine Google-Kalender-, Mail-, Push- oder produktiven Datenzugriffe.</bpmn:documentation>
+    <bpmn:startEvent id="N_5_0" name="Start" />
+    <bpmn:task id="N_5_1" name="Daniel: nicht bestanden berichten">
+      <bpmn:documentation>IMPLEMENTIERT in synthetischer Site; aktueller Gerätecheck gesondert.</bpmn:documentation>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="F_5_1" sourceRef="N_5_0" targetRef="N_5_1" />
+    <bpmn:task id="N_5_2" name="Matthew: Teilnahme bestätigen">
+      <bpmn:documentation>IMPLEMENTIERT in synthetischer Site; aktueller Gerätecheck gesondert.</bpmn:documentation>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="F_5_2" sourceRef="N_5_1" targetRef="N_5_2" />
+    <bpmn:task id="N_5_3" name="System: Stufe halten / Nachschulung nötig">
+      <bpmn:documentation>IMPLEMENTIERT in synthetischer Site; aktueller Gerätecheck gesondert.</bpmn:documentation>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="F_5_3" sourceRef="N_5_2" targetRef="N_5_3" />
+    <bpmn:task id="N_5_4" name="[MANUELL] Daniel: Nachschulung neu anlegen">
+      <bpmn:documentation>MANUELLER WIEDERANLAUF; keine automatische Funktion.</bpmn:documentation>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="F_5_4" sourceRef="N_5_3" targetRef="N_5_4" />
+    <bpmn:task id="N_5_5" name="[GEPLANT] Nachschulung automatisch auslösen">
+      <bpmn:documentation>GEPLANT; nicht in der Site implementiert.</bpmn:documentation>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="F_5_5" sourceRef="N_5_4" targetRef="N_5_5" />
+    <bpmn:endEvent id="N_5_6" name="Ende" />
+    <bpmn:sequenceFlow id="F_5_6" sourceRef="N_5_5" targetRef="N_5_6" />
+  </bpmn:process>
+  <bpmn:process id="Process_6" name="Teilnahmebestätigung fehlt" isExecutable="false">
+    <bpmn:documentation>Unabhängiges Kommunikationsszenario. IMPLEMENTIERT bezeichnet Site-Quellcode; GEPLANT ist keine ausgeführte Funktion. Startvoraussetzungen stehen im Runbook. Keine Google-Kalender-, Mail-, Push- oder produktiven Datenzugriffe.</bpmn:documentation>
+    <bpmn:startEvent id="N_6_0" name="Start" />
+    <bpmn:task id="N_6_1" name="Daniel: Bericht einreichen">
+      <bpmn:documentation>IMPLEMENTIERT in synthetischer Site; aktueller Gerätecheck gesondert.</bpmn:documentation>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="F_6_1" sourceRef="N_6_0" targetRef="N_6_1" />
+    <bpmn:task id="N_6_2" name="Matthew: noch nicht bestätigt">
+      <bpmn:documentation>OFFENER ZUSTAND; keine automatische Frist oder Eskalation.</bpmn:documentation>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="F_6_2" sourceRef="N_6_1" targetRef="N_6_2" />
+    <bpmn:task id="N_6_3" name="[GEPLANT] Automatisch erinnern / eskalieren">
+      <bpmn:documentation>GEPLANT; nicht in der Site implementiert.</bpmn:documentation>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="F_6_3" sourceRef="N_6_2" targetRef="N_6_3" />
+    <bpmn:task id="N_6_4" name="Matthew: später bestätigen">
+      <bpmn:documentation>IMPLEMENTIERT in synthetischer Site; aktueller Gerätecheck gesondert.</bpmn:documentation>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="F_6_4" sourceRef="N_6_3" targetRef="N_6_4" />
+    <bpmn:task id="N_6_5" name="System: Ergebnisabhängiger Abschluss">
+      <bpmn:documentation>IMPLEMENTIERT in synthetischer Site; aktueller Gerätecheck gesondert.</bpmn:documentation>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="F_6_5" sourceRef="N_6_4" targetRef="N_6_5" />
+    <bpmn:endEvent id="N_6_6" name="Ende" />
+    <bpmn:sequenceFlow id="F_6_6" sourceRef="N_6_5" targetRef="N_6_6" />
+  </bpmn:process>
+  <bpmn:process id="Process_7" name="Anmeldung oder Link scheitert" isExecutable="false">
+    <bpmn:documentation>Unabhängiges Kommunikationsszenario. IMPLEMENTIERT bezeichnet Site-Quellcode; GEPLANT ist keine ausgeführte Funktion. Startvoraussetzungen stehen im Runbook. Keine Google-Kalender-, Mail-, Push- oder produktiven Datenzugriffe.</bpmn:documentation>
+    <bpmn:startEvent id="N_7_0" name="Start" />
+    <bpmn:task id="N_7_1" name="System: Zugang abweisen">
+      <bpmn:documentation>IMPLEMENTIERT in synthetischer Site; aktueller Gerätecheck gesondert.</bpmn:documentation>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="F_7_1" sourceRef="N_7_0" targetRef="N_7_1" />
+    <bpmn:task id="N_7_2" name="[MANUELL] Daniel / Matthew: Konto und Link prüfen">
+      <bpmn:documentation>MANUELLER WIEDERANLAUF; keine automatische Funktion.</bpmn:documentation>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="F_7_2" sourceRef="N_7_1" targetRef="N_7_2" />
+    <bpmn:task id="N_7_3" name="[MANUELL] Passenden gültigen Rollenlink öffnen">
+      <bpmn:documentation>MANUELLER WIEDERANLAUF; keine automatische Funktion.</bpmn:documentation>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="F_7_3" sourceRef="N_7_2" targetRef="N_7_3" />
+    <bpmn:task id="N_7_4" name="[MANUELL] Bei Linkverlust: neuen Raum vorbereiten">
+      <bpmn:documentation>MANUELLER WIEDERANLAUF; keine automatische Funktion.</bpmn:documentation>
+    </bpmn:task>
+    <bpmn:sequenceFlow id="F_7_4" sourceRef="N_7_3" targetRef="N_7_4" />
+    <bpmn:endEvent id="N_7_5" name="Ende" />
+    <bpmn:sequenceFlow id="F_7_5" sourceRef="N_7_4" targetRef="N_7_5" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram_0" name="Erfolgspfad">
+    <bpmndi:BPMNPlane id="Plane_0" bpmnElement="Process_0">
+      <bpmndi:BPMNShape id="Shape_N_0_0" bpmnElement="N_0_0">
+        <dc:Bounds x="40" y="100" width="40" height="40" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_N_0_1" bpmnElement="N_0_1">
+        <dc:Bounds x="250" y="100" width="170" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_F_0_1" bpmnElement="F_0_1">
+        <di:waypoint x="80" y="120" />
+        <di:waypoint x="250" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Shape_N_0_2" bpmnElement="N_0_2">
+        <dc:Bounds x="460" y="100" width="170" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_F_0_2" bpmnElement="F_0_2">
+        <di:waypoint x="420" y="120" />
+        <di:waypoint x="460" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Shape_N_0_3" bpmnElement="N_0_3">
+        <dc:Bounds x="670" y="100" width="170" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_F_0_3" bpmnElement="F_0_3">
+        <di:waypoint x="630" y="120" />
+        <di:waypoint x="670" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Shape_N_0_4" bpmnElement="N_0_4">
+        <dc:Bounds x="880" y="100" width="170" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_F_0_4" bpmnElement="F_0_4">
+        <di:waypoint x="840" y="120" />
+        <di:waypoint x="880" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Shape_N_0_5" bpmnElement="N_0_5">
+        <dc:Bounds x="1090" y="100" width="170" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_F_0_5" bpmnElement="F_0_5">
+        <di:waypoint x="1050" y="120" />
+        <di:waypoint x="1090" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Shape_N_0_6" bpmnElement="N_0_6">
+        <dc:Bounds x="1300" y="100" width="170" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_F_0_6" bpmnElement="F_0_6">
+        <di:waypoint x="1260" y="120" />
+        <di:waypoint x="1300" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Shape_N_0_7" bpmnElement="N_0_7">
+        <dc:Bounds x="1510" y="100" width="170" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_F_0_7" bpmnElement="F_0_7">
+        <di:waypoint x="1470" y="120" />
+        <di:waypoint x="1510" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Shape_N_0_8" bpmnElement="N_0_8">
+        <dc:Bounds x="1720" y="100" width="170" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_F_0_8" bpmnElement="F_0_8">
+        <di:waypoint x="1680" y="120" />
+        <di:waypoint x="1720" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Shape_N_0_9" bpmnElement="N_0_9">
+        <dc:Bounds x="1930" y="100" width="40" height="40" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_F_0_9" bpmnElement="F_0_9">
+        <di:waypoint x="1890" y="120" />
+        <di:waypoint x="1930" y="120" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+  <bpmndi:BPMNDiagram id="Diagram_1" name="Absage vor Trainingsbeginn">
+    <bpmndi:BPMNPlane id="Plane_1" bpmnElement="Process_1">
+      <bpmndi:BPMNShape id="Shape_N_1_0" bpmnElement="N_1_0">
+        <dc:Bounds x="40" y="100" width="40" height="40" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_N_1_1" bpmnElement="N_1_1">
+        <dc:Bounds x="250" y="100" width="170" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_F_1_1" bpmnElement="F_1_1">
+        <di:waypoint x="80" y="120" />
+        <di:waypoint x="250" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Shape_N_1_2" bpmnElement="N_1_2">
+        <dc:Bounds x="460" y="100" width="170" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_F_1_2" bpmnElement="F_1_2">
+        <di:waypoint x="420" y="120" />
+        <di:waypoint x="460" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Shape_N_1_3" bpmnElement="N_1_3">
+        <dc:Bounds x="670" y="100" width="170" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_F_1_3" bpmnElement="F_1_3">
+        <di:waypoint x="630" y="120" />
+        <di:waypoint x="670" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Shape_N_1_4" bpmnElement="N_1_4">
+        <dc:Bounds x="880" y="100" width="40" height="40" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_F_1_4" bpmnElement="F_1_4">
+        <di:waypoint x="840" y="120" />
+        <di:waypoint x="880" y="120" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+  <bpmndi:BPMNDiagram id="Diagram_2" name="Absage während Training">
+    <bpmndi:BPMNPlane id="Plane_2" bpmnElement="Process_2">
+      <bpmndi:BPMNShape id="Shape_N_2_0" bpmnElement="N_2_0">
+        <dc:Bounds x="40" y="100" width="40" height="40" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_N_2_1" bpmnElement="N_2_1">
+        <dc:Bounds x="250" y="100" width="170" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_F_2_1" bpmnElement="F_2_1">
+        <di:waypoint x="80" y="120" />
+        <di:waypoint x="250" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Shape_N_2_2" bpmnElement="N_2_2">
+        <dc:Bounds x="460" y="100" width="170" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_F_2_2" bpmnElement="F_2_2">
+        <di:waypoint x="420" y="120" />
+        <di:waypoint x="460" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Shape_N_2_3" bpmnElement="N_2_3">
+        <dc:Bounds x="670" y="100" width="170" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_F_2_3" bpmnElement="F_2_3">
+        <di:waypoint x="630" y="120" />
+        <di:waypoint x="670" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Shape_N_2_4" bpmnElement="N_2_4">
+        <dc:Bounds x="880" y="100" width="170" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_F_2_4" bpmnElement="F_2_4">
+        <di:waypoint x="840" y="120" />
+        <di:waypoint x="880" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Shape_N_2_5" bpmnElement="N_2_5">
+        <dc:Bounds x="1090" y="100" width="40" height="40" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_F_2_5" bpmnElement="F_2_5">
+        <di:waypoint x="1050" y="120" />
+        <di:waypoint x="1090" y="120" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+  <bpmndi:BPMNDiagram id="Diagram_3" name="Alle Vorschläge abgelehnt">
+    <bpmndi:BPMNPlane id="Plane_3" bpmnElement="Process_3">
+      <bpmndi:BPMNShape id="Shape_N_3_0" bpmnElement="N_3_0">
+        <dc:Bounds x="40" y="100" width="40" height="40" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_N_3_1" bpmnElement="N_3_1">
+        <dc:Bounds x="250" y="100" width="170" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_F_3_1" bpmnElement="F_3_1">
+        <di:waypoint x="80" y="120" />
+        <di:waypoint x="250" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Shape_N_3_2" bpmnElement="N_3_2">
+        <dc:Bounds x="460" y="100" width="170" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_F_3_2" bpmnElement="F_3_2">
+        <di:waypoint x="420" y="120" />
+        <di:waypoint x="460" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Shape_N_3_3" bpmnElement="N_3_3">
+        <dc:Bounds x="670" y="100" width="170" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_F_3_3" bpmnElement="F_3_3">
+        <di:waypoint x="630" y="120" />
+        <di:waypoint x="670" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Shape_N_3_4" bpmnElement="N_3_4">
+        <dc:Bounds x="880" y="100" width="170" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_F_3_4" bpmnElement="F_3_4">
+        <di:waypoint x="840" y="120" />
+        <di:waypoint x="880" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Shape_N_3_5" bpmnElement="N_3_5">
+        <dc:Bounds x="1090" y="100" width="170" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_F_3_5" bpmnElement="F_3_5">
+        <di:waypoint x="1050" y="120" />
+        <di:waypoint x="1090" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Shape_N_3_6" bpmnElement="N_3_6">
+        <dc:Bounds x="1300" y="100" width="40" height="40" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_F_3_6" bpmnElement="F_3_6">
+        <di:waypoint x="1260" y="120" />
+        <di:waypoint x="1300" y="120" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+  <bpmndi:BPMNDiagram id="Diagram_4" name="Vorzeitiger Start">
+    <bpmndi:BPMNPlane id="Plane_4" bpmnElement="Process_4">
+      <bpmndi:BPMNShape id="Shape_N_4_0" bpmnElement="N_4_0">
+        <dc:Bounds x="40" y="100" width="40" height="40" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_N_4_1" bpmnElement="N_4_1">
+        <dc:Bounds x="250" y="100" width="170" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_F_4_1" bpmnElement="F_4_1">
+        <di:waypoint x="80" y="120" />
+        <di:waypoint x="250" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Shape_N_4_2" bpmnElement="N_4_2">
+        <dc:Bounds x="460" y="100" width="170" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_F_4_2" bpmnElement="F_4_2">
+        <di:waypoint x="420" y="120" />
+        <di:waypoint x="460" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Shape_N_4_3" bpmnElement="N_4_3">
+        <dc:Bounds x="670" y="100" width="170" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_F_4_3" bpmnElement="F_4_3">
+        <di:waypoint x="630" y="120" />
+        <di:waypoint x="670" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Shape_N_4_4" bpmnElement="N_4_4">
+        <dc:Bounds x="880" y="100" width="170" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_F_4_4" bpmnElement="F_4_4">
+        <di:waypoint x="840" y="120" />
+        <di:waypoint x="880" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Shape_N_4_5" bpmnElement="N_4_5">
+        <dc:Bounds x="1090" y="100" width="40" height="40" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_F_4_5" bpmnElement="F_4_5">
+        <di:waypoint x="1050" y="120" />
+        <di:waypoint x="1090" y="120" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+  <bpmndi:BPMNDiagram id="Diagram_5" name="Nicht bestanden / Nachschulung">
+    <bpmndi:BPMNPlane id="Plane_5" bpmnElement="Process_5">
+      <bpmndi:BPMNShape id="Shape_N_5_0" bpmnElement="N_5_0">
+        <dc:Bounds x="40" y="100" width="40" height="40" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_N_5_1" bpmnElement="N_5_1">
+        <dc:Bounds x="250" y="100" width="170" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_F_5_1" bpmnElement="F_5_1">
+        <di:waypoint x="80" y="120" />
+        <di:waypoint x="250" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Shape_N_5_2" bpmnElement="N_5_2">
+        <dc:Bounds x="460" y="100" width="170" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_F_5_2" bpmnElement="F_5_2">
+        <di:waypoint x="420" y="120" />
+        <di:waypoint x="460" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Shape_N_5_3" bpmnElement="N_5_3">
+        <dc:Bounds x="670" y="100" width="170" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_F_5_3" bpmnElement="F_5_3">
+        <di:waypoint x="630" y="120" />
+        <di:waypoint x="670" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Shape_N_5_4" bpmnElement="N_5_4">
+        <dc:Bounds x="880" y="100" width="170" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_F_5_4" bpmnElement="F_5_4">
+        <di:waypoint x="840" y="120" />
+        <di:waypoint x="880" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Shape_N_5_5" bpmnElement="N_5_5">
+        <dc:Bounds x="1090" y="100" width="170" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_F_5_5" bpmnElement="F_5_5">
+        <di:waypoint x="1050" y="120" />
+        <di:waypoint x="1090" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Shape_N_5_6" bpmnElement="N_5_6">
+        <dc:Bounds x="1300" y="100" width="40" height="40" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_F_5_6" bpmnElement="F_5_6">
+        <di:waypoint x="1260" y="120" />
+        <di:waypoint x="1300" y="120" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+  <bpmndi:BPMNDiagram id="Diagram_6" name="Teilnahmebestätigung fehlt">
+    <bpmndi:BPMNPlane id="Plane_6" bpmnElement="Process_6">
+      <bpmndi:BPMNShape id="Shape_N_6_0" bpmnElement="N_6_0">
+        <dc:Bounds x="40" y="100" width="40" height="40" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_N_6_1" bpmnElement="N_6_1">
+        <dc:Bounds x="250" y="100" width="170" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_F_6_1" bpmnElement="F_6_1">
+        <di:waypoint x="80" y="120" />
+        <di:waypoint x="250" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Shape_N_6_2" bpmnElement="N_6_2">
+        <dc:Bounds x="460" y="100" width="170" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_F_6_2" bpmnElement="F_6_2">
+        <di:waypoint x="420" y="120" />
+        <di:waypoint x="460" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Shape_N_6_3" bpmnElement="N_6_3">
+        <dc:Bounds x="670" y="100" width="170" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_F_6_3" bpmnElement="F_6_3">
+        <di:waypoint x="630" y="120" />
+        <di:waypoint x="670" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Shape_N_6_4" bpmnElement="N_6_4">
+        <dc:Bounds x="880" y="100" width="170" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_F_6_4" bpmnElement="F_6_4">
+        <di:waypoint x="840" y="120" />
+        <di:waypoint x="880" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Shape_N_6_5" bpmnElement="N_6_5">
+        <dc:Bounds x="1090" y="100" width="170" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_F_6_5" bpmnElement="F_6_5">
+        <di:waypoint x="1050" y="120" />
+        <di:waypoint x="1090" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Shape_N_6_6" bpmnElement="N_6_6">
+        <dc:Bounds x="1300" y="100" width="40" height="40" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_F_6_6" bpmnElement="F_6_6">
+        <di:waypoint x="1260" y="120" />
+        <di:waypoint x="1300" y="120" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+  <bpmndi:BPMNDiagram id="Diagram_7" name="Anmeldung oder Link scheitert">
+    <bpmndi:BPMNPlane id="Plane_7" bpmnElement="Process_7">
+      <bpmndi:BPMNShape id="Shape_N_7_0" bpmnElement="N_7_0">
+        <dc:Bounds x="40" y="100" width="40" height="40" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_N_7_1" bpmnElement="N_7_1">
+        <dc:Bounds x="250" y="100" width="170" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_F_7_1" bpmnElement="F_7_1">
+        <di:waypoint x="80" y="120" />
+        <di:waypoint x="250" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Shape_N_7_2" bpmnElement="N_7_2">
+        <dc:Bounds x="460" y="100" width="170" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_F_7_2" bpmnElement="F_7_2">
+        <di:waypoint x="420" y="120" />
+        <di:waypoint x="460" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Shape_N_7_3" bpmnElement="N_7_3">
+        <dc:Bounds x="670" y="100" width="170" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_F_7_3" bpmnElement="F_7_3">
+        <di:waypoint x="630" y="120" />
+        <di:waypoint x="670" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Shape_N_7_4" bpmnElement="N_7_4">
+        <dc:Bounds x="880" y="100" width="170" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_F_7_4" bpmnElement="F_7_4">
+        <di:waypoint x="840" y="120" />
+        <di:waypoint x="880" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Shape_N_7_5" bpmnElement="N_7_5">
+        <dc:Bounds x="1090" y="100" width="40" height="40" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_F_7_5" bpmnElement="F_7_5">
+        <di:waypoint x="1050" y="120" />
+        <di:waypoint x="1090" y="120" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

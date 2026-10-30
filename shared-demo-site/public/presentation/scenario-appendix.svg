@@ -1,0 +1,186 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2200" height="1670" viewBox="0 0 2200 1670"><style>text{font-family:Arial,sans-serif;fill:#322333} .title{font-size:28px;font-weight:bold}.sub{font-size:17px}.label{font-size:14px}</style><rect width="2200" height="1670" fill="#faf8fb"/><text x="30" y="40" class="title">Trainingsdemo · Ablauf und Ausnahmewege</text><text x="30" y="72" class="sub">Synthetische D1-Räume · einzelne Szenarien, keine ausführbare Prozesssteuerung · 29.10.2026</text>
+<text x="30" y="115" class="sub">1. Erfolgspfad</text>
+<circle cx="60" cy="170" r="18" fill="white" stroke="#664c6b" stroke-width="1.5"/>
+<rect x="250" y="130" width="170" height="85" rx="8" fill="#eee4f2" stroke="#664c6b" />
+<text x="260" y="153" class="label">Daniel: Thema / Matthew</text>
+<text x="260" y="170" class="label">/ Ziel</text>
+<path d="M 80 170 H 247" stroke="#664c6b" fill="none"/><path d="M 242 165 L 248 170 L 242 175" fill="none" stroke="#664c6b"/>
+<rect x="460" y="130" width="170" height="85" rx="8" fill="#eee4f2" stroke="#664c6b" />
+<text x="470" y="153" class="label">Daniel: 1–3 Angebote /</text>
+<text x="470" y="170" class="label">Einladung</text>
+<path d="M 420 170 H 457" stroke="#664c6b" fill="none"/><path d="M 452 165 L 458 170 L 452 175" fill="none" stroke="#664c6b"/>
+<rect x="670" y="130" width="170" height="85" rx="8" fill="#eee4f2" stroke="#664c6b" />
+<text x="680" y="153" class="label">Matthew: erstes</text>
+<text x="680" y="170" class="label">ablehnen</text>
+<path d="M 630 170 H 667" stroke="#664c6b" fill="none"/><path d="M 662 165 L 668 170 L 662 175" fill="none" stroke="#664c6b"/>
+<rect x="880" y="130" width="170" height="85" rx="8" fill="#eee4f2" stroke="#664c6b" />
+<text x="890" y="153" class="label">Matthew: zweites</text>
+<text x="890" y="170" class="label">annehmen</text>
+<path d="M 840 170 H 877" stroke="#664c6b" fill="none"/><path d="M 872 165 L 878 170 L 872 175" fill="none" stroke="#664c6b"/>
+<rect x="1090" y="130" width="170" height="85" rx="8" fill="#eee4f2" stroke="#664c6b" />
+<text x="1100" y="153" class="label">Daniel: Training</text>
+<text x="1100" y="170" class="label">starten</text>
+<path d="M 1050 170 H 1087" stroke="#664c6b" fill="none"/><path d="M 1082 165 L 1088 170 L 1082 175" fill="none" stroke="#664c6b"/>
+<rect x="1300" y="130" width="170" height="85" rx="8" fill="#eee4f2" stroke="#664c6b" />
+<text x="1310" y="153" class="label">Daniel: bestanden</text>
+<text x="1310" y="170" class="label">berichten</text>
+<path d="M 1260 170 H 1297" stroke="#664c6b" fill="none"/><path d="M 1292 165 L 1298 170 L 1292 175" fill="none" stroke="#664c6b"/>
+<rect x="1510" y="130" width="170" height="85" rx="8" fill="#eee4f2" stroke="#664c6b" />
+<text x="1520" y="153" class="label">Matthew: Teilnahme</text>
+<text x="1520" y="170" class="label">bestätigen</text>
+<path d="M 1470 170 H 1507" stroke="#664c6b" fill="none"/><path d="M 1502 165 L 1508 170 L 1502 175" fill="none" stroke="#664c6b"/>
+<rect x="1720" y="130" width="170" height="85" rx="8" fill="#eee4f2" stroke="#664c6b" />
+<text x="1730" y="153" class="label">System: Demo-Skill /</text>
+<text x="1730" y="170" class="label">Verlauf</text>
+<path d="M 1680 170 H 1717" stroke="#664c6b" fill="none"/><path d="M 1712 165 L 1718 170 L 1712 175" fill="none" stroke="#664c6b"/>
+<circle cx="1950" cy="170" r="18" fill="white" stroke="#664c6b" stroke-width="3"/>
+<path d="M 1890 170 H 1927" stroke="#664c6b" fill="none"/><path d="M 1922 165 L 1928 170 L 1922 175" fill="none" stroke="#664c6b"/>
+<text x="30" y="305" class="sub">2. Absage vor Trainingsbeginn</text>
+<circle cx="60" cy="360" r="18" fill="white" stroke="#664c6b" stroke-width="1.5"/>
+<rect x="250" y="320" width="170" height="85" rx="8" fill="#eee4f2" stroke="#664c6b" />
+<text x="260" y="343" class="label">Daniel: Einladung /</text>
+<text x="260" y="360" class="label">Termin</text>
+<path d="M 80 360 H 247" stroke="#664c6b" fill="none"/><path d="M 242 355 L 248 360 L 242 365" fill="none" stroke="#664c6b"/>
+<rect x="460" y="320" width="170" height="85" rx="8" fill="#eee4f2" stroke="#664c6b" />
+<text x="470" y="343" class="label">Daniel: vor Start</text>
+<text x="470" y="360" class="label">absagen</text>
+<path d="M 420 360 H 457" stroke="#664c6b" fill="none"/><path d="M 452 355 L 458 360 L 452 365" fill="none" stroke="#664c6b"/>
+<rect x="670" y="320" width="170" height="85" rx="8" fill="#eee4f2" stroke="#664c6b" />
+<text x="680" y="343" class="label">System: abgesagt / kein</text>
+<text x="680" y="360" class="label">Skillgewinn</text>
+<path d="M 630 360 H 667" stroke="#664c6b" fill="none"/><path d="M 662 355 L 668 360 L 662 365" fill="none" stroke="#664c6b"/>
+<circle cx="900" cy="360" r="18" fill="white" stroke="#664c6b" stroke-width="3"/>
+<path d="M 840 360 H 877" stroke="#664c6b" fill="none"/><path d="M 872 355 L 878 360 L 872 365" fill="none" stroke="#664c6b"/>
+<text x="30" y="495" class="sub">3. Absage während Training</text>
+<circle cx="60" cy="550" r="18" fill="white" stroke="#664c6b" stroke-width="1.5"/>
+<rect x="250" y="510" width="170" height="85" rx="8" fill="#eee4f2" stroke="#664c6b" />
+<text x="260" y="533" class="label">Matthew: Termin</text>
+<text x="260" y="550" class="label">bestätigen</text>
+<path d="M 80 550 H 247" stroke="#664c6b" fill="none"/><path d="M 242 545 L 248 550 L 242 555" fill="none" stroke="#664c6b"/>
+<rect x="460" y="510" width="170" height="85" rx="8" fill="#eee4f2" stroke="#664c6b" />
+<text x="470" y="533" class="label">Daniel: Training</text>
+<text x="470" y="550" class="label">starten</text>
+<path d="M 420 550 H 457" stroke="#664c6b" fill="none"/><path d="M 452 545 L 458 550 L 452 555" fill="none" stroke="#664c6b"/>
+<rect x="670" y="510" width="170" height="85" rx="8" fill="#eee4f2" stroke="#664c6b" />
+<text x="680" y="533" class="label">Daniel: laufendes</text>
+<text x="680" y="550" class="label">Training absagen</text>
+<path d="M 630 550 H 667" stroke="#664c6b" fill="none"/><path d="M 662 545 L 668 550 L 662 555" fill="none" stroke="#664c6b"/>
+<rect x="880" y="510" width="170" height="85" rx="8" fill="#eee4f2" stroke="#664c6b" />
+<text x="890" y="533" class="label">System: abgesagt / kein</text>
+<text x="890" y="550" class="label">Skillgewinn</text>
+<path d="M 840 550 H 877" stroke="#664c6b" fill="none"/><path d="M 872 545 L 878 550 L 872 555" fill="none" stroke="#664c6b"/>
+<circle cx="1110" cy="550" r="18" fill="white" stroke="#664c6b" stroke-width="3"/>
+<path d="M 1050 550 H 1087" stroke="#664c6b" fill="none"/><path d="M 1082 545 L 1088 550 L 1082 555" fill="none" stroke="#664c6b"/>
+<text x="30" y="685" class="sub">4. Alle Vorschläge abgelehnt</text>
+<circle cx="60" cy="740" r="18" fill="white" stroke="#664c6b" stroke-width="1.5"/>
+<rect x="250" y="700" width="170" height="85" rx="8" fill="#eee4f2" stroke="#664c6b" />
+<text x="260" y="723" class="label">Matthew: alle Angebote</text>
+<text x="260" y="740" class="label">ablehnen</text>
+<path d="M 80 740 H 247" stroke="#664c6b" fill="none"/><path d="M 242 735 L 248 740 L 242 745" fill="none" stroke="#664c6b"/>
+<rect x="460" y="700" width="170" height="85" rx="8" fill="#eee4f2" stroke="#664c6b" />
+<text x="470" y="723" class="label">System: Neuplanung</text>
+<text x="470" y="740" class="label">nötig</text>
+<path d="M 420 740 H 457" stroke="#664c6b" fill="none"/><path d="M 452 735 L 458 740 L 452 745" fill="none" stroke="#664c6b"/>
+<rect x="670" y="700" width="170" height="85" rx="8" fill="#eee4f2" stroke="#664c6b" />
+<text x="680" y="723" class="label">Daniel: neue Angebote</text>
+<text x="680" y="740" class="label">setzen</text>
+<path d="M 630 740 H 667" stroke="#664c6b" fill="none"/><path d="M 662 735 L 668 740 L 662 745" fill="none" stroke="#664c6b"/>
+<rect x="880" y="700" width="170" height="85" rx="8" fill="#eee4f2" stroke="#664c6b" />
+<text x="890" y="723" class="label">Matthew: erneut Termin</text>
+<text x="890" y="740" class="label">wählen</text>
+<path d="M 840 740 H 877" stroke="#664c6b" fill="none"/><path d="M 872 735 L 878 740 L 872 745" fill="none" stroke="#664c6b"/>
+<rect x="1090" y="700" width="170" height="85" rx="8" fill="#ffe2df" stroke="#664c6b" stroke-dasharray="6 4"/>
+<text x="1100" y="723" class="label">Verfügbarkeit</text>
+<text x="1100" y="740" class="label">automatisch suchen</text>
+<path d="M 1050 740 H 1087" stroke="#664c6b" fill="none"/><path d="M 1082 735 L 1088 740 L 1082 745" fill="none" stroke="#664c6b"/>
+<circle cx="1320" cy="740" r="18" fill="white" stroke="#664c6b" stroke-width="3"/>
+<path d="M 1260 740 H 1297" stroke="#664c6b" fill="none"/><path d="M 1292 735 L 1298 740 L 1292 745" fill="none" stroke="#664c6b"/>
+<text x="30" y="875" class="sub">5. Vorzeitiger Start</text>
+<circle cx="60" cy="930" r="18" fill="white" stroke="#664c6b" stroke-width="1.5"/>
+<rect x="250" y="890" width="170" height="85" rx="8" fill="#eee4f2" stroke="#664c6b" />
+<text x="260" y="913" class="label">Matthew: Termin</text>
+<text x="260" y="930" class="label">bestätigen</text>
+<path d="M 80 930 H 247" stroke="#664c6b" fill="none"/><path d="M 242 925 L 248 930 L 242 935" fill="none" stroke="#664c6b"/>
+<rect x="460" y="890" width="170" height="85" rx="8" fill="#eee4f2" stroke="#664c6b" />
+<text x="470" y="913" class="label">System:</text>
+<text x="470" y="930" class="label">In-App-Erinnerung</text>
+<path d="M 420 930 H 457" stroke="#664c6b" fill="none"/><path d="M 452 925 L 458 930 L 452 935" fill="none" stroke="#664c6b"/>
+<rect x="670" y="890" width="170" height="85" rx="8" fill="#eee4f2" stroke="#664c6b" />
+<text x="680" y="913" class="label">Daniel: vorzeitig</text>
+<text x="680" y="930" class="label">starten</text>
+<path d="M 630 930 H 667" stroke="#664c6b" fill="none"/><path d="M 662 925 L 668 930 L 662 935" fill="none" stroke="#664c6b"/>
+<rect x="880" y="890" width="170" height="85" rx="8" fill="#eee4f2" stroke="#664c6b" />
+<text x="890" y="913" class="label">System: Start</text>
+<text x="890" y="930" class="label">protokollieren</text>
+<path d="M 840 930 H 877" stroke="#664c6b" fill="none"/><path d="M 872 925 L 878 930 L 872 935" fill="none" stroke="#664c6b"/>
+<circle cx="1110" cy="930" r="18" fill="white" stroke="#664c6b" stroke-width="3"/>
+<path d="M 1050 930 H 1087" stroke="#664c6b" fill="none"/><path d="M 1082 925 L 1088 930 L 1082 935" fill="none" stroke="#664c6b"/>
+<text x="30" y="1065" class="sub">6. Nicht bestanden / Nachschulung</text>
+<circle cx="60" cy="1120" r="18" fill="white" stroke="#664c6b" stroke-width="1.5"/>
+<rect x="250" y="1080" width="170" height="85" rx="8" fill="#eee4f2" stroke="#664c6b" />
+<text x="260" y="1103" class="label">Daniel: nicht bestanden</text>
+<text x="260" y="1120" class="label">berichten</text>
+<path d="M 80 1120 H 247" stroke="#664c6b" fill="none"/><path d="M 242 1115 L 248 1120 L 242 1125" fill="none" stroke="#664c6b"/>
+<rect x="460" y="1080" width="170" height="85" rx="8" fill="#eee4f2" stroke="#664c6b" />
+<text x="470" y="1103" class="label">Matthew: Teilnahme</text>
+<text x="470" y="1120" class="label">bestätigen</text>
+<path d="M 420 1120 H 457" stroke="#664c6b" fill="none"/><path d="M 452 1115 L 458 1120 L 452 1125" fill="none" stroke="#664c6b"/>
+<rect x="670" y="1080" width="170" height="85" rx="8" fill="#eee4f2" stroke="#664c6b" />
+<text x="680" y="1103" class="label">System: Stufe halten /</text>
+<text x="680" y="1120" class="label">Nachschulung nötig</text>
+<path d="M 630 1120 H 667" stroke="#664c6b" fill="none"/><path d="M 662 1115 L 668 1120 L 662 1125" fill="none" stroke="#664c6b"/>
+<rect x="880" y="1080" width="170" height="85" rx="8" fill="#fff0db" stroke="#664c6b" />
+<text x="890" y="1103" class="label">Daniel: Nachschulung</text>
+<text x="890" y="1120" class="label">neu anlegen</text>
+<path d="M 840 1120 H 877" stroke="#664c6b" fill="none"/><path d="M 872 1115 L 878 1120 L 872 1125" fill="none" stroke="#664c6b"/>
+<rect x="1090" y="1080" width="170" height="85" rx="8" fill="#ffe2df" stroke="#664c6b" stroke-dasharray="6 4"/>
+<text x="1100" y="1103" class="label">Nachschulung</text>
+<text x="1100" y="1120" class="label">automatisch auslösen</text>
+<path d="M 1050 1120 H 1087" stroke="#664c6b" fill="none"/><path d="M 1082 1115 L 1088 1120 L 1082 1125" fill="none" stroke="#664c6b"/>
+<circle cx="1320" cy="1120" r="18" fill="white" stroke="#664c6b" stroke-width="3"/>
+<path d="M 1260 1120 H 1297" stroke="#664c6b" fill="none"/><path d="M 1292 1115 L 1298 1120 L 1292 1125" fill="none" stroke="#664c6b"/>
+<text x="30" y="1255" class="sub">7. Teilnahmebestätigung fehlt</text>
+<circle cx="60" cy="1310" r="18" fill="white" stroke="#664c6b" stroke-width="1.5"/>
+<rect x="250" y="1270" width="170" height="85" rx="8" fill="#eee4f2" stroke="#664c6b" />
+<text x="260" y="1293" class="label">Daniel: Bericht</text>
+<text x="260" y="1310" class="label">einreichen</text>
+<path d="M 80 1310 H 247" stroke="#664c6b" fill="none"/><path d="M 242 1305 L 248 1310 L 242 1315" fill="none" stroke="#664c6b"/>
+<rect x="460" y="1270" width="170" height="85" rx="8" fill="#e3ecf8" stroke="#664c6b" />
+<text x="470" y="1293" class="label">Matthew: noch nicht</text>
+<text x="470" y="1310" class="label">bestätigt</text>
+<path d="M 420 1310 H 457" stroke="#664c6b" fill="none"/><path d="M 452 1305 L 458 1310 L 452 1315" fill="none" stroke="#664c6b"/>
+<rect x="670" y="1270" width="170" height="85" rx="8" fill="#ffe2df" stroke="#664c6b" stroke-dasharray="6 4"/>
+<text x="680" y="1293" class="label">Automatisch erinnern /</text>
+<text x="680" y="1310" class="label">eskalieren</text>
+<path d="M 630 1310 H 667" stroke="#664c6b" fill="none"/><path d="M 662 1305 L 668 1310 L 662 1315" fill="none" stroke="#664c6b"/>
+<rect x="880" y="1270" width="170" height="85" rx="8" fill="#eee4f2" stroke="#664c6b" />
+<text x="890" y="1293" class="label">Matthew: später</text>
+<text x="890" y="1310" class="label">bestätigen</text>
+<path d="M 840 1310 H 877" stroke="#664c6b" fill="none"/><path d="M 872 1305 L 878 1310 L 872 1315" fill="none" stroke="#664c6b"/>
+<rect x="1090" y="1270" width="170" height="85" rx="8" fill="#eee4f2" stroke="#664c6b" />
+<text x="1100" y="1293" class="label">System:</text>
+<text x="1100" y="1310" class="label">Ergebnisabhängiger</text>
+<text x="1100" y="1327" class="label">Abschluss</text>
+<path d="M 1050 1310 H 1087" stroke="#664c6b" fill="none"/><path d="M 1082 1305 L 1088 1310 L 1082 1315" fill="none" stroke="#664c6b"/>
+<circle cx="1320" cy="1310" r="18" fill="white" stroke="#664c6b" stroke-width="3"/>
+<path d="M 1260 1310 H 1297" stroke="#664c6b" fill="none"/><path d="M 1292 1305 L 1298 1310 L 1292 1315" fill="none" stroke="#664c6b"/>
+<text x="30" y="1445" class="sub">8. Anmeldung oder Link scheitert</text>
+<circle cx="60" cy="1500" r="18" fill="white" stroke="#664c6b" stroke-width="1.5"/>
+<rect x="250" y="1460" width="170" height="85" rx="8" fill="#eee4f2" stroke="#664c6b" />
+<text x="260" y="1483" class="label">System: Zugang abweisen</text>
+<path d="M 80 1500 H 247" stroke="#664c6b" fill="none"/><path d="M 242 1495 L 248 1500 L 242 1505" fill="none" stroke="#664c6b"/>
+<rect x="460" y="1460" width="170" height="85" rx="8" fill="#fff0db" stroke="#664c6b" />
+<text x="470" y="1483" class="label">Daniel / Matthew: Konto</text>
+<text x="470" y="1500" class="label">und Link prüfen</text>
+<path d="M 420 1500 H 457" stroke="#664c6b" fill="none"/><path d="M 452 1495 L 458 1500 L 452 1505" fill="none" stroke="#664c6b"/>
+<rect x="670" y="1460" width="170" height="85" rx="8" fill="#fff0db" stroke="#664c6b" />
+<text x="680" y="1483" class="label">Passenden gültigen</text>
+<text x="680" y="1500" class="label">Rollenlink öffnen</text>
+<path d="M 630 1500 H 667" stroke="#664c6b" fill="none"/><path d="M 662 1495 L 668 1500 L 662 1505" fill="none" stroke="#664c6b"/>
+<rect x="880" y="1460" width="170" height="85" rx="8" fill="#fff0db" stroke="#664c6b" />
+<text x="890" y="1483" class="label">Bei Linkverlust: neuen</text>
+<text x="890" y="1500" class="label">Raum vorbereiten</text>
+<path d="M 840 1500 H 877" stroke="#664c6b" fill="none"/><path d="M 872 1495 L 878 1500 L 872 1505" fill="none" stroke="#664c6b"/>
+<circle cx="1110" cy="1500" r="18" fill="white" stroke="#664c6b" stroke-width="3"/>
+<path d="M 1050 1500 H 1087" stroke="#664c6b" fill="none"/><path d="M 1082 1495 L 1088 1500 L 1082 1505" fill="none" stroke="#664c6b"/>
+<text x="30" y="1645" class="sub">Legende: Lila = implementiert · Orange = manuell · Blau = offen / warten · Koralle gestrichelt = geplant. Keine Kalenderbuchung, automatische Mail oder Push.</text></svg>

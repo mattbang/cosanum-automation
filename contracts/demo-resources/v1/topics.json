@@ -1,0 +1,34 @@
+[
+  {
+    "topic_id": "TR-1",
+    "topic": "Wareneingang",
+    "version": "DEMO-1",
+    "duration_minutes": 60,
+    "material_folder": "/materials/",
+    "synthetic": true
+  },
+  {
+    "topic_id": "TR-2",
+    "topic": "Kommissionierung",
+    "version": "DEMO-1",
+    "duration_minutes": 60,
+    "material_folder": "/materials/",
+    "synthetic": true
+  },
+  {
+    "topic_id": "TR-3",
+    "topic": "Qualitätskontrolle",
+    "version": "DEMO-1",
+    "duration_minutes": 60,
+    "material_folder": "/materials/",
+    "synthetic": true
+  },
+  {
+    "topic_id": "TR-4",
+    "topic": "Prozessänderung",
+    "version": "DEMO-1",
+    "duration_minutes": 60,
+    "material_folder": "/materials/",
+    "synthetic": true
+  }
+]

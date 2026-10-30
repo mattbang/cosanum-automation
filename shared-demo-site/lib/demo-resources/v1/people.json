@@ -1,0 +1,30 @@
+[
+  {
+    "employee_id": "EMP-001",
+    "name": "Matthew",
+    "role": "Mitarbeiter 1",
+    "account_status": "Zugewiesen",
+    "synthetic": true
+  },
+  {
+    "employee_id": "EMP-002",
+    "name": "Annina",
+    "role": "Mitarbeiter 2",
+    "account_status": "Konto folgt",
+    "synthetic": true
+  },
+  {
+    "employee_id": "EMP-003",
+    "name": "Marko",
+    "role": "Mitarbeiter 3",
+    "account_status": "Konto folgt",
+    "synthetic": true
+  },
+  {
+    "employee_id": "EMP-004",
+    "name": "Daniel",
+    "role": "Process & Quality",
+    "account_status": "Zugewiesen",
+    "synthetic": true
+  }
+]

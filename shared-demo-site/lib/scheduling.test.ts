@@ -1,0 +1,3 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {demoWeekSchedule} from './scheduling.ts';
+test('proposals skip weekends and exclude either busy calendar',()=>{const schedule=demoWeekSchedule(new Date('2026-10-30T12:00Z'));assert.equal(schedule.days[0].date,'2026-11-02');assert.equal(schedule.days.length,5);assert.equal(schedule.offers.length,3);for(const offer of schedule.offers){const slot=schedule.days.flatMap(d=>d.slots).find(s=>s.start===offer)!;assert.equal(slot.danielBusy||slot.matthewBusy,false);assert.match(offer,/T08:00:00.000Z|T10:00:00.000Z|T12:00:00.000Z/);}});
+test('summer proposals retain Zurich wall-clock hours',()=>{assert.match(demoWeekSchedule(new Date('2026-06-12T12:00Z')).offers[0],/T07:00:00.000Z/);});
