@@ -6,6 +6,7 @@ This project tests an end-to-end logistics training workflow with synthetic peop
 
 ## Start here
 
+- [Contributor development](docs/CONTRIBUTOR_DEVELOPMENT.md): clean-checkout setup, local checks, and isolated Google test targets.
 - [Project overview](docs/PROJECT_OVERVIEW.md): purpose, components, and data boundary.
 - [Feature register](docs/FEATURE_REGISTER.md): supported status and next acceptance check for each feature.
 - [Development plan](docs/DEVELOPMENT_PLAN.md): staged delivery and current dependencies.
