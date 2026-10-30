@@ -276,7 +276,7 @@ test('synthetic participant API and static asset rehearsal uses fake identities 
     assert.equal((await request(base, '/cases/CASE-ONE', { token: 'fake-person-2-token' })).status, 403,
       'group participant cannot read another person case');
     // This fixture seeds persisted evidence directly; it does not exercise trainer assessment submission.
-    await pool.query("UPDATE workflow_cases SET evidence_facts = evidence_facts || '{\"trainerPass\":true}'::jsonb WHERE case_id = 'CASE-ONE'");
+    await pool.query("UPDATE workflow_cases SET status = 'assessed', evidence_facts = evidence_facts || '{\"trainerPass\":true}'::jsonb WHERE case_id = 'CASE-ONE'");
     const accepted = await request(base, '/participant-responses', { method: 'POST', token: 'fake-person-1-token', body: payload });
     assert.equal(accepted.status, 201);
     assert.equal(accepted.body.status, 'verified');
@@ -320,7 +320,7 @@ test('synthetic participant API and static asset rehearsal uses fake identities 
         'the rendered response form stays hidden before trainer pass');
       assert.match(await page.evaluate<string>("document.getElementById('action-state').textContent"), /noch nicht bestätigt/i);
 
-      await pool.query("UPDATE workflow_cases SET evidence_facts = evidence_facts || '{\"trainerPass\":true}'::jsonb WHERE case_id = 'CASE-UI'");
+      await pool.query("UPDATE workflow_cases SET status = 'assessed', evidence_facts = evidence_facts || '{\"trainerPass\":true}'::jsonb WHERE case_id = 'CASE-UI'");
       const refreshedToken = await issue('CASE-UI', 'ui@example.test');
       await page.command('Page.navigate', { url: `${base}/?case=CASE-UI&fresh=2#link=${refreshedToken}` });
       await waitForPage(page, "document.readyState === 'complete' && !document.getElementById('sign-in').disabled", 'fresh trainer-pass invitation');

@@ -98,7 +98,7 @@ test('PostgreSQL integration: migration, group booking, case history, link bindi
       actorKey: 'PERSON-1', role: 'assigned_participant', verifiedEmail: 'person@example.test',
       issuer: owner.issuer, subject: 'participant-subject-1',
     };
-    await pool.query("UPDATE workflow_cases SET evidence_facts = evidence_facts || '{\"trainerPass\":true}'::jsonb WHERE case_id = $1", ['CASE-PGLITE-1']);
+    await pool.query("UPDATE workflow_cases SET status = 'assessed', evidence_facts = evidence_facts || '{\"trainerPass\":true}'::jsonb WHERE case_id = $1", ['CASE-PGLITE-1']);
     const responses = new ParticipantResponses(pool);
     const wrongAccount = { ...participant, subject: 'wrong-participant-subject' };
     await assert.rejects(responses.submit({ caseId: 'CASE-PGLITE-1', idempotencyKey: 'wrong-account', answer: 'yes', typedName: 'Other Person' }, wrongAccount),
@@ -108,7 +108,7 @@ test('PostgreSQL integration: migration, group booking, case history, link bindi
       actorKey: 'PERSON-2', role: 'assigned_participant', verifiedEmail: 'person2@example.test',
       issuer: owner.issuer, subject: 'participant-subject-2',
     };
-    await pool.query("UPDATE workflow_cases SET evidence_facts = evidence_facts || '{\"trainerPass\":true}'::jsonb WHERE case_id = $1", ['CASE-PGLITE-2']);
+    await pool.query("UPDATE workflow_cases SET status = 'assessed', evidence_facts = evidence_facts || '{\"trainerPass\":true}'::jsonb WHERE case_id = $1", ['CASE-PGLITE-2']);
     const assignment2 = await pool.query<{ assignment_id: string }>(
       "SELECT assignment_id FROM workflow_assignments WHERE case_id = 'CASE-PGLITE-2' AND role = 'assigned_participant'",
     );

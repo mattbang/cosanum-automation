@@ -86,6 +86,26 @@ try {
       [identity.issuer, identity.subject, identity.verifiedEmail, identity.actorKey, identity.role],
     );
   }
+  // Revocation committed before creation must win, even if the caller was authenticated earlier.
+  await withPinnedTransaction(async (lockClient, blockerPid) => {
+    await lockClient.query('UPDATE verified_identities SET active = false WHERE issuer = $1 AND subject = $2', [owner.issuer, owner.subject]);
+    const operation = { settled: false };
+    const create = new PostgresWorkflowRepository(pool).createRequest({
+      id: 'REQ-REVOKED-NATIVE', requesterName: 'Revocation race', reason: 'new_training', deadlineDate: '2026-11-20',
+      sessions: [{ sessionId: 'SES-REVOKED-NATIVE' }],
+      cases: [{ caseId: 'CASE-REVOKED-NATIVE', sessionId: 'SES-REVOKED-NATIVE', participantKey: 'PERSON-REVOKED',
+        trainerKey: trainer.actorKey, ownerKey: owner.actorKey }],
+    }, owner).finally(() => { operation.settled = true; });
+    const waiterPid = await waitForBlockedPid(blockerPid, operation, 'identity deactivate versus request creation');
+    assert.notEqual(waiterPid, blockerPid, 'request creation uses its own backend connection');
+    await lockClient.query('COMMIT');
+    await assert.rejects(create, error => error instanceof ActionError && error.status === 403);
+    assert.equal((await pool.query("SELECT count(*)::int AS count FROM workflow_requests WHERE request_id = 'REQ-REVOKED-NATIVE'")).rows[0].count, 0);
+    assert.equal((await pool.query("SELECT count(*)::int AS count FROM audit_events WHERE request_id = 'REQ-REVOKED-NATIVE'")).rows[0].count, 0);
+  });
+  await pool.query('UPDATE verified_identities SET active = true WHERE issuer = $1 AND subject = $2', [owner.issuer, owner.subject]);
+  console.log('Identity deactivate/request creation race: passed on separate backends without request or audit writes');
+
   await new PostgresWorkflowRepository(pool).createRequest({
     id: 'REQ-NATIVE', requesterName: 'Synthetic native integration', sourceTeam: 'Test',
     reason: 'new_training', deadlineDate: '2026-11-20', sessions: [{ sessionId: 'SES-NATIVE' }],
@@ -155,6 +175,36 @@ try {
   await pool.query('UPDATE verified_identities SET active = true WHERE issuer = $1 AND subject = $2', [owner.issuer, owner.subject]);
   console.log('Owner identity revoke race: passed on separate backends');
 
+  // An absent identity SELECT cannot lock a future row. The upsert must validate the winner.
+  const collisionLink = await links.issue({ caseId: 'CASE-NATIVE-2', assignmentId: assignment('CASE-NATIVE-2', 'assigned_participant'),
+    email: 'person2@example.test', expiresAt, createdBy: owner });
+  for (const registration of [
+    { subject: 'collision-native', actorKey: 'OTHER-PERSON-NATIVE', active: true },
+    { subject: 'inactive-native', actorKey: 'PERSON-NATIVE-2', active: false },
+  ]) {
+    await withPinnedTransaction(async (lockClient, blockerPid) => {
+      await lockClient.query(
+        `INSERT INTO verified_identities (issuer, subject, email_normalized, email_verified, actor_key, role, active)
+         VALUES ($1, $2, 'person2@example.test', true, $3, 'assigned_participant', $4)`,
+        [owner.issuer, registration.subject, registration.actorKey, registration.active],
+      );
+      const operation = { settled: false };
+      const claim = links.claim(collisionLink.token, {
+        issuer: owner.issuer, subject: registration.subject, email: 'person2@example.test', emailVerified: true,
+      }).finally(() => { operation.settled = true; });
+      const waiterPid = await waitForBlockedPid(blockerPid, operation, 'concurrent identity registration versus link claim');
+      assert.notEqual(waiterPid, blockerPid, 'link claim uses its own backend connection');
+      await lockClient.query('COMMIT');
+      await assert.rejects(claim, error => error instanceof ParticipantLinkError && error.status === 403);
+      const binding = await pool.query(`SELECT l.claimed_issuer, l.claimed_subject, a.identity_issuer, a.identity_subject
+        FROM hosted_participant_links l JOIN workflow_assignments a ON a.assignment_id = l.assignment_id
+        WHERE l.token_hash = $1`, [createHash('sha256').update(collisionLink.token).digest()]);
+      assert.deepEqual(binding.rows[0], { claimed_issuer: null, claimed_subject: null, identity_issuer: null, identity_subject: null });
+      assert.equal((await pool.query("SELECT count(*)::int AS count FROM audit_events WHERE case_id = 'CASE-NATIVE-2' AND operation = 'participant_link.claim'")).rows[0].count, 0);
+    });
+  }
+  console.log('Identity registration/claim races: conflicting and inactive winners denied; link, assignment and audit rollback verified');
+
   const issued = await links.issue({ caseId: 'CASE-NATIVE-1', assignmentId: assignment('CASE-NATIVE-1', 'assigned_participant'),
     email: 'person1@example.test', expiresAt, createdBy: owner });
   const claimed = await links.claim(issued.token, {
@@ -215,6 +265,8 @@ try {
   assert.equal((await pool.query("SELECT count(*)::int AS count FROM case_evidence WHERE case_id IN ('CASE-NATIVE-1','CASE-NATIVE-2') AND fact_key = 'eventVerified'")).rows[0].count, 2);
   console.log(`Concurrent group booking: passed; distinct backends ${firstPid}/${secondPid}; one commit, one stale-revision conflict`);
 
+  // Seed assessment state; trainer submission is outside this native harness.
+  await pool.query("UPDATE workflow_cases SET status = 'assessed' WHERE case_id = 'CASE-NATIVE-1'");
   const responseInput = { caseId: 'CASE-NATIVE-1', idempotencyKey: 'native-response-1', answer: 'yes', typedName: 'Native Participant' };
   const response = await responses.submit(responseInput, participant);
   const replay = await responses.submit(responseInput, participant);

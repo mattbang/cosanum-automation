@@ -9,7 +9,7 @@ const input: CreateRequestInput = {
   sessions: [{ sessionId: 'SES-1', startsAt: '2026-11-02T09:00:00Z', endsAt: '2026-11-02T10:00:00Z', attributes: { location: 'Synthetic room' } }],
   cases: [{ caseId: 'CASE-1', sessionId: 'SES-1', participantKey: 'PERSON-1', trainerKey: 'TRAINER-1', ownerKey: 'OWNER-1', attributes: { topicId: 'TOPIC-1', targetLevel: 2 } }],
 };
-const actor: Identity = { actorKey: 'OWNER-1', role: 'process_quality', verifiedEmail: 'owner@example.test' };
+const actor: Identity = { actorKey: 'OWNER-1', role: 'process_quality', verifiedEmail: 'owner@example.test', issuer: 'https://issuer.example.test', subject: 'owner' };
 function result(rows: unknown[] = [], rowCount = rows.length) { return { rows, rowCount } as never; }
 
 function repositoryDb() {
@@ -21,6 +21,7 @@ function repositoryDb() {
   const connection = {
     async query(sql: string, values: readonly unknown[] = []) {
       calls.push(sql);
+      if (sql.includes('SELECT 1 FROM verified_identities')) return result([{}]);
       if (sql.startsWith('INSERT INTO workflow_requests')) {
         const id = String(values[0]);
         if (requests.has(id)) return result([], 0);

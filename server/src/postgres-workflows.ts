@@ -1,6 +1,7 @@
 import type { SqlPool } from './database.ts';
 import { inTransaction } from './database.ts';
-import type { Identity } from './service.ts';
+import { ActionError, type Identity } from './service.ts';
+import { normalizeEmail } from './identity.ts';
 
 export type CreateRequestInput = {
   id: string;
@@ -39,7 +40,8 @@ export class PostgresWorkflowRepository {
   constructor(private readonly pool: SqlPool) {}
 
   async createRequest(input: CreateRequestInput, actor: Identity): Promise<{ requestId: string; caseIds: string[]; replayed: boolean }> {
-    if (actor.role !== 'process_quality') throw new WorkflowConflictError('Process & Quality authorization required');
+    if (actor.role !== 'process_quality' || !actor.issuer || !actor.subject || !actor.verifiedEmail)
+      throw new ActionError(403, 'Verified Process & Quality identity required');
     if (!input || typeof input !== 'object' || typeof input.id !== 'string' || !input.id.trim() ||
         typeof input.requesterName !== 'string' || !input.requesterName.trim() ||
         (input.sourceTeam !== undefined && typeof input.sourceTeam !== 'string') || typeof input.deadlineDate !== 'string' ||
@@ -65,6 +67,16 @@ export class PostgresWorkflowRepository {
       throw new WorkflowInputError('Every case must reference a unique session supplied with this request');
 
     return inTransaction(this.pool, async db => {
+      // Authentication can precede a concurrent revocation. Keep the exact identity
+      // active and verified for the whole creation/replay transaction.
+      const authority = await db.query(
+        `SELECT 1 FROM verified_identities
+          WHERE issuer = $1 AND subject = $2 AND email_normalized = $3
+            AND actor_key = $4 AND role = 'process_quality' AND email_verified AND active
+          FOR SHARE`,
+        [actor.issuer, actor.subject, normalizeEmail(actor.verifiedEmail), actor.actorKey],
+      );
+      if (authority.rowCount !== 1) throw new ActionError(403, 'Active verified Process & Quality identity required');
       const requestManifest = {
         sessionIds: input.sessions.map(session => session.sessionId).sort(),
         caseIds: input.cases.map(entry => entry.caseId).sort(),

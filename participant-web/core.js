@@ -34,7 +34,7 @@ export function invitationUrlWithoutSecret(url) {
 }
 
 export function participantResponseReady(snapshot, verifiedParticipantClaim) {
-  return verifiedParticipantClaim === true && snapshot?.evidence?.facts?.trainerPass === true && snapshot?.status !== 'acknowledged' && snapshot?.status !== 'complete';
+  return verifiedParticipantClaim === true && snapshot?.evidence?.facts?.trainerPass === true && snapshot?.status === 'assessed';
 }
 
 export function isRetryableSubmissionError(error) {

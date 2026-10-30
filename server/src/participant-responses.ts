@@ -4,7 +4,7 @@ import { ActionError, type Identity } from './service.ts';
 import { inTransaction, type SqlPool } from './database.ts';
 
 type CaseRow = QueryResultRow & {
-  case_id: string; request_id: string; participant_key: string; revision: string;
+  case_id: string; request_id: string; participant_key: string; revision: string; status: string;
   evidence_facts: Record<string, boolean>; assignment_id: string; actor_email: string;
 };
 
@@ -30,7 +30,7 @@ export class ParticipantResponses {
 
     return inTransaction(this.pool, async db => {
       const current = await db.query<CaseRow>(
-        `SELECT c.case_id, c.request_id, c.participant_key, c.revision::text AS revision, c.evidence_facts,
+        `SELECT c.case_id, c.request_id, c.participant_key, c.revision::text AS revision, c.status, c.evidence_facts,
                 a.assignment_id, i.email_normalized AS actor_email
            FROM workflow_cases c
            JOIN workflow_assignments a ON a.case_id = c.case_id AND a.role = 'assigned_participant'
@@ -64,6 +64,7 @@ export class ParticipantResponses {
         return { status: 'verified', actionId: 'acceptParticipantAcknowledgement', caseId,
           responseId: prior.response_id, revision: prior.revision, replayed: true };
       }
+      if (row.status !== 'assessed') throw new ActionError(409, 'Case is not awaiting a participant acknowledgement');
       const priorForCase = await db.query('SELECT 1 FROM participant_responses WHERE case_id = $1', [caseId]);
       if (priorForCase.rowCount) throw new ActionError(409, 'Participant acknowledgement was already recorded');
 

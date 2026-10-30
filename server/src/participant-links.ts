@@ -141,15 +141,21 @@ export class HostedParticipantLinks {
           WHERE assignment_id = $1 AND (identity_issuer IS NULL OR (identity_issuer = $2 AND identity_subject = $3))`,
         [link.assignment_id, claims.issuer, claims.subject, email],
       );
-      await db.query(
+      const registered = await db.query<{ actor_key: string; role: Identity['role']; email_normalized: string; active: boolean }>(
         `INSERT INTO verified_identities (issuer, subject, email_normalized, email_verified, actor_key, role)
          VALUES ($1, $2, $3, true, $4, 'assigned_participant')
          ON CONFLICT (issuer, subject) DO UPDATE SET updated_at = now()
          WHERE verified_identities.actor_key = EXCLUDED.actor_key
            AND verified_identities.role = EXCLUDED.role
-           AND verified_identities.email_normalized = EXCLUDED.email_normalized`,
+           AND verified_identities.email_normalized = EXCLUDED.email_normalized
+           AND verified_identities.email_verified AND verified_identities.active
+         RETURNING actor_key, role, email_normalized, active`,
         [claims.issuer, claims.subject, email, link.actor_key],
       );
+      const identity = registered.rows[0];
+      if (registered.rowCount !== 1 || !identity?.active || identity.actor_key !== link.actor_key ||
+          identity.role !== 'assigned_participant' || identity.email_normalized !== email)
+        throw new ParticipantLinkError(403, 'Verified account is no longer available for this participant');
       await db.query(
         `INSERT INTO audit_events (actor_key, actor_role, actor_email, operation, case_id, outcome, details)
          VALUES ($1, 'assigned_participant', $2, 'participant_link.claim', $3, 'accepted', $4::jsonb)`,

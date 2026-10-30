@@ -83,3 +83,17 @@ test('request planning preserves requester and deadline and rejects mismatched t
  state=transition(state,'host',{type:'invite',requestId:request.id,topic:request.topic,participant:request.participant,offers:[second],targetLevel:2},now);
  assert.equal(state.active?.stage,'invited');assert.equal(state.history[0].stage,'cancelled');
 });
+
+test('a participant cannot accept an offer after its start time', () => {
+  const state = transition(initialState(), 'host', { type: 'invite', topic: TOPICS[0], participant: LIVE_PARTICIPANT, offers: [first], targetLevel: 2 }, now);
+  assert.throws(() => transition(state, 'guest', { type: 'accept_offer', offer: first }, first), /abgelaufen/);
+  assert.equal(state.active?.stage, 'invited');
+  assert.equal(state.active?.acceptedOffer, null);
+});
+
+test('linked request planning cannot change its persisted target level', () => {
+  const state = initialState(), request = state.requests![0];
+  assert.throws(() => transition(state, 'host', { type: 'invite', requestId: request.id, topic: request.topic,
+    participant: request.participant, offers: [first], targetLevel: 3 }, now), /Anfrage/);
+  assert.equal(state.active, null);
+});

@@ -22,7 +22,8 @@ test('participant response requires a claimed participant link and persisted tra
   assert.equal(participantResponseReady(snapshot, false), false);
   assert.equal(participantResponseReady({ status: 'assessed', evidence: { facts: { trainerPass: false } } }, true), false);
   assert.equal(participantResponseReady(snapshot, true), true);
-  assert.equal(participantResponseReady({ ...snapshot, status: 'acknowledged' }, true), false);
+  for (const status of ['open', 'invited', 'acknowledged', 'proof_ready', 'archived_verified', 'complete'])
+    assert.equal(participantResponseReady({ ...snapshot, status }, true), false);
 });
 
 test('transient server and network failures can retry, while client conflicts cannot', () => {

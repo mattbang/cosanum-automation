@@ -74,7 +74,7 @@ export function transition(state: DemoState, actor: 'host' | 'guest', action: De
     assert(Number.isInteger(action.targetLevel) && action.targetLevel >= 1 && action.targetLevel <= 3, 'Ungültiges Zielniveau.');
     const request = action.requestId ? state.requests?.find(item => item.id === action.requestId) : undefined;
     if (action.requestId) {
-      assert(request && request.topic === action.topic && request.participant === action.participant, 'Die Anfrage passt nicht zu dieser Planung.');
+      assert(request && request.topic === action.topic && request.participant === action.participant && request.targetLevel === action.targetLevel, 'Die Anfrage passt nicht zu dieser Planung.');
       assert(![...(state.active ? [state.active] : []), ...state.history].some(item => item.request?.id === action.requestId && item.stage !== 'cancelled'), 'Diese Anfrage wurde bereits eingeplant.');
     }
     const next: DemoCase = {
@@ -101,6 +101,7 @@ export function transition(state: DemoState, actor: 'host' | 'guest', action: De
   if (action.type === 'accept_offer') {
     assert(actor === 'guest' && current.stage === 'invited', 'Die Einladung ist nicht mehr offen.');
     assert(current.offers.includes(action.offer) && !current.rejectedOffers.includes(action.offer), 'Dieser Termin ist nicht verfügbar.');
+    assert(validOffer(action.offer, now), 'Dieser Terminvorschlag ist abgelaufen. Bitte neue Termine anfordern.');
     return { ...state, active: { ...current, acceptedOffer: action.offer, stage: 'confirmed', events: [...current.events, event('Teilnehmer:in', 'Termin bestätigt', now)] } };
   }
   if (action.type === 'start_early') {

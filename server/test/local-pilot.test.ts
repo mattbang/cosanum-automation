@@ -97,7 +97,7 @@ test('local pilot serves durable assigned cases while external actions remain di
         participantEmail: participant.email, trainerKey: 'HCM4', ownerKey: owner.actorKey,
         attributes: { topicId: 'TR-1', topicName: 'Wareneingang', mode: 'single', targetLevel: 2 } }],
     };
-    assert.equal((await call(base, '/requests', { method: 'POST', token: participant.token, body: input })).status, 409);
+    assert.equal((await call(base, '/requests', { method: 'POST', token: participant.token, body: input })).status, 403);
     const wrongOwner = await call(base, '/requests', { method: 'POST', token: owner.token, body: {
       ...input, id: 'REQ-LOCAL-ORPHAN', sessions: [{ ...input.sessions[0], sessionId: 'SES-LOCAL-ORPHAN' }],
       cases: [{ ...input.cases[0], caseId: 'CASE-LOCAL-ORPHAN', sessionId: 'SES-LOCAL-ORPHAN', ownerKey: 'UNKNOWN-OWNER' }],

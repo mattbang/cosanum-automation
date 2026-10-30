@@ -10,6 +10,7 @@ function fakePool(options: {
   expiresAt?: Date; revokedAt?: Date | null; assignmentActive?: boolean; claimedIssuer?: string | null; claimedSubject?: string | null;
   assignmentIssuer?: string | null; assignmentSubject?: string | null;
   ownerAuthority?: boolean;
+  identityRegistrationConflict?: boolean;
   ownerIdentityIssuer?: string; ownerIdentitySubject?: string;
 } = {}) {
   const calls: Array<{ sql: string; values?: readonly unknown[] }> = [];
@@ -30,6 +31,9 @@ function fakePool(options: {
         actor_key: 'PERSON-1', assignment_active: options.assignmentActive ?? true,
       }], rowCount: 1 } as never;
       if (sql.startsWith('SELECT actor_key, role, email_normalized, active')) return { rows: [], rowCount: 0 } as never;
+      if (sql.startsWith('INSERT INTO verified_identities')) return options.identityRegistrationConflict
+        ? { rows: [], rowCount: 0 } as never
+        : { rows: [{ actor_key: 'PERSON-1', role: 'assigned_participant', email_normalized: 'person@example.test', active: true }], rowCount: 1 } as never;
       if (sql.startsWith('UPDATE hosted_participant_links')) return options.ownerAuthority !== false && values?.[0] === 'link-1'
         ? { rows: [{ case_id: 'CASE-1' }], rowCount: 1 } as never : { rows: [], rowCount: 0 } as never;
       return { rows: [], rowCount: sql.startsWith('INSERT') || sql.startsWith('UPDATE') ? 1 : 0 } as never;
@@ -148,4 +152,13 @@ test('expired, revoked, or differently bound links fail closed', async () => {
     await assert.rejects(links.claim('synthetic-link-token', claims),
       (error: unknown) => error instanceof ParticipantLinkError && (error.status === 401 || error.status === 403));
   }
+});
+
+test('a lost identity-registration conflict rolls back claim bindings and never records acceptance', async () => {
+  const db = fakePool({ identityRegistrationConflict: true });
+  await assert.rejects(new HostedParticipantLinks(db.pool).claim('synthetic-link-token', {
+    issuer: 'https://issuer.example.test', subject: 'concurrent-subject', email: 'person@example.test', emailVerified: true,
+  }), (error: unknown) => error instanceof ParticipantLinkError && error.status === 403);
+  assert.ok(db.calls.some(call => call.sql === 'ROLLBACK'));
+  assert.equal(db.calls.some(call => call.sql === 'COMMIT' || call.sql.includes('participant_link.claim')), false);
 });
