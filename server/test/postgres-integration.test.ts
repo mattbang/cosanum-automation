@@ -18,7 +18,7 @@ test('PostgreSQL integration: migration, group booking, case history, link bindi
     await runMigrations(pool);
     await runMigrations(pool);
     const migrationRows = await pool.query('SELECT count(*)::int AS count FROM schema_migrations');
-    assert.equal(migrationRows.rows[0].count, 2);
+    assert.equal(migrationRows.rows[0].count, 3);
 
     const owner: Identity = {
       actorKey: 'OWNER-1', role: 'process_quality', verifiedEmail: 'owner@example.test',

@@ -68,8 +68,8 @@ try {
   console.log(`PostgreSQL: ${versionRows[0].version}`);
   await runMigrations(pool);
   await runMigrations(pool);
-  assert.equal((await pool.query('SELECT count(*)::int AS count FROM schema_migrations')).rows[0].count, 2);
-  console.log('Migrations: two applied from scratch; repeat is idempotent');
+  assert.equal((await pool.query('SELECT count(*)::int AS count FROM schema_migrations')).rows[0].count, 3);
+  console.log('Migrations: three applied from scratch; repeat is idempotent');
 
   const owner = {
     actorKey: 'OWNER-NATIVE', role: 'process_quality', verifiedEmail: 'owner@example.test',
