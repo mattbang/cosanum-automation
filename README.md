@@ -23,3 +23,8 @@ The [GUI design baseline](docs/GUI_DESIGN_BASELINE.md) records the agreed starti
 The private training web app remains owner-only. A source commit, Apps Script editor `@HEAD`, and a numbered `/exec` deployment are separate states. Version 6 has no mail scope; reminders and completion messages still require a reviewed permission grant and connected delivery test. The public synthetic role tour and its proposed mail sender are separate from the training app.
 
 Use synthetic data only. Keep OAuth credentials, account-specific configuration, local evidence, and personal test identities out of the public repository. The [agent instructions](AGENTS.md) describe the active Google target and the historical one; the ignored local `docs/private/README.md` indexes account-specific evidence.
+
+## Start developing
+
+From a clean checkout with Node 24 and Python 3.11 or newer, run `npm run check` for credential-free local checks, then `npm run dev` and open `http://127.0.0.1:4173/` for the synthetic read-only Demo Hub. No package install or Google login is needed. The [contributor guide](docs/CONTRIBUTING.md) covers the expected result, common setup failures, the optional container, and the separate connected-verification handoff.
+

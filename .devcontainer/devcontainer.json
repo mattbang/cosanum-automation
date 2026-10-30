@@ -1,0 +1,20 @@
+{
+  "name": "Cosanum synthetic development",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:24-bookworm",
+  "features": {
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.13"
+    }
+  },
+  "containerEnv": {
+    "PREVIEW_HOST": "0.0.0.0"
+  },
+  "forwardPorts": [4173],
+  "portsAttributes": {
+    "4173": {
+      "label": "Synthetic read-only Demo Hub",
+      "onAutoForward": "notify"
+    }
+  },
+  "postCreateCommand": "npm run check"
+}

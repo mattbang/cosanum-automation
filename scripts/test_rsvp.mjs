@@ -3,7 +3,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import vm from 'node:vm';
 
-const fixture = JSON.parse(fs.readFileSync('data/demo_fixture.json', 'utf8'));
+const fixture = JSON.parse(fs.readFileSync('fixtures/synthetic_demo.json', 'utf8'));
 const people = fixture.People.map(row => ({person_key:row[0],email:row[1],demo_marker:row[3],display_alias:row[5]}));
 const byKey = key => people.find(person => person.person_key === key);
 const formatDate = (date, zone) => new Intl.DateTimeFormat('en-CA', {
