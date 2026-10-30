@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "Cosanum Training Demo",
+    "slug": "cosanum-training-demo",
+    "scheme": "cosanum-training-demo",
+    "version": "1.0.2",
+    "orientation": "default",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.mattbang.cosanumtrainingdemo",
+      "buildNumber": "1"
+    },
+    "android": {
+      "package": "com.mattbang.cosanumtrainingdemo",
+      "versionCode": 3,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#452347"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-status-bar",
+      ["expo-notifications", { "enableRemoteNotifications": false }]
+    ]
+  }
+}

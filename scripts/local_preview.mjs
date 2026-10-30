@@ -9,7 +9,9 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const source = resolve(root, 'apps-script/Index.html');
 const adapter = resolve(root, 'scripts/local_preview_adapter.js');
 const port = Number(process.env.PORT || 4173);
+const host = process.env.PREVIEW_HOST || '127.0.0.1';
 if (!Number.isInteger(port) || port < 0 || port > 65535) throw new Error('PORT must be an integer from 0 to 65535');
+if (!['127.0.0.1', '0.0.0.0'].includes(host)) throw new Error('PREVIEW_HOST must be 127.0.0.1 or 0.0.0.0');
 
 export function renderPreview(html, adapterCode, nonce) {
   if (!html.includes('<script>') || !html.includes('<body>')) throw new Error('Index.html structure changed; preview injection stopped');
@@ -51,7 +53,14 @@ export function createPreviewServer() {
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  createPreviewServer().listen(port, '127.0.0.1', function () {
-    console.log(`Offline preview: http://127.0.0.1:${this.address().port}/`);
+  createPreviewServer().on('error', error => {
+    if (error.code === 'EADDRINUSE') {
+      console.error(`Preview port ${port} is already in use. Stop the other preview or set PORT to a free port.`);
+    } else {
+      console.error(`Preview could not start: ${error.message}`);
+    }
+    process.exitCode = 1;
+  }).listen(port, host, function () {
+    console.log(`Offline preview: http://${host === '0.0.0.0' ? 'localhost' : host}:${this.address().port}/`);
   });
 }

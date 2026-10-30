@@ -1,0 +1,46 @@
+[
+  {
+    "material_id": "MAT-TR-1",
+    "topic_id": "TR-1",
+    "topic": "Wareneingang",
+    "reading_duration": "8 Min",
+    "reading_minutes": 8,
+    "objective": "Eine Lieferung anhand von Auftrag, Verpackung und Kennzeichnung prüfen.",
+    "lesson_path": "materials/wareneingang.html",
+    "preparation_path": "materials/wareneingang-vorbereitung.html",
+    "synthetic": true
+  },
+  {
+    "material_id": "MAT-TR-2",
+    "topic_id": "TR-2",
+    "topic": "Kommissionierung",
+    "reading_duration": "10 Min",
+    "reading_minutes": 10,
+    "objective": "Artikel, Menge und Auftrag systematisch gegeneinander prüfen.",
+    "lesson_path": "materials/kommissionierung.html",
+    "preparation_path": "materials/kommissionierung-vorbereitung.html",
+    "synthetic": true
+  },
+  {
+    "material_id": "MAT-TR-3",
+    "topic_id": "TR-3",
+    "topic": "Qualitätskontrolle",
+    "reading_duration": "10 Min",
+    "reading_minutes": 10,
+    "objective": "Eine Beobachtung nachvollziehbar dokumentieren und eine Abweichung erkennen.",
+    "lesson_path": "materials/qualitaetskontrolle.html",
+    "preparation_path": "materials/qualitaetskontrolle-vorbereitung.html",
+    "synthetic": true
+  },
+  {
+    "material_id": "MAT-TR-4",
+    "topic_id": "TR-4",
+    "topic": "Prozessänderung",
+    "reading_duration": "8 Min",
+    "reading_minutes": 8,
+    "objective": "Eine Änderung erklären und ihre Umsetzung anhand eines Beispiels prüfen.",
+    "lesson_path": "materials/prozessaenderung.html",
+    "preparation_path": "materials/prozessaenderung-vorbereitung.html",
+    "synthetic": true
+  }
+]

@@ -1,0 +1,27 @@
+\if :{?app_role}
+\else
+\echo 'Pass -v app_role=ROLE when applying runtime grants.'
+\quit 1
+\endif
+
+-- Local pilot only. Run after migrations with a database administrator.
+-- The role must exist already; do not reuse this grant set for a cloud service.
+-- Keep evidence, event, audit, and response history append-only for the API role.
+REVOKE ALL ON ALL TABLES IN SCHEMA public FROM :"app_role";
+REVOKE ALL ON ALL SEQUENCES IN SCHEMA public FROM :"app_role";
+GRANT USAGE ON SCHEMA public TO :"app_role";
+GRANT SELECT ON TABLE
+  schema_migrations, workflow_requests, workflow_sessions, workflow_cases,
+  verified_identities, workflow_assignments, hosted_participant_links,
+  case_evidence, workflow_events, audit_events, participant_responses
+TO :"app_role";
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO :"app_role";
+
+GRANT INSERT, UPDATE ON TABLE
+  workflow_requests, workflow_sessions, workflow_cases, verified_identities,
+  workflow_assignments, hosted_participant_links
+TO :"app_role";
+
+GRANT INSERT ON TABLE
+  case_evidence, workflow_events, audit_events, participant_responses
+TO :"app_role";

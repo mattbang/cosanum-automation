@@ -1,0 +1,767 @@
+<?xml version='1.0' encoding='utf-8'?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_WholeTraining" targetNamespace="https://example.invalid/cosanum/demo-day" exporter="Cosanum synthetic communication model" exporterVersion="2">
+  <bpmn:process id="Process_WholeTraining" name="Ein Trainingsfall mit Ausnahmewegen" isExecutable="false">
+    <bpmn:documentation>Nicht ausführbares Kommunikationsmodell der synthetischen Site. Zielniveau Mitarbeiter 1–3. Keine verbundenen Google-Kalender, automatischen Mails, Push oder produktiven Matrixschreibvorgänge. Geplante Erinnerung ist nur Annotation und steuert keinen Tokenfluss.</bpmn:documentation>
+    <bpmn:laneSet id="LaneSet_Responsibilities">
+      <bpmn:lane id="Lane_daniel" name="Daniel · Process &amp; Quality">
+        <bpmn:flowNodeRef>request</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>offers</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>cancel_merge</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>reschedule</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>before</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>cancelbefore</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>early</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>begin</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>during</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>cancelduring</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>report</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>failed</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>retrain</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_app" name="Anwendung · synthetischer Raum">
+        <bpmn:flowNodeRef>start</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>access</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>authorized</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>invite</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>invitation_open</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>remaining</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>confirmed</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>cancelendbefore</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>timing</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>scheduled</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>training</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>cancelendduring</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>received</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>waiting</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>result</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>skill</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>history</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>done</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_trainee" name="Matthew · Teilnehmer">
+        <bpmn:flowNodeRef>credentials</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>recoverable</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>newroom</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>response_merge</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>confirmation_merge</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>response</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>reject</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>accept</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>confirm</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="start" name="Demo öffnen">
+      <bpmn:documentation>IMPLEMENTIERT in lokaler Site-Quelle; Hosting-/Geräteabnahme separat.</bpmn:documentation>
+      <bpmn:outgoing>Flow_0</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:task id="access" name="Raumzugang und Google-Anmeldung prüfen, falls eingerichtet">
+      <bpmn:documentation>IMPLEMENTIERT in lokaler Site-Quelle; Hosting-/Geräteabnahme separat.</bpmn:documentation>
+      <bpmn:incoming>Flow_0</bpmn:incoming>
+      <bpmn:incoming>Flow_5</bpmn:incoming>
+      <bpmn:outgoing>Flow_1</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:exclusiveGateway id="authorized" name="Zugang gültig?">
+      <bpmn:documentation>IMPLEMENTIERT in lokaler Site-Quelle; Hosting-/Geräteabnahme separat.</bpmn:documentation>
+      <bpmn:incoming>Flow_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_2</bpmn:outgoing>
+      <bpmn:outgoing>Flow_3</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:task id="credentials" name="[MANUELL] Konto, Rolle und gespeicherten Link prüfen">
+      <bpmn:documentation>MANUELLER Schritt, keine automatische Funktion.</bpmn:documentation>
+      <bpmn:incoming>Flow_3</bpmn:incoming>
+      <bpmn:outgoing>Flow_4</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:exclusiveGateway id="recoverable" name="Gültiger Link vorhanden?">
+      <bpmn:documentation>IMPLEMENTIERT in lokaler Site-Quelle; Hosting-/Geräteabnahme separat.</bpmn:documentation>
+      <bpmn:incoming>Flow_4</bpmn:incoming>
+      <bpmn:outgoing>Flow_5</bpmn:outgoing>
+      <bpmn:outgoing>Flow_6</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:endEvent id="newroom" name="Neuen Raum vorbereiten">
+      <bpmn:documentation>MANUELLER Schritt, keine automatische Funktion.</bpmn:documentation>
+      <bpmn:incoming>Flow_6</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:task id="request" name="Daniel: Thema, Matthew und Zielniveau 1–3 wählen">
+      <bpmn:documentation>IMPLEMENTIERT in lokaler Site-Quelle; Hosting-/Geräteabnahme separat.</bpmn:documentation>
+      <bpmn:incoming>Flow_2</bpmn:incoming>
+      <bpmn:incoming>Flow_46</bpmn:incoming>
+      <bpmn:outgoing>Flow_7</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="offers" name="Daniel: 1–3 gemeinsame freie Demo-Fenster wählen">
+      <bpmn:documentation>IMPLEMENTIERT in lokaler Site-Quelle; Hosting-/Geräteabnahme separat.</bpmn:documentation>
+      <bpmn:incoming>Flow_7</bpmn:incoming>
+      <bpmn:outgoing>Flow_8</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="invite" name="Einladung und getrennte Rollenlinks speichern">
+      <bpmn:documentation>IMPLEMENTIERT in lokaler Site-Quelle; Hosting-/Geräteabnahme separat.</bpmn:documentation>
+      <bpmn:incoming>Flow_8</bpmn:incoming>
+      <bpmn:incoming>Flow_19</bpmn:incoming>
+      <bpmn:outgoing>Flow_9</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:exclusiveGateway id="invitation_open" name="Daniel: nächster Schritt?">
+      <bpmn:documentation>IMPLEMENTIERT in lokaler Site-Quelle; Hosting-/Geräteabnahme separat.</bpmn:documentation>
+      <bpmn:incoming>Flow_9</bpmn:incoming>
+      <bpmn:outgoing>Flow_10</bpmn:outgoing>
+      <bpmn:outgoing>Flow_12</bpmn:outgoing>
+      <bpmn:outgoing>Flow_13</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:exclusiveGateway id="response_merge" name="">
+      <bpmn:documentation>IMPLEMENTIERT in lokaler Site-Quelle; Hosting-/Geräteabnahme separat.</bpmn:documentation>
+      <bpmn:incoming>Flow_10</bpmn:incoming>
+      <bpmn:incoming>Flow_17</bpmn:incoming>
+      <bpmn:outgoing>Flow_11</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:exclusiveGateway id="confirmation_merge" name="">
+      <bpmn:documentation>IMPLEMENTIERT in lokaler Site-Quelle; Hosting-/Geräteabnahme separat.</bpmn:documentation>
+      <bpmn:incoming>Flow_35</bpmn:incoming>
+      <bpmn:incoming>Flow_39</bpmn:incoming>
+      <bpmn:outgoing>Flow_36</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:exclusiveGateway id="cancel_merge" name="">
+      <bpmn:documentation>IMPLEMENTIERT in lokaler Site-Quelle; Hosting-/Geräteabnahme separat.</bpmn:documentation>
+      <bpmn:incoming>Flow_12</bpmn:incoming>
+      <bpmn:incoming>Flow_22</bpmn:incoming>
+      <bpmn:outgoing>Flow_23</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:exclusiveGateway id="response" name="Matthews Antwort?">
+      <bpmn:documentation>IMPLEMENTIERT in lokaler Site-Quelle; Hosting-/Geräteabnahme separat.</bpmn:documentation>
+      <bpmn:incoming>Flow_11</bpmn:incoming>
+      <bpmn:outgoing>Flow_14</bpmn:outgoing>
+      <bpmn:outgoing>Flow_15</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:task id="reject" name="Matthew: Angebot ablehnen">
+      <bpmn:documentation>IMPLEMENTIERT in lokaler Site-Quelle; Hosting-/Geräteabnahme separat.</bpmn:documentation>
+      <bpmn:incoming>Flow_15</bpmn:incoming>
+      <bpmn:outgoing>Flow_16</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:exclusiveGateway id="remaining" name="Weiteres Angebot offen?">
+      <bpmn:documentation>IMPLEMENTIERT in lokaler Site-Quelle; Hosting-/Geräteabnahme separat.</bpmn:documentation>
+      <bpmn:incoming>Flow_16</bpmn:incoming>
+      <bpmn:outgoing>Flow_17</bpmn:outgoing>
+      <bpmn:outgoing>Flow_18</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:task id="reschedule" name="Daniel: 1–3 Angebote ersetzen; erneute Wahl erforderlich">
+      <bpmn:documentation>IMPLEMENTIERT in lokaler Site-Quelle; Hosting-/Geräteabnahme separat.</bpmn:documentation>
+      <bpmn:incoming>Flow_13</bpmn:incoming>
+      <bpmn:incoming>Flow_18</bpmn:incoming>
+      <bpmn:incoming>Flow_47</bpmn:incoming>
+      <bpmn:outgoing>Flow_19</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="accept" name="Matthew: offenes Angebot annehmen">
+      <bpmn:documentation>IMPLEMENTIERT in lokaler Site-Quelle; Hosting-/Geräteabnahme separat.</bpmn:documentation>
+      <bpmn:incoming>Flow_14</bpmn:incoming>
+      <bpmn:outgoing>Flow_20</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="confirmed" name="Termin bestätigen; Hinweis in beiden Ansichten">
+      <bpmn:documentation>IMPLEMENTIERT in lokaler Site-Quelle; Hosting-/Geräteabnahme separat.</bpmn:documentation>
+      <bpmn:incoming>Flow_20</bpmn:incoming>
+      <bpmn:outgoing>Flow_21</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:exclusiveGateway id="before" name="Daniel: vor Start absagen?">
+      <bpmn:documentation>IMPLEMENTIERT in lokaler Site-Quelle; Hosting-/Geräteabnahme separat.</bpmn:documentation>
+      <bpmn:incoming>Flow_21</bpmn:incoming>
+      <bpmn:outgoing>Flow_22</bpmn:outgoing>
+      <bpmn:outgoing>Flow_25</bpmn:outgoing>
+      <bpmn:outgoing>Flow_47</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:task id="cancelbefore" name="Daniel: vor Beginn absagen">
+      <bpmn:documentation>IMPLEMENTIERT in lokaler Site-Quelle; Hosting-/Geräteabnahme separat.</bpmn:documentation>
+      <bpmn:incoming>Flow_23</bpmn:incoming>
+      <bpmn:outgoing>Flow_24</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:endEvent id="cancelendbefore" name="Abgesagt; kein Skillgewinn">
+      <bpmn:documentation>IMPLEMENTIERT in lokaler Site-Quelle; Hosting-/Geräteabnahme separat.</bpmn:documentation>
+      <bpmn:incoming>Flow_24</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:exclusiveGateway id="timing" name="Startzeitpunkt?">
+      <bpmn:documentation>IMPLEMENTIERT in lokaler Site-Quelle; Hosting-/Geräteabnahme separat.</bpmn:documentation>
+      <bpmn:incoming>Flow_25</bpmn:incoming>
+      <bpmn:outgoing>Flow_26</bpmn:outgoing>
+      <bpmn:outgoing>Flow_28</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:task id="early" name="Daniel: vorzeitigen Demostart wählen">
+      <bpmn:documentation>IMPLEMENTIERT in lokaler Site-Quelle; Hosting-/Geräteabnahme separat.</bpmn:documentation>
+      <bpmn:incoming>Flow_26</bpmn:incoming>
+      <bpmn:outgoing>Flow_27</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="scheduled" name="[MANUELL] Bis Termin warten; kein automatischer Start">
+      <bpmn:documentation>MANUELLER Schritt, keine automatische Funktion.</bpmn:documentation>
+      <bpmn:incoming>Flow_28</bpmn:incoming>
+      <bpmn:outgoing>Flow_29</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="begin" name="Daniel: Start ausdrücklich auslösen">
+      <bpmn:documentation>IMPLEMENTIERT in lokaler Site-Quelle; Hosting-/Geräteabnahme separat.</bpmn:documentation>
+      <bpmn:incoming>Flow_27</bpmn:incoming>
+      <bpmn:incoming>Flow_29</bpmn:incoming>
+      <bpmn:outgoing>Flow_30</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="training" name="Training läuft; Start im Verlauf protokolliert">
+      <bpmn:documentation>IMPLEMENTIERT in lokaler Site-Quelle; Hosting-/Geräteabnahme separat.</bpmn:documentation>
+      <bpmn:incoming>Flow_30</bpmn:incoming>
+      <bpmn:outgoing>Flow_31</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:exclusiveGateway id="during" name="Daniel: während Training absagen?">
+      <bpmn:documentation>IMPLEMENTIERT in lokaler Site-Quelle; Hosting-/Geräteabnahme separat.</bpmn:documentation>
+      <bpmn:incoming>Flow_31</bpmn:incoming>
+      <bpmn:outgoing>Flow_32</bpmn:outgoing>
+      <bpmn:outgoing>Flow_34</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:task id="cancelduring" name="Daniel: laufenden Fall absagen">
+      <bpmn:documentation>IMPLEMENTIERT in lokaler Site-Quelle; Hosting-/Geräteabnahme separat.</bpmn:documentation>
+      <bpmn:incoming>Flow_32</bpmn:incoming>
+      <bpmn:outgoing>Flow_33</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:endEvent id="cancelendduring" name="Abgesagt; kein Skillgewinn">
+      <bpmn:documentation>IMPLEMENTIERT in lokaler Site-Quelle; Hosting-/Geräteabnahme separat.</bpmn:documentation>
+      <bpmn:incoming>Flow_33</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:task id="report" name="Daniel: Bericht und Ergebnis einreichen">
+      <bpmn:documentation>IMPLEMENTIERT in lokaler Site-Quelle; Hosting-/Geräteabnahme separat.</bpmn:documentation>
+      <bpmn:incoming>Flow_34</bpmn:incoming>
+      <bpmn:outgoing>Flow_35</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="confirm" name="Matthew: Erklärung lesen, Checkbox und Teilnahme bestätigen">
+      <bpmn:documentation>IMPLEMENTIERT in lokaler Site-Quelle; Hosting-/Geräteabnahme separat.</bpmn:documentation>
+      <bpmn:incoming>Flow_36</bpmn:incoming>
+      <bpmn:outgoing>Flow_37</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:exclusiveGateway id="received" name="Bestätigung gespeichert?">
+      <bpmn:documentation>IMPLEMENTIERT in lokaler Site-Quelle; Hosting-/Geräteabnahme separat.</bpmn:documentation>
+      <bpmn:incoming>Flow_37</bpmn:incoming>
+      <bpmn:outgoing>Flow_38</bpmn:outgoing>
+      <bpmn:outgoing>Flow_40</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:task id="waiting" name="Fall offen halten; auf spätere Antwort warten">
+      <bpmn:documentation>OFFENER Zustand; kein automatischer Fristlauf.</bpmn:documentation>
+      <bpmn:incoming>Flow_38</bpmn:incoming>
+      <bpmn:outgoing>Flow_39</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:exclusiveGateway id="result" name="Bericht bestanden?">
+      <bpmn:documentation>IMPLEMENTIERT in lokaler Site-Quelle; Hosting-/Geräteabnahme separat.</bpmn:documentation>
+      <bpmn:incoming>Flow_40</bpmn:incoming>
+      <bpmn:outgoing>Flow_41</bpmn:outgoing>
+      <bpmn:outgoing>Flow_44</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:task id="failed" name="Daniel: unveränderte Stufe und Nachschulungsbedarf prüfen">
+      <bpmn:documentation>IMPLEMENTIERT in lokaler Site-Quelle; Hosting-/Geräteabnahme separat.</bpmn:documentation>
+      <bpmn:incoming>Flow_44</bpmn:incoming>
+      <bpmn:outgoing>Flow_45</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="retrain" name="[MANUELL] Neuen Nachschulungsfall anlegen">
+      <bpmn:documentation>MANUELLER Schritt, keine automatische Funktion.</bpmn:documentation>
+      <bpmn:incoming>Flow_45</bpmn:incoming>
+      <bpmn:outgoing>Flow_46</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="skill" name="Synthetische Raum-Kompetenz aktualisieren">
+      <bpmn:documentation>IMPLEMENTIERT in lokaler Site-Quelle; Hosting-/Geräteabnahme separat.</bpmn:documentation>
+      <bpmn:incoming>Flow_41</bpmn:incoming>
+      <bpmn:outgoing>Flow_42</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="history" name="Abschluss und Verlauf zeigen; Historie beim Folgefall">
+      <bpmn:documentation>IMPLEMENTIERT in lokaler Site-Quelle; Hosting-/Geräteabnahme separat.</bpmn:documentation>
+      <bpmn:incoming>Flow_42</bpmn:incoming>
+      <bpmn:outgoing>Flow_43</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:endEvent id="done" name="Demo-Fall abgeschlossen">
+      <bpmn:documentation>IMPLEMENTIERT in lokaler Site-Quelle; Hosting-/Geräteabnahme separat.</bpmn:documentation>
+      <bpmn:incoming>Flow_43</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_0" sourceRef="start" targetRef="access" name="" />
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="access" targetRef="authorized" name="" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="authorized" targetRef="request" name="Ja" />
+    <bpmn:sequenceFlow id="Flow_3" sourceRef="authorized" targetRef="credentials" name="Nein" />
+    <bpmn:sequenceFlow id="Flow_4" sourceRef="credentials" targetRef="recoverable" name="" />
+    <bpmn:sequenceFlow id="Flow_5" sourceRef="recoverable" targetRef="access" name="Ja" />
+    <bpmn:sequenceFlow id="Flow_6" sourceRef="recoverable" targetRef="newroom" name="Nein" />
+    <bpmn:sequenceFlow id="Flow_7" sourceRef="request" targetRef="offers" name="" />
+    <bpmn:sequenceFlow id="Flow_8" sourceRef="offers" targetRef="invite" name="" />
+    <bpmn:sequenceFlow id="Flow_9" sourceRef="invite" targetRef="invitation_open" name="" />
+    <bpmn:sequenceFlow id="Flow_10" sourceRef="invitation_open" targetRef="response_merge" name="Antwort abwarten" />
+    <bpmn:sequenceFlow id="Flow_11" sourceRef="response_merge" targetRef="response" name="" />
+    <bpmn:sequenceFlow id="Flow_12" sourceRef="invitation_open" targetRef="cancel_merge" name="Absagen" />
+    <bpmn:sequenceFlow id="Flow_13" sourceRef="invitation_open" targetRef="reschedule" name="Neue Angebote" />
+    <bpmn:sequenceFlow id="Flow_14" sourceRef="response" targetRef="accept" name="Annehmen" />
+    <bpmn:sequenceFlow id="Flow_15" sourceRef="response" targetRef="reject" name="Ablehnen" />
+    <bpmn:sequenceFlow id="Flow_16" sourceRef="reject" targetRef="remaining" name="" />
+    <bpmn:sequenceFlow id="Flow_17" sourceRef="remaining" targetRef="response_merge" name="Ja" />
+    <bpmn:sequenceFlow id="Flow_18" sourceRef="remaining" targetRef="reschedule" name="Nein: alle abgelehnt" />
+    <bpmn:sequenceFlow id="Flow_19" sourceRef="reschedule" targetRef="invite" name="Annahme zurückgesetzt" />
+    <bpmn:sequenceFlow id="Flow_20" sourceRef="accept" targetRef="confirmed" name="" />
+    <bpmn:sequenceFlow id="Flow_21" sourceRef="confirmed" targetRef="before" name="" />
+    <bpmn:sequenceFlow id="Flow_22" sourceRef="before" targetRef="cancel_merge" name="Ja" />
+    <bpmn:sequenceFlow id="Flow_23" sourceRef="cancel_merge" targetRef="cancelbefore" name="" />
+    <bpmn:sequenceFlow id="Flow_24" sourceRef="cancelbefore" targetRef="cancelendbefore" name="" />
+    <bpmn:sequenceFlow id="Flow_25" sourceRef="before" targetRef="timing" name="Nein" />
+    <bpmn:sequenceFlow id="Flow_26" sourceRef="timing" targetRef="early" name="Vorzeitig" />
+    <bpmn:sequenceFlow id="Flow_27" sourceRef="early" targetRef="begin" name="" />
+    <bpmn:sequenceFlow id="Flow_28" sourceRef="timing" targetRef="scheduled" name="Zum Termin" />
+    <bpmn:sequenceFlow id="Flow_29" sourceRef="scheduled" targetRef="begin" name="" />
+    <bpmn:sequenceFlow id="Flow_30" sourceRef="begin" targetRef="training" name="" />
+    <bpmn:sequenceFlow id="Flow_31" sourceRef="training" targetRef="during" name="" />
+    <bpmn:sequenceFlow id="Flow_32" sourceRef="during" targetRef="cancelduring" name="Ja" />
+    <bpmn:sequenceFlow id="Flow_33" sourceRef="cancelduring" targetRef="cancelendduring" name="" />
+    <bpmn:sequenceFlow id="Flow_34" sourceRef="during" targetRef="report" name="Nein" />
+    <bpmn:sequenceFlow id="Flow_35" sourceRef="report" targetRef="confirmation_merge" name="" />
+    <bpmn:sequenceFlow id="Flow_36" sourceRef="confirmation_merge" targetRef="confirm" name="" />
+    <bpmn:sequenceFlow id="Flow_37" sourceRef="confirm" targetRef="received" name="" />
+    <bpmn:sequenceFlow id="Flow_38" sourceRef="received" targetRef="waiting" name="Noch nicht" />
+    <bpmn:sequenceFlow id="Flow_39" sourceRef="waiting" targetRef="confirmation_merge" name="Spätere Antwort" />
+    <bpmn:sequenceFlow id="Flow_40" sourceRef="received" targetRef="result" name="Ja" />
+    <bpmn:sequenceFlow id="Flow_41" sourceRef="result" targetRef="skill" name="Ja" />
+    <bpmn:sequenceFlow id="Flow_42" sourceRef="skill" targetRef="history" name="" />
+    <bpmn:sequenceFlow id="Flow_43" sourceRef="history" targetRef="done" name="" />
+    <bpmn:sequenceFlow id="Flow_44" sourceRef="result" targetRef="failed" name="Nein" />
+    <bpmn:sequenceFlow id="Flow_45" sourceRef="failed" targetRef="retrain" name="" />
+    <bpmn:sequenceFlow id="Flow_46" sourceRef="retrain" targetRef="request" name="Neuer Zyklus" />
+    <bpmn:sequenceFlow id="Flow_47" sourceRef="before" targetRef="reschedule" name="Neue Angebote" />
+    <bpmn:textAnnotation id="reminder">
+      <bpmn:text>[GEPLANT] Automatische Erinnerung / Eskalation bei fehlender Bestätigung. Heute nur In-App-Hinweise.</bpmn:text>
+    </bpmn:textAnnotation>
+    <bpmn:association id="Assoc_reminder" sourceRef="waiting" targetRef="reminder" associationDirection="None" />
+    <bpmn:textAnnotation id="mail">
+      <bpmn:text>[MANUELL] Mailentwurf öffnen und selbst senden. Kein automatischer Mailversand / Push.</bpmn:text>
+    </bpmn:textAnnotation>
+    <bpmn:association id="Assoc_mail" sourceRef="confirmed" targetRef="mail" associationDirection="None" />
+    <bpmn:textAnnotation id="calendar">
+      <bpmn:text>Synthetisch: gemeinsame freie Fenster der nächsten fünf Arbeitstage. Keine Google-Kalenderbuchung.</bpmn:text>
+    </bpmn:textAnnotation>
+    <bpmn:association id="Assoc_calendar" sourceRef="offers" targetRef="calendar" associationDirection="None" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram_WholeTraining" name="Gesamtablauf">
+    <bpmndi:BPMNPlane id="Plane_WholeTraining" bpmnElement="Process_WholeTraining">
+      <bpmndi:BPMNShape id="Shape_Lane_daniel" bpmnElement="Lane_daniel" isHorizontal="false">
+        <dc:Bounds x="0" y="0" width="600" height="5100" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Lane_app" bpmnElement="Lane_app" isHorizontal="false">
+        <dc:Bounds x="600" y="0" width="600" height="5100" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Lane_trainee" bpmnElement="Lane_trainee" isHorizontal="false">
+        <dc:Bounds x="1200" y="0" width="600" height="5100" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_start" bpmnElement="start">
+        <dc:Bounds x="880.0" y="90.0" width="40" height="40" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="790.0" y="135.0" width="240" height="45" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_access" bpmnElement="access">
+        <dc:Bounds x="770.0" y="250.0" width="260" height="100" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_authorized" bpmnElement="authorized">
+        <dc:Bounds x="870.0" y="470.0" width="60" height="60" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="780.0" y="535.0" width="240" height="45" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_credentials" bpmnElement="credentials">
+        <dc:Bounds x="1370.0" y="450.0" width="260" height="100" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_recoverable" bpmnElement="recoverable">
+        <dc:Bounds x="1470.0" y="670.0" width="60" height="60" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1380.0" y="735.0" width="240" height="45" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_newroom" bpmnElement="newroom">
+        <dc:Bounds x="1480.0" y="880.0" width="40" height="40" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1390.0" y="925.0" width="240" height="45" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_request" bpmnElement="request">
+        <dc:Bounds x="170.0" y="650.0" width="260" height="100" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_offers" bpmnElement="offers">
+        <dc:Bounds x="170.0" y="950.0" width="260" height="100" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_invite" bpmnElement="invite">
+        <dc:Bounds x="770.0" y="950.0" width="260" height="100" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_invitation_open" bpmnElement="invitation_open">
+        <dc:Bounds x="870.0" y="1170.0" width="60" height="60" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="780.0" y="1235.0" width="240" height="45" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_response_merge" bpmnElement="response_merge">
+        <dc:Bounds x="1470.0" y="1070.0" width="60" height="60" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1380.0" y="1135.0" width="240" height="45" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_confirmation_merge" bpmnElement="confirmation_merge">
+        <dc:Bounds x="1470.0" y="3420.0" width="60" height="60" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1380.0" y="3485.0" width="240" height="45" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_cancel_merge" bpmnElement="cancel_merge">
+        <dc:Bounds x="270.0" y="1920.0" width="60" height="60" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="180.0" y="1985.0" width="240" height="45" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_response" bpmnElement="response">
+        <dc:Bounds x="1470.0" y="1220.0" width="60" height="60" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1380.0" y="1285.0" width="240" height="45" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_reject" bpmnElement="reject">
+        <dc:Bounds x="1370.0" y="1400.0" width="260" height="100" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_remaining" bpmnElement="remaining">
+        <dc:Bounds x="870.0" y="1420.0" width="60" height="60" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="780.0" y="1485.0" width="240" height="45" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_reschedule" bpmnElement="reschedule">
+        <dc:Bounds x="170.0" y="1400.0" width="260" height="100" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_accept" bpmnElement="accept">
+        <dc:Bounds x="1370.0" y="1700.0" width="260" height="100" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_confirmed" bpmnElement="confirmed">
+        <dc:Bounds x="770.0" y="1700.0" width="260" height="100" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_before" bpmnElement="before">
+        <dc:Bounds x="270.0" y="1720.0" width="60" height="60" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="180.0" y="1785.0" width="240" height="45" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_cancelbefore" bpmnElement="cancelbefore">
+        <dc:Bounds x="170.0" y="2000.0" width="260" height="100" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_cancelendbefore" bpmnElement="cancelendbefore">
+        <dc:Bounds x="880.0" y="2030.0" width="40" height="40" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="790.0" y="2075.0" width="240" height="45" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_timing" bpmnElement="timing">
+        <dc:Bounds x="870.0" y="2320.0" width="60" height="60" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="780.0" y="2385.0" width="240" height="45" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_early" bpmnElement="early">
+        <dc:Bounds x="170.0" y="2300.0" width="260" height="100" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_scheduled" bpmnElement="scheduled">
+        <dc:Bounds x="770.0" y="2600.0" width="260" height="100" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_begin" bpmnElement="begin">
+        <dc:Bounds x="170.0" y="2600.0" width="260" height="100" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_training" bpmnElement="training">
+        <dc:Bounds x="770.0" y="2900.0" width="260" height="100" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_during" bpmnElement="during">
+        <dc:Bounds x="270.0" y="2920.0" width="60" height="60" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="180.0" y="2985.0" width="240" height="45" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_cancelduring" bpmnElement="cancelduring">
+        <dc:Bounds x="170.0" y="3200.0" width="260" height="100" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_cancelendduring" bpmnElement="cancelendduring">
+        <dc:Bounds x="880.0" y="3230.0" width="40" height="40" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="790.0" y="3275.0" width="240" height="45" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_report" bpmnElement="report">
+        <dc:Bounds x="170.0" y="3500.0" width="260" height="100" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_confirm" bpmnElement="confirm">
+        <dc:Bounds x="1370.0" y="3500.0" width="260" height="100" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_received" bpmnElement="received">
+        <dc:Bounds x="870.0" y="3520.0" width="60" height="60" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="780.0" y="3585.0" width="240" height="45" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_waiting" bpmnElement="waiting">
+        <dc:Bounds x="770.0" y="3800.0" width="260" height="100" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_result" bpmnElement="result">
+        <dc:Bounds x="870.0" y="4120.0" width="60" height="60" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="780.0" y="4185.0" width="240" height="45" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_failed" bpmnElement="failed">
+        <dc:Bounds x="170.0" y="4100.0" width="260" height="100" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_retrain" bpmnElement="retrain">
+        <dc:Bounds x="170.0" y="4400.0" width="260" height="100" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_skill" bpmnElement="skill">
+        <dc:Bounds x="770.0" y="4400.0" width="260" height="100" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_history" bpmnElement="history">
+        <dc:Bounds x="770.0" y="4700.0" width="260" height="100" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_done" bpmnElement="done">
+        <dc:Bounds x="880.0" y="4950.0" width="40" height="40" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="790.0" y="4995.0" width="240" height="45" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_0" bpmnElement="Flow_0">
+        <di:waypoint x="900.0" y="130.0" />
+        <di:waypoint x="900.0" y="250.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_1" bpmnElement="Flow_1">
+        <di:waypoint x="900.0" y="350.0" />
+        <di:waypoint x="900.0" y="470.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_2" bpmnElement="Flow_2">
+        <di:waypoint x="900.0" y="530.0" />
+        <di:waypoint x="900" y="600" />
+        <di:waypoint x="300" y="600" />
+        <di:waypoint x="300.0" y="650.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_3" bpmnElement="Flow_3">
+        <di:waypoint x="930.0" y="500.0" />
+        <di:waypoint x="1370.0" y="500.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_4" bpmnElement="Flow_4">
+        <di:waypoint x="1500.0" y="550.0" />
+        <di:waypoint x="1500.0" y="670.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_5" bpmnElement="Flow_5">
+        <di:waypoint x="1530.0" y="700.0" />
+        <di:waypoint x="1770" y="700" />
+        <di:waypoint x="1770" y="300" />
+        <di:waypoint x="1030.0" y="300.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_6" bpmnElement="Flow_6">
+        <di:waypoint x="1500.0" y="730.0" />
+        <di:waypoint x="1500.0" y="880.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_7" bpmnElement="Flow_7">
+        <di:waypoint x="300.0" y="750.0" />
+        <di:waypoint x="300.0" y="950.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_8" bpmnElement="Flow_8">
+        <di:waypoint x="430.0" y="1000.0" />
+        <di:waypoint x="770.0" y="1000.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_9" bpmnElement="Flow_9">
+        <di:waypoint x="900.0" y="1050.0" />
+        <di:waypoint x="900.0" y="1170.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_10" bpmnElement="Flow_10">
+        <di:waypoint x="930.0" y="1200.0" />
+        <di:waypoint x="1200" y="1200" />
+        <di:waypoint x="1200" y="1100" />
+        <di:waypoint x="1470.0" y="1100.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_11" bpmnElement="Flow_11">
+        <di:waypoint x="1500.0" y="1130.0" />
+        <di:waypoint x="1500.0" y="1220.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_12" bpmnElement="Flow_12">
+        <di:waypoint x="870.0" y="1200.0" />
+        <di:waypoint x="500" y="1200" />
+        <di:waypoint x="500" y="1950" />
+        <di:waypoint x="330.0" y="1950.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_13" bpmnElement="Flow_13">
+        <di:waypoint x="900.0" y="1230.0" />
+        <di:waypoint x="900" y="1320" />
+        <di:waypoint x="300" y="1320" />
+        <di:waypoint x="300.0" y="1400.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_14" bpmnElement="Flow_14">
+        <di:waypoint x="1530.0" y="1250.0" />
+        <di:waypoint x="1750" y="1250" />
+        <di:waypoint x="1750" y="1750" />
+        <di:waypoint x="1630.0" y="1750.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_15" bpmnElement="Flow_15">
+        <di:waypoint x="1500.0" y="1280.0" />
+        <di:waypoint x="1500.0" y="1400.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_16" bpmnElement="Flow_16">
+        <di:waypoint x="1370.0" y="1450.0" />
+        <di:waypoint x="930.0" y="1450.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_17" bpmnElement="Flow_17">
+        <di:waypoint x="900.0" y="1480.0" />
+        <di:waypoint x="900" y="1550" />
+        <di:waypoint x="1780" y="1550" />
+        <di:waypoint x="1780" y="1100" />
+        <di:waypoint x="1530.0" y="1100.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_18" bpmnElement="Flow_18">
+        <di:waypoint x="870.0" y="1450.0" />
+        <di:waypoint x="430.0" y="1450.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_19" bpmnElement="Flow_19">
+        <di:waypoint x="170.0" y="1450.0" />
+        <di:waypoint x="70" y="1450" />
+        <di:waypoint x="70" y="1120" />
+        <di:waypoint x="900" y="1120" />
+        <di:waypoint x="900.0" y="1050.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_20" bpmnElement="Flow_20">
+        <di:waypoint x="1370.0" y="1750.0" />
+        <di:waypoint x="1030.0" y="1750.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_21" bpmnElement="Flow_21">
+        <di:waypoint x="770.0" y="1750.0" />
+        <di:waypoint x="330.0" y="1750.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_22" bpmnElement="Flow_22">
+        <di:waypoint x="300.0" y="1780.0" />
+        <di:waypoint x="300.0" y="1920.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_23" bpmnElement="Flow_23">
+        <di:waypoint x="300.0" y="1980.0" />
+        <di:waypoint x="300.0" y="2000.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_24" bpmnElement="Flow_24">
+        <di:waypoint x="430.0" y="2050.0" />
+        <di:waypoint x="880.0" y="2050.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_25" bpmnElement="Flow_25">
+        <di:waypoint x="270.0" y="1750.0" />
+        <di:waypoint x="70" y="1750" />
+        <di:waypoint x="70" y="2220" />
+        <di:waypoint x="900" y="2220" />
+        <di:waypoint x="900.0" y="2320.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_26" bpmnElement="Flow_26">
+        <di:waypoint x="870.0" y="2350.0" />
+        <di:waypoint x="430.0" y="2350.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_27" bpmnElement="Flow_27">
+        <di:waypoint x="300.0" y="2400.0" />
+        <di:waypoint x="300.0" y="2600.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_28" bpmnElement="Flow_28">
+        <di:waypoint x="900.0" y="2380.0" />
+        <di:waypoint x="900.0" y="2600.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_29" bpmnElement="Flow_29">
+        <di:waypoint x="770.0" y="2650.0" />
+        <di:waypoint x="430.0" y="2650.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_30" bpmnElement="Flow_30">
+        <di:waypoint x="300.0" y="2700.0" />
+        <di:waypoint x="300" y="2820" />
+        <di:waypoint x="900" y="2820" />
+        <di:waypoint x="900.0" y="2900.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_31" bpmnElement="Flow_31">
+        <di:waypoint x="770.0" y="2950.0" />
+        <di:waypoint x="330.0" y="2950.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_32" bpmnElement="Flow_32">
+        <di:waypoint x="300.0" y="2980.0" />
+        <di:waypoint x="300.0" y="3200.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_33" bpmnElement="Flow_33">
+        <di:waypoint x="430.0" y="3250.0" />
+        <di:waypoint x="880.0" y="3250.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_34" bpmnElement="Flow_34">
+        <di:waypoint x="270.0" y="2950.0" />
+        <di:waypoint x="70" y="2950" />
+        <di:waypoint x="70" y="3550" />
+        <di:waypoint x="170.0" y="3550.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_35" bpmnElement="Flow_35">
+        <di:waypoint x="300.0" y="3500.0" />
+        <di:waypoint x="300" y="3350" />
+        <di:waypoint x="1500" y="3350" />
+        <di:waypoint x="1500.0" y="3420.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_36" bpmnElement="Flow_36">
+        <di:waypoint x="1500.0" y="3480.0" />
+        <di:waypoint x="1500.0" y="3500.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_37" bpmnElement="Flow_37">
+        <di:waypoint x="1370.0" y="3550.0" />
+        <di:waypoint x="930.0" y="3550.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_38" bpmnElement="Flow_38">
+        <di:waypoint x="900.0" y="3580.0" />
+        <di:waypoint x="900.0" y="3800.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_39" bpmnElement="Flow_39">
+        <di:waypoint x="1030.0" y="3850.0" />
+        <di:waypoint x="1200" y="3850" />
+        <di:waypoint x="1200" y="3450" />
+        <di:waypoint x="1470.0" y="3450.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_40" bpmnElement="Flow_40">
+        <di:waypoint x="870.0" y="3550.0" />
+        <di:waypoint x="650" y="3550" />
+        <di:waypoint x="650" y="4020" />
+        <di:waypoint x="900" y="4020" />
+        <di:waypoint x="900.0" y="4120.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_41" bpmnElement="Flow_41">
+        <di:waypoint x="900.0" y="4180.0" />
+        <di:waypoint x="900.0" y="4400.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_42" bpmnElement="Flow_42">
+        <di:waypoint x="900.0" y="4500.0" />
+        <di:waypoint x="900.0" y="4700.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_43" bpmnElement="Flow_43">
+        <di:waypoint x="900.0" y="4800.0" />
+        <di:waypoint x="900.0" y="4950.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_44" bpmnElement="Flow_44">
+        <di:waypoint x="870.0" y="4150.0" />
+        <di:waypoint x="430.0" y="4150.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_45" bpmnElement="Flow_45">
+        <di:waypoint x="300.0" y="4200.0" />
+        <di:waypoint x="300.0" y="4400.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_46" bpmnElement="Flow_46">
+        <di:waypoint x="170.0" y="4450.0" />
+        <di:waypoint x="35" y="4450" />
+        <di:waypoint x="35" y="700" />
+        <di:waypoint x="170.0" y="700.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_47" bpmnElement="Flow_47">
+        <di:waypoint x="300.0" y="1720.0" />
+        <di:waypoint x="300" y="1580" />
+        <di:waypoint x="300.0" y="1500.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Shape_reminder" bpmnElement="reminder">
+        <dc:Bounds x="1320" y="3800" width="400" height="150" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_Assoc_reminder" bpmnElement="Assoc_reminder">
+        <di:waypoint x="1030.0" y="3850.0" />
+        <di:waypoint x="1320" y="3875.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Shape_mail" bpmnElement="mail">
+        <dc:Bounds x="1260" y="2140" width="480" height="140" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_Assoc_mail" bpmnElement="Assoc_mail">
+        <di:waypoint x="1030.0" y="1750.0" />
+        <di:waypoint x="1260" y="2210.0" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Shape_calendar" bpmnElement="calendar">
+        <dc:Bounds x="50" y="60" width="480" height="160" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_Assoc_calendar" bpmnElement="Assoc_calendar">
+        <di:waypoint x="430.0" y="1000.0" />
+        <di:waypoint x="550" y="1000.0" />
+        <di:waypoint x="550" y="140.0" />
+        <di:waypoint x="530" y="140.0" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

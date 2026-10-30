@@ -32,7 +32,7 @@ Use the [GUI design baseline](GUI_DESIGN_BASELINE.md) as the interface starting 
 
 ## Contributor development track
 
-The contributor development track is recorded in [draft PR #29](https://github.com/mattbang/cosanum-automation/pull/29) and on the Kanban. [#27](https://github.com/mattbang/cosanum-automation/issues/27) standardizes a clean checkout, synthetic read-only preview, local checks, and pull-request CI. [#28](https://github.com/mattbang/cosanum-automation/issues/28) establishes a separate, access-reviewed Google test environment for team connected work. Local checks can run during a Google authorization blocker; they do not satisfy an increment's connected acceptance check. A shared test environment may support later team replay, but it does not widen the owner-only v0.1 app or change member access requirements.
+The [contributor development plan](CONTRIBUTOR_DEVELOPMENT.md) records the contributor track; the Kanban holds its acceptance status. [#27](https://github.com/mattbang/cosanum-automation/issues/27) standardizes a clean checkout, synthetic read-only preview, local checks, and pull-request CI. [#28](https://github.com/mattbang/cosanum-automation/issues/28) establishes a separate, access-reviewed Google test environment for team connected work. Local checks can run during a Google authorization blocker; they do not satisfy an increment's connected acceptance check. A shared test environment may support later team replay, but it does not widen the owner-only v0.1 app or change member access requirements.
 
 ## Public synthetic tour and historical environment
 

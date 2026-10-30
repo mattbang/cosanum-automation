@@ -1,0 +1,75 @@
+{
+  "scope": "local unified model verification only",
+  "primary_model": "training-demo.bpmn",
+  "primary_diagrams": 1,
+  "responsibility_lanes": [
+    "Daniel",
+    "Application",
+    "Matthew"
+  ],
+  "appendix_scenarios": 8,
+  "schema": "Official OMG BPMN20.xsd via xmllint; primary and appendix pass",
+  "checks": [
+    "unique IDs",
+    "resolved attribute and text references",
+    "all lifecycle nodes reachable",
+    "every node has terminal route",
+    "exact lane coverage",
+    "orthogonal flows",
+    "no sequence flow crosses unrelated node bodies",
+    "BPMNDI",
+    "5/5 node centres",
+    "SVG XML parsing",
+    "no sequence flow crosses annotation bodies"
+  ],
+  "renderer": "bpmn-js 18.3.1",
+  "diagrams": [
+    {
+      "id": "Diagram_WholeTraining",
+      "warnings": []
+    }
+  ],
+  "appendix_renderer_warnings": 0,
+  "visual_review": [
+    "unified SVG raster in five sections",
+    "source-flow.svg raster",
+    "initial BPMN success-path preview"
+  ],
+  "native_adonis_import": "not verified",
+  "files": {
+    "shared-demo-site/public/presentation/index.html": "3788551800e6194fa097c315b5c365c06adc34897bbea0e4ee4680608f886340",
+    "shared-demo-site/public/presentation/runbook.html": "cae424c1b275607802e62741b03db9ee6597b5c2834f5a29b5cc4c5852100f56",
+    "shared-demo-site/public/presentation/scenario-appendix.bpmn": "b9d55fdb9373e689747440cc558b688ed7dc811d6ee36a3cf5076d897b0b9d09",
+    "shared-demo-site/public/presentation/process-flow.svg": "7bd1300cd2dc5fbcb2f1f06a28bc48913e0a1a9e5549a538de05c34dd74df2b6",
+    "shared-demo-site/public/presentation/scenario-appendix.svg": "a39e156ed6bf15b6924a116e91016bdb7dc7a03f96f8245287aed99add21629c",
+    "shared-demo-site/public/presentation/messages.html": "eb7137861dc11d06156b55155b5855c6497fc33f19b63455681b828bae431deb",
+    "shared-demo-site/public/presentation/source-flow.svg": "bf2188544c0b1ae8fee1784e12740d1168cb0c0c4477e21bff86917837e931d1",
+    "shared-demo-site/public/presentation/training-demo.bpmn": "09d34ecd4285024552142ed86231ec94b223d9f8f0359a0aaa3417c8355c0a19",
+    "shared-demo-site/public/presentation/sources.html": "299bb44caf241de99472c71ec2ebaa42b4d9a07b46cf0b1d61543dbcff442e8d",
+    "shared-demo-site/public/presentation/friction.html": "70da009cb3127170052833ddc5fc0f54eeabc35c9fc735aed833d9d3dc2d8c4d"
+  },
+  "html_handouts": {
+    "files": [
+      "runbook.html",
+      "friction.html",
+      "sources.html",
+      "messages.html"
+    ],
+    "checks": [
+      "parsed HTML",
+      "one h1 per handout",
+      "tables present",
+      "relative links resolve",
+      "no scripts",
+      "no private absolute filesystem paths",
+      "local Chrome screenshots visually reviewed at desktop viewport"
+    ],
+    "notification_catalogue": "9 process triggers; current delivery vs proposed copy; no sending",
+    "visually_reviewed_files": [
+      "runbook.html",
+      "friction.html",
+      "sources.html"
+    ],
+    "messages_html_verification": "HTML parse, headings, table and relative links only"
+  }
+}

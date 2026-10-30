@@ -1,0 +1,71 @@
+name: Mobile and backend checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    env:
+      COSANUM_CHROME_PATH: /usr/bin/google-chrome
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm run check
+      - name: Require the runner's Chrome for browser assertions
+        run: test -x "$COSANUM_CHROME_PATH"
+      - run: npm test
+
+  mobile:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npx tsc --noEmit
+      - run: npm run lint
+      - run: node --test tests/*.test.cjs
+
+  participant-and-shared-demo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - run: npm run check && npm test && npm run build
+        working-directory: participant-web
+      - run: node contracts/demo-resources/v1/validate.mjs
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+        working-directory: shared-demo-site
+      - run: node --experimental-strip-types --test lib/*.test.ts
+        working-directory: shared-demo-site
+      - run: npx tsc --noEmit
+        working-directory: shared-demo-site
+      - run: npm run build
+        working-directory: shared-demo-site

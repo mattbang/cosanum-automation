@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 
-const fixture = JSON.parse(fs.readFileSync('data/demo_fixture.json', 'utf8'));
+const fixture = JSON.parse(fs.readFileSync('fixtures/synthetic_demo.json', 'utf8'));
 const headers = {
   People: ['person_key','email','demo_role','demo_marker','persona_id','display_alias'],
   ParticipantCases: ['case_id','request_id','person_key','current_level','target_level','status','created_at','demo_marker'],
