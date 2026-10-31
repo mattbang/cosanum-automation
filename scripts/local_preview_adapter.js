@@ -8,14 +8,15 @@
     { key: 'P04', alias: 'Kim (synthetisch)', role: 'Teilnehmende Person' }
   ];
   const topics = [
-    { id: 'TC_R030', name: 'Beispielprozess A (synthetisch)', progression: true, configuredTarget: null, theory: true, practice: true, theoryMinutes: 60, practiceMinutes: 180 },
-    { id: 'TC_R027', name: 'Beispielprozess B (synthetisch)', progression: true, configuredTarget: null, theory: true, practice: false, theoryMinutes: 60, practiceMinutes: 0 },
-    { id: 'TC_R033', name: 'Beispielprozess C (synthetisch)', progression: false, configuredTarget: 2, theory: true, practice: true, theoryMinutes: 60, practiceMinutes: 180 },
-    { id: 'TC_R052', name: 'Beispielprozess D (synthetisch)', progression: true, configuredTarget: null, theory: true, practice: true, theoryMinutes: 60, practiceMinutes: 180 },
-    { id: 'TC_R077', name: 'Beispielprozess E (synthetisch)', progression: false, configuredTarget: 1, theory: true, practice: false, theoryMinutes: 60, practiceMinutes: 0 }
+    { id: 'TC_R030', name: 'Beispielprozess A (synthetisch)', progression: true, configuredTarget: null, theory: true, practice: true, theoryMinutes: 60, practiceMinutes: 180, sourceMaterial: 'Synthetische Quelle A' },
+    { id: 'TC_R027', name: 'Beispielprozess B (synthetisch)', progression: true, configuredTarget: null, theory: true, practice: false, theoryMinutes: 60, practiceMinutes: 0, sourceMaterial: 'Synthetische Quelle B' },
+    { id: 'TC_R033', name: 'Beispielprozess C (synthetisch)', progression: false, configuredTarget: 2, theory: true, practice: true, theoryMinutes: 60, practiceMinutes: 180, sourceMaterial: 'Synthetische Quelle C' },
+    { id: 'TC_R052', name: 'Beispielprozess D (synthetisch)', progression: true, configuredTarget: null, theory: true, practice: true, theoryMinutes: 60, practiceMinutes: 180, sourceMaterial: 'Synthetische Quelle D' },
+    { id: 'TC_R077', name: 'Beispielprozess E (synthetisch)', progression: false, configuredTarget: 1, theory: true, practice: false, theoryMinutes: 60, practiceMinutes: 0, sourceMaterial: 'Synthetische Quelle E' }
   ];
   function phase(requestId, phaseName, booked, completed, declined) {
     return { phase: phaseName, sessionId: `${requestId}-${phaseName === 'theory' ? 'T' : 'P'}`,
+      startUtc: booked ? sampleStartUtc(requestId, phaseName) : '',
       rsvp: booked ? declined ? 'declined' : 'accepted' : '',
       attendance: completed ? 'attended' : '', result: completed ? 'passed' : '',
       trainerResponseId: completed ? 'SAMPLE-TRAINER' : '', acknowledgementResponseId: completed ? 'SAMPLE-ACK' : '',
@@ -26,6 +27,8 @@
     return { caseId: `${requestId}-${person.key}`, personKey: person.key, personAlias: person.alias,
       state, reasonCode: reasonCode || '', reason: state === 'open' ? 'Synthetische Absage prüfen.' : state === 'waiting' ? booked ? 'Bestätigung und Nachweis stehen aus.' : 'Termin noch nicht gebucht.' : '',
       nextAction: state === 'open' ? 'Ersatztermin für diese Person prüfen.' : state === 'waiting' ? booked ? 'Belege prüfen.' : 'Freien Termin prüfen.' : 'Keiner',
+      currentTask: { action: completed ? 'complete' : reasonCode === 'declined' ? 'reschedule' : booked ? 'trainer_assessment' : 'booking',
+        actorKey: completed ? person.key : reasonCode === 'declined' || !booked ? 'MATT' : 'P03', state: completed ? 'complete' : 'suggested' },
       previousLevel: 1, targetLevel: 2, phases: phaseNames.map(name => phase(requestId, name, booked, completed, reasonCode === 'declined')),
       proofId: completed ? 'SAMPLE-PROOF' : '', archiveStatus: completed ? 'archived_verified' : '', archiveVerifiedAt: completed ? 'SAMPLE-TIME' : '',
       skillStatus: completed ? 'applied' : '', skillKey: '', docUrl: '', pdfUrl: '', archiveReceiptUrl: '', skillUrl: '' };
@@ -62,6 +65,10 @@
   const reads = Object.freeze({
     getIntakeData: () => ({ marker: '[SYNTHETIC OFFLINE]', topics, people }),
     getCatalogue: () => ({ marker: '[SYNTHETIC OFFLINE]', topics, people }),
+    getOwnerResourceOverview: () => ({ marker: '[SYNTHETIC OFFLINE]', topics, matrix: people.map((person, index) => ({
+      personKey: person.key, personAlias: person.alias, role: person.role,
+      levels: topics.map((topic, topicIndex) => ({ topicId: topic.id, level: index === 2 ? '4' : topicIndex === 4 ? '–' : String((index + topicIndex) % 3) }))
+    })), sheetUrl: '' }),
     getAuditDashboard: () => requests,
     getSavedPhasePlan: id => plans[id] || null,
     getPhasePlanPreview: () => { throw new Error('Offline preview has no planning simulation for new requests.'); },
