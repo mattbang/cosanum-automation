@@ -12,11 +12,15 @@ A deadline is a Gregorian `YYYY-MM-DD` calendar day in `Europe/Zurich`, inclusiv
 
 Deadline status is separate from the existing audit result. An incomplete case can be upcoming, due today, or overdue even while evidence or an archive is blocked. Cancellation and an approved exception remain distinct dispositions; neither satisfies training completion. This module reads an existing `cancelled` request/case or `exception_approved` case status and provides no command to grant either disposition.
 
+Each new revision records the exact person cases it applies to. A shared reschedule captures only the currently editable cases, so cancelled and excepted peers and completed cases without a known completion time retain their prior dates and histories. Global stream revisions are validated before each person's applicable history is selected; that person's history can therefore have gaps in its revision numbers. Reopening a case does not retroactively apply revisions that excluded it.
+
 Only the existing verified audit projection can establish completion. Its persisted skill-application timestamp determines whether completion was on time or late. Missing completion time is explicit and never counted as on-time completion. For a completed person, the applicable deadline is reconstructed from changes recorded on or before that completion timestamp. A later group reschedule therefore cannot rewrite that person's completion timing. Changes to the shared request date affect its remaining open cases; a person-policy date cannot be changed after that person's case ends.
 
 ## Sources and revision history
 
 `DeadlineChanges` is an append-only Sheet ledger in schema 13. A stream is identified by request ID, case ID and source. Request dates use an empty case ID and source `request`; a person's approved-policy snapshot uses that exact case ID and source `policy`. Each row records its stable change ID, date, source reference, Process & Quality owner key, previous/current revision, reason, UTC time and authenticated actor. The first row preserves the original date. Revisions never overwrite earlier rows.
+
+The trailing fourteenth column, `case_scope_json`, stores a sorted JSON array of the affected case IDs. A policy revision names only its exact case. Malformed, duplicate or foreign-request scopes and inconsistent case registries fail closed. A blank legacy shared scope retains its historical global behavior and is labelled explicitly in the history; it is not reconstructed from today's active cases. A legacy policy remains bound to its existing case ID. New writes always record scope. Exact replay returns the persisted scope and timestamp even if a peer ended after the first write; full-row readback includes that scope.
 
 The owner enters the request date and source during intake. A legacy request can receive its first deadline through the deadline editor. A person-policy entry requires a named source including its rule version and an explicit owner confirmation that it is already approved. This is a manually recorded policy snapshot, not an automated policy lookup or independent verification of an onboarding rule. [#65](https://github.com/mattbang/cosanum-automation/issues/65) owns the policy register and rule calculation.
 
@@ -33,6 +37,8 @@ The local preview includes fictional due-today and overdue examples and keeps al
 ## Setup and verification boundary
 
 Reading a schema-12 Sheet without `DeadlineChanges` remains supported and yields unset deadlines. An explicit reviewed `setupDemo_()` run creates the new empty tab through the existing setup path; it does not backfill dates or alter prior workflow evidence. Saving a deadline before that tab exists fails with a setup instruction. The [deployment allowlist](../.claspignore) includes `Deadlines.gs`; no manifest scope is added.
+
+The scoped ledger is the first connected schema-13 definition: its earlier 13-column draft was never deployed. An existing 13-column or otherwise ambiguous header is rejected without mutation; there is no automatic migration that invents the historical audience.
 
 Local verification:
 

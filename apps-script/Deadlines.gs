@@ -20,12 +20,45 @@ function deadlineText_(value, label, maxLength) {
   return value.trim();
 }
 
+function deadlineCaseIds_(row) {
+  if (row.case_scope_json === '' || row.case_scope_json === undefined || row.case_scope_json === null) return null;
+  var ids;
+  try { ids = JSON.parse(row.case_scope_json); }
+  catch (_) { throw new Error('Ungültiger Frist-Geltungsbereich.'); }
+  if (!Array.isArray(ids) || !ids.length || new Set(ids).size !== ids.length || ids.some(function (id) {
+    return typeof id !== 'string' || !id || id !== id.trim();
+  })) throw new Error('Ungültiger Frist-Geltungsbereich.');
+  if (row.source === 'policy' && (ids.length !== 1 || ids[0] !== row.case_id)) throw new Error('Frist-Geltungsbereich passt nicht zum Personenfall.');
+  return ids;
+}
+
+function deadlineScopeBindings_(tables, requestId) {
+  var cases = tables.ParticipantCases.filter(function (row) {
+    return row.request_id === requestId && row.demo_marker === '[DEMO]';
+  });
+  var ids = new Set(cases.map(function (row) { return row.case_id; }));
+  if (!cases.length || ids.size !== cases.length || new Set(cases.map(function (row) { return row.person_key; })).size !== cases.length || cases.some(function (row) {
+    return typeof row.case_id !== 'string' || !row.case_id || !row.person_key || tables.ParticipantCases.filter(function (candidate) { return candidate.case_id === row.case_id; }).length !== 1;
+  })) throw new Error('Personenfallregister für die Frist ist widersprüchlich.');
+  (tables.DeadlineChanges || []).filter(function (row) { return row.request_id === requestId; }).forEach(function (row) {
+    var scope = deadlineCaseIds_(row);
+    if ((row.source !== 'request' && row.source !== 'policy') ||
+        (row.source === 'request' && String(row.case_id || '') !== '') ||
+        (row.source === 'policy' && !ids.has(row.case_id)) ||
+        (scope && scope.some(function (id) { return !ids.has(id); }))) {
+      throw new Error('Frist-Geltungsbereich passt nicht zu den Personenfällen des Auftrags.');
+    }
+  });
+  return cases;
+}
+
 function deadlineStream_(rows, requestId, caseId, source) {
   var found = (rows || []).filter(function (row) {
     return row.request_id === requestId && String(row.case_id || '') === caseId && row.source === source;
   });
   found.forEach(function (row, index) {
     deadlineDay_(row.due_date);
+    deadlineCaseIds_(row);
     if (row.demo_marker !== '[DEMO]' || Number(row.revision) !== index + 1 || Number(row.previous_revision) !== index ||
         !row.change_id || !row.source_reference || row.owner_key !== 'MATT' || !row.reason || !row.actor_email ||
         !/^\d{4}-\d{2}-\d{2}T.*Z$/.test(String(row.recorded_at)) || !Number.isFinite(Date.parse(row.recorded_at))) {
@@ -41,12 +74,17 @@ function deadlineSourceView_(history) {
   var latest = history[history.length - 1];
   return { date: latest.due_date, originalDate: history[0].due_date, revision: Number(latest.revision),
     source: latest.source, reference: latest.source_reference, ownerKey: latest.owner_key,
-    history: history.map(function (row) { return { date: row.due_date, revision: Number(row.revision), reference: row.source_reference,
-      reason: row.reason, recordedAt: row.recorded_at, actorEmail: row.actor_email }; }) };
+    history: history.map(function (row) { var ids = deadlineCaseIds_(row); return { date: row.due_date, revision: Number(row.revision), reference: row.source_reference,
+      reason: row.reason, recordedAt: row.recorded_at, actorEmail: row.actor_email, caseIds: ids,
+      legacyGlobal: row.source === 'request' && ids === null }; }) };
 }
 
 function deadlineCaseView_(request, personCase, auditCase, rows, now) {
   var requestHistory = deadlineStream_(rows, request.request_id, '', 'request');
+  requestHistory = requestHistory.filter(function (row) {
+    var scope = deadlineCaseIds_(row);
+    return scope === null || scope.indexOf(personCase.case_id) >= 0;
+  });
   var policyHistory = deadlineStream_(rows, request.request_id, personCase.case_id, 'policy');
   var completionTime = /^\d{4}-\d{2}-\d{2}T.*(?:Z|[+-]\d{2}:\d{2})$/.test(auditCase.skillAppliedAt || '') ? Date.parse(auditCase.skillAppliedAt) : NaN;
   if (auditCase.state === 'complete' && Number.isFinite(completionTime)) {
@@ -78,6 +116,7 @@ function deadlineCaseView_(request, personCase, auditCase, rows, now) {
 
 function deadlineRequestView_(tables, request, view, now) {
   var rows = tables.DeadlineChanges || [];
+  deadlineScopeBindings_(tables, request.request_id);
   var source = deadlineSourceView_(deadlineStream_(rows, request.request_id, '', 'request'));
   view.cases.forEach(function (row) {
     var personCase = proofUnique_(tables.ParticipantCases, function (candidate) {
@@ -97,6 +136,7 @@ function deadlineRequestView_(tables, request, view, now) {
 function deadlineChange_(input, tables, now, actorEmail) {
   if (!input || typeof input.actionId !== 'string' || !/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(input.actionId)) throw new Error('Ungültige Fristaktions-ID.');
   var request = proofUnique_(tables.Requests, function (row) { return row.request_id === input.requestId && row.demo_marker === '[DEMO]'; }, 'Demo-Auftrag für die Frist');
+  var requestCases = deadlineScopeBindings_(tables, request.request_id);
   if (input.caseId !== undefined && typeof input.caseId !== 'string') throw new Error('Ungültige Personenfall-ID.');
   var caseId = input.caseId || '';
   var source = caseId ? 'policy' : 'request';
@@ -119,13 +159,14 @@ function deadlineChange_(input, tables, now, actorEmail) {
     return { row: replay[0], reused: true };
   }
   if (history.length !== input.expectedRevision) throw new Error('Frist wurde inzwischen geändert. Register neu lesen.');
-  var cases = tables.ParticipantCases.filter(function (row) { return row.request_id === request.request_id && (!caseId || row.case_id === caseId) && row.demo_marker === '[DEMO]'; });
+  var cases = requestCases.filter(function (row) { return !caseId || row.case_id === caseId; });
   if (!cases.length || (caseId && cases.length !== 1)) throw new Error('Personenfall gehört nicht eindeutig zum Auftrag.');
   var editableCases = cases.filter(function (row) {
     var audit = auditCase_(tables, row, now);
     return deadlineCaseView_(request, row, audit, tables.DeadlineChanges || [], now).editable;
   });
   if (!editableCases.length || (caseId && editableCases.length !== 1)) throw new Error('Abgeschlossene, stornierte oder ausgenommene Fälle behalten ihre Frist.');
+  command.case_scope_json = JSON.stringify(editableCases.map(function (row) { return row.case_id; }).sort());
   return { row: command, reused: false };
 }
 
@@ -150,7 +191,8 @@ function deadlineSaveLocked_(input) {
   var reread = readDemoTables_();
   var saved = deadlineStream_(reread.DeadlineChanges, change.row.request_id, change.row.case_id, change.row.source).filter(function (row) { return row.change_id === change.row.change_id; });
   if (saved.length !== 1 || DEMO_SCHEMA.sheets.DeadlineChanges.some(function (key) { return String(saved[0][key]) !== String(change.row[key]); })) throw new Error('Frist konnte nicht bestätigt werden. Dieselbe Aktion erneut versuchen.');
-  return { requestId: change.row.request_id, caseId: change.row.case_id, revision: Number(change.row.revision), date: change.row.due_date, reused: change.reused };
+  return { requestId: change.row.request_id, caseId: change.row.case_id, revision: Number(change.row.revision), date: change.row.due_date,
+    caseIds: deadlineCaseIds_(change.row), recordedAt: change.row.recorded_at, reused: change.reused };
 }
 
 function deadlineDraftInput_(input) {
