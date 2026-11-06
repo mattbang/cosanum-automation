@@ -21,7 +21,7 @@ var DEMO_SCHEMA = Object.freeze({
     SkillUpdates: ['idempotency_key', 'case_id', 'request_id', 'person_key', 'topic_id', 'previous_level', 'target_level', 'proof_id', 'proof_version', 'source_hash', 'archive_verified_at', 'applied_at', 'status', 'reason', 'demo_marker'],
     MessageLedger: ['send_key', 'purpose', 'template_version', 'request_id', 'case_id', 'session_id', 'recipient_email', 'due_at_utc', 'attempted_at_utc', 'sent_at_utc', 'state', 'error_summary', 'demo_marker'],
     FollowUps: ['action_id', 'case_id', 'session_id', 'request_id', 'action', 'note', 'actor_email', 'recorded_at_utc', 'demo_marker'],
-    DeadlineChanges: ['change_id', 'request_id', 'case_id', 'source', 'due_date', 'source_reference', 'owner_key', 'previous_revision', 'revision', 'reason', 'recorded_at', 'actor_email', 'demo_marker']
+    DeadlineChanges: ['change_id', 'request_id', 'case_id', 'source', 'due_date', 'source_reference', 'owner_key', 'previous_revision', 'revision', 'reason', 'recorded_at', 'actor_email', 'demo_marker', 'case_scope_json']
   })
 });
 

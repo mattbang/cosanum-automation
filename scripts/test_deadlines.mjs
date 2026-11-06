@@ -96,7 +96,7 @@ tables.DeadlineChanges[0].revision = 3;
 assert.throws(() => project(), /widersprüchlich/);
 tables.DeadlineChanges[0].revision = originalRevision;
 
-let locked = false, ownerAllowed = true, readbackBroken = false, loseReceipt = false, writes = 0;
+let locked = false, ownerAllowed = true, readbackBroken = false, corruptScopeReadback = false, loseReceipt = false, writes = 0;
 ctx.LockService = { getScriptLock: () => ({ waitLock() { assert(!locked); locked = true; }, releaseLock() { assert(locked); locked = false; } }) };
 ctx.auditOwner_ = () => { assert(locked); if (!ownerAllowed) throw Error('Owner required'); return 'owner@example.test'; };
 ctx.SpreadsheetApp = { flush() {} };
@@ -107,6 +107,7 @@ ctx.findDemoSpreadsheet_ = () => ({ getSheetByName: () => ({ appendRow(row) {
 } }) });
 ctx.readDemoTables_ = () => {
   if (readbackBroken && writes >= 3) return { ...tables, DeadlineChanges: [] };
+  if (corruptScopeReadback && writes >= 4) return { ...tables, DeadlineChanges: tables.DeadlineChanges.map((row, index) => index === tables.DeadlineChanges.length - 1 ? { ...row, case_scope_json: '["CASE-B"]' } : row) };
   return tables;
 };
 const stored = command(6, { date: '2026-12-01', expectedRevision: 2 });
@@ -121,13 +122,88 @@ ownerAllowed = true;
 loseReceipt = true;
 const uncertain = command(8, { date: '2026-12-02', expectedRevision: 3 });
 assert.throws(() => ctx.saveRequestDeadline_(uncertain), /response lost/);
-assert.equal(ctx.saveRequestDeadline_(uncertain).reused, true);
+const originalReceiptStamp = tables.DeadlineChanges.at(-1).recorded_at;
+tables.ParticipantCases[1].status = 'cancelled';
+const replayedScope = ctx.saveRequestDeadline_(uncertain);
+assert.equal(replayedScope.reused, true);
+assert.deepEqual(Array.from(replayedScope.caseIds), ['CASE-A', 'CASE-B'], 'lost-response replay retains its original audience after a peer ends');
+assert.equal(replayedScope.recordedAt, originalReceiptStamp, 'lost-response replay returns the original persisted timestamp');
 assert.equal(writes, 2, 'lost transport response does not duplicate the persisted change');
 readbackBroken = true;
 assert.throws(() => ctx.saveRequestDeadline_(command(9, { expectedRevision: 4 })), /nicht bestätigt/);
 assert.equal(locked, false);
 readbackBroken = false;
 assert.equal(ctx.saveRequestDeadline_(command(9, { expectedRevision: 4 })).reused, true);
+assert.deepEqual(Array.from(ctx.saveRequestDeadline_(command(9, { expectedRevision: 4 })).caseIds), ['CASE-A'], 'the next change captures only the currently open case');
+corruptScopeReadback = true;
+const scopeReadback = command(26, { expectedRevision: 5, date: '2026-12-03' });
+assert.throws(() => ctx.saveRequestDeadline_(scopeReadback), /nicht bestätigt/, 'full-row readback includes the persisted scope');
+corruptScopeReadback = false;
+assert.deepEqual(Array.from(ctx.saveRequestDeadline_(scopeReadback).caseIds), ['CASE-A']);
+assert.equal(writes, 4, 'failed scope readback reuses its existing revision');
+
+for (const ended of ['cancelled', 'exception_approved', 'complete_without_time']) {
+  const mixed = { Requests: [{ ...request }], ParticipantCases: [person('CASE-A'), person('CASE-B')], DeadlineChanges: [] };
+  let endedNow = false;
+  ctx.auditCase_ = (_tables, row) => endedNow && row.case_id === 'CASE-B' && ended === 'complete_without_time' ? { state: 'complete', skillAppliedAt: '' } : audit;
+  const write = (id, revision, date) => {
+    const result = ctx.deadlineChange_(command(id, { expectedRevision: revision, date }), mixed, now, 'owner@example.test');
+    mixed.DeadlineChanges.push(result.row); return result.row;
+  };
+  const initial = write(20, 0, '2026-11-16');
+  assert.deepEqual(JSON.parse(initial.case_scope_json), ['CASE-A', 'CASE-B']);
+  endedNow = true;
+  if (ended !== 'complete_without_time') mixed.ParticipantCases[1].status = ended;
+  const second = write(21, 1, '2026-11-18');
+  const third = write(22, 2, '2026-11-21');
+  assert.deepEqual(JSON.parse(second.case_scope_json), ['CASE-A']);
+  assert.deepEqual(JSON.parse(third.case_scope_json), ['CASE-A']);
+  const open = ctx.deadlineCaseView_(mixed.Requests[0], mixed.ParticipantCases[0], audit, mixed.DeadlineChanges, now);
+  const closed = ctx.deadlineCaseView_(mixed.Requests[0], mixed.ParticipantCases[1], ctx.auditCase_(mixed, mixed.ParticipantCases[1]), mixed.DeadlineChanges, now);
+  assert.equal(open.date, '2026-11-21');
+  assert.equal(open.request.history.length, 3);
+  assert.equal(closed.date, '2026-11-16', ended + ' keeps its prior deadline without a terminal timestamp');
+  assert.equal(closed.request.originalDate, '2026-11-16');
+  assert.equal(closed.request.history.length, 1);
+  assert.equal(closed.editable, false);
+  endedNow = false;
+  mixed.ParticipantCases[1].status = 'draft';
+  const reopened = ctx.deadlineChange_(command(23, { expectedRevision: 3, date: '2026-11-25' }), mixed, now, 'owner@example.test').row;
+  const withGap = ctx.deadlineCaseView_(mixed.Requests[0], mixed.ParticipantCases[1], audit, [...mixed.DeadlineChanges, reopened], now);
+  assert.deepEqual(Array.from(withGap.request.history, row => row.revision), [1, 4], 'per-case history can have gaps in the validated global revision stream');
+  assert.equal(withGap.date, '2026-11-25');
+  endedNow = true;
+  mixed.ParticipantCases[1].status = ended === 'complete_without_time' ? 'draft' : ended;
+  const replay = ctx.deadlineChange_(command(20, { date: '2026-11-16' }), mixed, now, 'owner@example.test');
+  assert.equal(replay.reused, true);
+  assert.equal(replay.row.case_scope_json, initial.case_scope_json, 'retry cannot recalculate the earlier audience');
+  for (const invalid of ['[', '[]', 'null', '"CASE-A"', '{}', '["CASE-A","CASE-A"]', '[1]', '["OTHER-CASE"]']) {
+    third.case_scope_json = invalid;
+    const mixedView = { cases: mixed.ParticipantCases.map(row => ({ caseId: row.case_id, ...ctx.auditCase_(mixed, row) })) };
+    assert.throws(() => ctx.deadlineRequestView_(mixed, mixed.Requests[0], mixedView, now), /Geltungsbereich|Personenfall/);
+  }
+  third.case_scope_json = '["CASE-A"]';
+  const foreign = { ...person('CASE-OTHER'), request_id: 'REQ-OTHER' };
+  mixed.ParticipantCases.push(foreign);
+  third.case_scope_json = '["CASE-OTHER"]';
+  assert.throws(() => ctx.deadlineChange_(command(24, { expectedRevision: 3 }), mixed, now, 'owner@example.test'), /Geltungsbereich/);
+  third.case_scope_json = '["CASE-A"]';
+  mixed.ParticipantCases.pop();
+  mixed.ParticipantCases.push({ ...mixed.ParticipantCases[0] });
+  assert.throws(() => ctx.deadlineChange_(command(24, { expectedRevision: 3 }), mixed, now, 'owner@example.test'), /Personenfallregister/);
+  mixed.ParticipantCases.pop();
+  mixed.ParticipantCases[1].request_id = 'REQ-OTHER';
+  assert.throws(() => ctx.deadlineChange_(command(24, { expectedRevision: 3 }), mixed, now, 'owner@example.test'), /Geltungsbereich/);
+  mixed.ParticipantCases[1].request_id = 'REQ-1';
+  const policy = ctx.deadlineChange_(command(25, { caseId: 'CASE-A', date: '2026-11-15', policyApproved: true }), mixed, now, 'owner@example.test').row;
+  assert.deepEqual(JSON.parse(policy.case_scope_json), ['CASE-A']);
+  assert.throws(() => ctx.deadlineCaseIds_({ ...policy, case_scope_json: '["CASE-B"]' }), /Personenfall/);
+  third.case_scope_json = '';
+  const legacy = ctx.deadlineCaseView_(mixed.Requests[0], mixed.ParticipantCases[1], ctx.auditCase_(mixed, mixed.ParticipantCases[1]), mixed.DeadlineChanges, now);
+  assert.equal(legacy.date, '2026-11-21', 'blank legacy scope keeps explicit historical global semantics');
+  assert.equal(legacy.request.history.at(-1).legacyGlobal, true);
+}
+ctx.auditCase_ = () => audit;
 
 // Intake validates a malformed or unavailable initial deadline before writing a request.
 assert.throws(() => ctx.saveDraftRequest_({ actionId: uuid(10), initialDeadline: { date: '2026-02-30', reference: 'Anfrage' } }), /Frist/);
@@ -144,4 +220,9 @@ ctx.findDemoSpreadsheet_ = () => ({ getSheetByName(name) {
 assert.equal(ctx.readDemoTables_().DeadlineChanges.length, 0);
 missingTab = 'Requests';
 assert.throws(() => ctx.readDemoTables_(), /Fehlendes Tabellenblatt: Requests/);
+missingTab = '';
+ctx.findDemoSpreadsheet_ = () => ({ getSheetByName(name) {
+  return { getDataRange: () => ({ getValues: () => [name === 'DeadlineChanges' ? ctx.DEMO_SCHEMA.sheets[name].slice(0, 13) : ctx.DEMO_SCHEMA.sheets[name]] }) };
+} });
+assert.throws(() => ctx.readDemoTables_(), /Schemafehler in DeadlineChanges/, 'an ambiguous old header must not be silently migrated');
 console.log('Pass: Zurich calendar days/DST, original sources, group deadlines, completion/dispositions, immutable history, optimistic revisions, owner gate, readback and retry.');
