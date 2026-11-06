@@ -66,6 +66,7 @@ test('adapter supplies synthetic read views and rejects writes and unknown calls
     assert.equal(row.startUtc, groupPlan.phases.find(phase => phase.sessionId === row.sessionId).startUtc);
   }
   assert.match((await call('saveDraftRequest')).error, /blocked saveDraftRequest/);
+  assert.match((await call('saveRequestDeadline')).error, /blocked saveRequestDeadline/);
   assert.match((await call('processVerifiedSkillUpdates')).error, /blocked processVerifiedSkillUpdates/);
   assert.match((await call('refreshRsvpStatus')).error, /blocked refreshRsvpStatus/);
   assert.match((await call('unknownRpc')).error, /blocked unknownRpc/);

@@ -174,12 +174,14 @@ function auditView_(tables, now, spreadsheetUrl) {
 
 function getAuditDashboard_() {
   var spreadsheet = findDemoSpreadsheet_();
-  return auditView_(readDemoTables_(), new Date(), spreadsheet.getUrl()).map(function (request) {
+  var tables = readDemoTables_(), now = new Date();
+  return auditView_(tables, now, spreadsheet.getUrl()).map(function (request) {
     request.cases.forEach(function (row) {
       row.skillUrl = row.skillRowNumber ? spreadsheet.getUrl() + '#gid=' + spreadsheet.getSheetByName('SkillUpdates').getSheetId() + '&range=A' + row.skillRowNumber : '';
       row.archiveReceiptUrl = row.receiptRowNumber ? spreadsheet.getUrl() + '#gid=' + spreadsheet.getSheetByName('ArchiveReceipts').getSheetId() + '&range=A' + row.receiptRowNumber : '';
     });
-    return request;
+    var stored = tables.Requests.filter(function (row) { return row.request_id === request.requestId; })[0];
+    return deadlineRequestView_(tables, stored, request, now);
   });
 }
 

@@ -69,6 +69,11 @@ function saveDraftRequest_(input) {
   if (!input || typeof input.actionId !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(input.actionId)) {
     throw new Error('Ungültige Aktions-ID. Bitte die Seite neu laden.');
   }
+  if (Object.prototype.hasOwnProperty.call(input, 'initialDeadline')) {
+    deadlineDraftInput_(input);
+    if (!appUuid_(input.actionId)) throw new Error('Ungültige Fristaktions-ID.');
+    if (!findDemoSpreadsheet_().getSheetByName('DeadlineChanges')) throw new Error('Fristregister fehlt. Zuerst das geprüfte Schema-Setup ausführen.');
+  }
   var lock = LockService.getScriptLock();
   lock.waitLock(30000);
   try {
@@ -84,6 +89,7 @@ function saveDraftRequest_(input) {
       if (saved.topic_id !== input.topicId || Number(saved.target_level) !== Number(input.targetLevel) || submitted !== stored) {
         throw new Error('Diese Aktions-ID gehört bereits zu einem anderen Entwurf. Bitte die Seite neu laden.');
       }
+      if (Object.prototype.hasOwnProperty.call(input, 'initialDeadline')) deadlineSaveDraftLocked_(input, saved.request_id);
       return draftResult_(saved, savedCases, true, tables.Requests.indexOf(saved) + 1);
     }
     var preview = intakeSelection_(input, tables);
@@ -114,6 +120,7 @@ function saveDraftRequest_(input) {
     }
     requestsSheet.appendRow(request);
     SpreadsheetApp.flush();
+    if (Object.prototype.hasOwnProperty.call(input, 'initialDeadline')) deadlineSaveDraftLocked_(input, requestId);
     return draftResult_({request_id: requestId, status: 'draft', mode: ''}, cases.map(function (c) { return {case_id: c[0], person_key: c[2]}; }), false, requestNo);
   } finally {
     lock.releaseLock();

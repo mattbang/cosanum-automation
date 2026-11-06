@@ -209,7 +209,7 @@ function dispatchAppRequest(input) {
 function appMethods_() {
   return {
     getCatalogue: getCatalogue_, getOwnerResourceOverview: getOwnerResourceOverview_,
-    getIntakeData: getIntakeData_, getIntakePreview: getIntakePreview_, saveDraftRequest: saveDraftRequest_,
+    getIntakeData: getIntakeData_, getIntakePreview: getIntakePreview_, saveDraftRequest: saveDraftRequest_, saveRequestDeadline: saveRequestDeadline_,
     getPhasePlanPreview: getPhasePlanPreview_, getSavedPhasePlan: getSavedPhasePlan_, savePhasePlan: savePhasePlan_,
     checkDemoCalendarAccess: checkDemoCalendarAccess_, getSlotProposals: getSlotProposals_, bookSelectedSlot: bookSelectedSlot_,
     getRsvpStatus: getRsvpStatus_, refreshRsvpStatus: refreshRsvpStatus_,

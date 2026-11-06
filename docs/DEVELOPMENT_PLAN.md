@@ -2,6 +2,8 @@
 
 Der aktuelle Produktstand mit festen Feature-IDs und dem jeweils nächsten offenen Check steht im [Feature-Register](FEATURE_REGISTER.md). Aufgaben und Tagesfortschritt bleiben im [Kanban](https://github.com/users/mattbang/projects/1).
 
+Request deadlines and per-person overdue state are defined in the [deadline contract](REQUEST_DEADLINES.md), tracked in [#66](https://github.com/mattbang/cosanum-automation/issues/66). Local implementation and synthetic checks do not establish its connected update/readback acceptance or reminder delivery.
+
 Each increment below should end with a visible behavior and a repeatable acceptance check. Use synthetic data and test accounts. Keep source code local and versioned; keep credentials, individual evidence, and operational data outside this public repository.
 
 The [workflow asset inventory](WORKFLOW_ASSETS.md) links each step to its interface mockup, Calendar event, Form, proof, archive, checklist, and notification template. Use and update those canonical design inputs when building an increment so fields and wording are not recreated independently.

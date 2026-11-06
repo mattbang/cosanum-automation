@@ -43,6 +43,22 @@
     if (requestId === 'SAMPLE-EXCEPTION') return '2027-01-12T09:00:00Z';
     return '';
   }
+  const fixtureToday = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Zurich', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+  function fixtureDate(offset) { return new Date(Date.parse(fixtureToday + 'T12:00:00Z') + offset * 86400000).toISOString().slice(0, 10); }
+  function deadlineSource(source, date, reference) { return { source, date, originalDate: date, revision: 1, reference, ownerKey: 'MATT',
+    history: [{ date, revision: 1, reference, reason: 'Synthetisches Fristbeispiel', recordedAt: fixtureToday + 'T08:00:00Z', actorEmail: 'offline@example.test' }] }; }
+  requests.forEach(request => {
+    const requestDate = deadlineSource('request', fixtureDate(request.requestId === 'SAMPLE-INDIVIDUAL' ? 0 : 2), 'Synthetische Bedarfsanfrage');
+    request.cases.forEach((row, index) => {
+      const overdue = request.requestId === 'SAMPLE-EXCEPTION' && index === 0;
+      const policy = overdue ? deadlineSource('policy', fixtureDate(-3), 'DEMO-ONBOARDING@1') : null;
+      row.deadline = { date: policy ? policy.date : requestDate.date, today: fixtureToday, request: requestDate, policy,
+        state: row.state === 'complete' ? 'completed_time_unknown' : overdue ? 'overdue' : request.requestId === 'SAMPLE-INDIVIDUAL' ? 'due_today' : 'upcoming',
+        daysRemaining: overdue ? -3 : request.requestId === 'SAMPLE-INDIVIDUAL' ? 0 : 2, daysOverdue: overdue ? 3 : 0,
+        daysLate: null, workflowState: row.state, editable: row.state !== 'complete' };
+    });
+    request.deadline = { request: requestDate, date: requestDate.date, overdueCount: request.cases.filter(row => row.deadline.state === 'overdue').length, dueTodayCount: request.cases.filter(row => row.deadline.state === 'due_today').length, unsetCount: 0 };
+  });
   const plans = Object.fromEntries(requests.map(request => {
     const topic = topics.find(row => row.id === request.topicId);
     const phases = ['theory', ...(topic.practice ? ['practice'] : [])].map((name, index) => {

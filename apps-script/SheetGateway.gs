@@ -4,6 +4,7 @@ function readDemoTables_() {
   var tables = {};
   Object.keys(DEMO_SCHEMA.sheets).forEach(function (name) {
     var sheet = spreadsheet.getSheetByName(name);
+    if (!sheet && name === 'DeadlineChanges') { tables[name] = []; return; }
     if (!sheet) throw new Error('Fehlendes Tabellenblatt: ' + name);
     var values = sheet.getDataRange().getValues();
     assertHeaders_(values[0], DEMO_SCHEMA.sheets[name], name);
