@@ -77,28 +77,28 @@ const server = vm.createContext({
   LockService: { getScriptLock: () => ({ waitLock() {}, releaseLock() {} }) }
 });
 vm.runInContext(fs.readFileSync('apps-script/Feedback.gs', 'utf8'), server);
-assert.throws(() => server.prepareDemoTourLink({ requestId }), /move interrupted/);
+assert.throws(() => server.prepareDemoTourLink_({ requestId }), /move interrupted/);
 assert.equal(created, 1);
 assert.equal(files.root.length, 1);
-const first = server.prepareDemoTourLink({ requestId });
-const second = server.prepareDemoTourLink({ requestId });
+const first = server.prepareDemoTourLink_({ requestId });
+const second = server.prepareDemoTourLink_({ requestId });
 assert.equal(created, 1, 'retry and repeat reuse one Form');
 assert.equal(files.root.length, 0);
 assert.equal(files.demo.length, 1);
 assert.equal(activeForm.items.length, 4, 'partial creation never duplicates questions');
 assert.equal(first.url, second.url);
 assert.match(first.url, /request=REQ-EXAMPLE-001/);
-assert.equal(server.getDemoFeedbackForRequest({ requestId }).rows.length, 0);
+assert.equal(server.getDemoFeedbackForRequest_({ requestId }).rows.length, 0);
 function response(fields, time) { return { getTimestamp: () => new Date(time), getItemResponses: () => Object.entries(fields).map(([key, value]) => ({
   getItem: () => ({ getTitle: () => key }), getResponse: () => value })) }; }
 activeForm.responses = [
   response({ 'Auftrags-ID': requestId, Rolle: 'Schulende Person', Schritt: 'Trainerbericht', Beobachtung: 'Beispieltext' }, '2026-10-24T11:00:00Z'),
   response({ 'Auftrags-ID': 'REQ-OTHER-001', Rolle: 'Teilnehmende Person', Schritt: 'Teilnahmebestätigung', Beobachtung: 'Andere Anfrage' }, '2026-10-24T12:00:00Z')
 ];
-const rows = server.getDemoFeedbackForRequest({ requestId }).rows;
+const rows = server.getDemoFeedbackForRequest_({ requestId }).rows;
 assert.equal(rows.length, 1);
 assert.equal(rows[0].role, 'Schulende Person');
 assert.equal(rows[0].step, 'Trainerbericht');
 assert.equal(rows[0].submittedAt, '2026-10-24T11:00:00.000Z');
-assert.throws(() => server.getDemoFeedbackForRequest({ requestId: 'REQ-OTHER-001' }), /nicht eindeutig/);
+assert.throws(() => server.getDemoFeedbackForRequest_({ requestId: 'REQ-OTHER-001' }), /nicht eindeutig/);
 console.log('Public tour and owner-only feedback checks passed');
