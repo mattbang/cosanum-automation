@@ -2,7 +2,7 @@
 
 Der aktuelle Produktstand mit festen Feature-IDs und dem jeweils nächsten offenen Check steht im [Feature-Register](FEATURE_REGISTER.md). Aufgaben und Tagesfortschritt bleiben im [Kanban](https://github.com/users/mattbang/projects/1).
 
-Request deadlines and per-person overdue state are defined in the [deadline contract](REQUEST_DEADLINES.md), tracked in [#66](https://github.com/mattbang/cosanum-automation/issues/66). Local implementation and synthetic checks do not establish its connected update/readback acceptance or reminder delivery.
+Request deadlines and per-person overdue state passed connected acceptance on 6 November 2026 in owner-only version 15 ([#66](https://github.com/mattbang/cosanum-automation/issues/66), [PR #74](https://github.com/mattbang/cosanum-automation/pull/74)). The existing draft recovered without duplicates; source history, earlier-policy precedence, due/overdue states and fresh-page readback passed with prior records preserved. The [deadline contract](REQUEST_DEADLINES.md) records the bounded result. Reminder delivery remains [#68](https://github.com/mattbang/cosanum-automation/issues/68), and the ongoing training replay keeps its separate acceptance gates.
 
 Each increment below should end with a visible behavior and a repeatable acceptance check. Use synthetic data and test accounts. Keep source code local and versioned; keep credentials, individual evidence, and operational data outside this public repository.
 
