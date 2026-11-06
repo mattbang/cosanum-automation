@@ -263,24 +263,28 @@ function saveTrainerAttempt_(decision, sheet) {
   return { saved: true, decision: decision };
 }
 
+function processTrainerResponseLocked_(formId, response) {
+  var tables = readDemoTables_();
+  var formRow = uniqueTrainerRow_(tables.TrainerForms, function (row) {
+    return row.form_id === formId && row.demo_marker === '[DEMO]';
+  }, 'Trainerformular');
+  var context = trainerCaseContext_(tables, formRow.session_id, formRow.case_id);
+  if (formRow.person_key !== context.person.person_key || formRow.trainer_key !== context.trainer.person_key ||
+      String(formRow.trainer_email).trim().toLowerCase() !== String(context.trainer.email).trim().toLowerCase()) {
+    throw new Error('Trainerformular und Fallzuweisung stimmen nicht überein.');
+  }
+  var existing = tables.TrainerAssessments.filter(function (row) {
+    return row.form_id === formId && row.session_id === formRow.session_id && row.case_id === formRow.case_id;
+  });
+  var decision = trainerAssessmentDecision_(context, formRow, response, existing, calendarBookingGet_);
+  return saveTrainerAttempt_(decision, findDemoSpreadsheet_().getSheetByName('TrainerAssessments'));
+}
+
 function processTrainerResponse_(formId, response) {
   var lock = LockService.getScriptLock();
   lock.waitLock(30000);
   try {
-    var tables = readDemoTables_();
-    var formRow = uniqueTrainerRow_(tables.TrainerForms, function (row) {
-      return row.form_id === formId && row.demo_marker === '[DEMO]';
-    }, 'Trainerformular');
-    var context = trainerCaseContext_(tables, formRow.session_id, formRow.case_id);
-    if (formRow.person_key !== context.person.person_key || formRow.trainer_key !== context.trainer.person_key ||
-        String(formRow.trainer_email).trim().toLowerCase() !== String(context.trainer.email).trim().toLowerCase()) {
-      throw new Error('Trainerformular und Fallzuweisung stimmen nicht überein.');
-    }
-    var existing = tables.TrainerAssessments.filter(function (row) {
-      return row.form_id === formId && row.session_id === formRow.session_id && row.case_id === formRow.case_id;
-    });
-    var decision = trainerAssessmentDecision_(context, formRow, response, existing, calendarBookingGet_);
-    return saveTrainerAttempt_(decision, findDemoSpreadsheet_().getSheetByName('TrainerAssessments'));
+    return processTrainerResponseLocked_(formId, response);
   } finally { lock.releaseLock(); }
 }
 

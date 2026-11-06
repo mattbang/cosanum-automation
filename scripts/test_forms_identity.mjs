@@ -189,3 +189,39 @@ const beforeReplay=JSON.stringify([trainerSheet.rows,participantSheet.rows]);
 assert.equal(ctx.prepareTrainerForm_({sessionId:'SESSION',caseId:'CASE-T',requireExistingFormId:'FORM-TRAINER'}).reused,true);
 assert.equal(ctx.prepareParticipantForm_({sessionId:'SESSION',caseId:'CASE-P',requireExistingFormId:'FORM-PARTICIPANT'}).reused,true);
 assert.equal(JSON.stringify([trainerSheet.rows,participantSheet.rows]),beforeReplay,'shared-trigger replay must not write');
+
+// Run the real response handlers: scheduler stubs alone cannot catch a missing core handler.
+{
+  const live=vm.createContext({Date,Set,Object,Array,Number,String,JSON,encodeURIComponent});
+  for(const file of ['FormsIdentity.gs','TrainerAssessment.gs','ParticipantAcknowledgement.gs'])
+    vm.runInContext(fs.readFileSync('apps-script/'+file,'utf8'),live);
+  let locked=false, releases=0;
+  live.LockService={getScriptLock:()=>({
+    tryLock:()=>{if(locked)return false;locked=true;return true;},
+    waitLock:()=>{assert.equal(locked,false,'real handler must not nest locks');locked=true;},
+    releaseLock:()=>{assert(locked);locked=false;releases++;}
+  })};
+  const source={TrainerForms:[{...savedTrainer,...trainerForm}],ParticipantForms:[{...savedParticipant,...participantForm}],
+    TrainerAssessments:[],ParticipantAcknowledgements:[]};
+  live.readDemoTables_=()=>{assert(locked);return source;};
+  live.trainerCaseContext_=(_tables,_sessionId,caseId)=>caseId==='CASE-T'
+    ? {...trainerContext,trainer:{...trainerContext.trainer,person_key:'MATT'}} : participantContext;
+  live.formsIdentityGate_=()=>({allowed:true});
+  live.participantAcknowledgementGate_=()=>({allowed:true,releasedAt:'2026-10-22T09:10:00Z'});
+  live.verifyTrainerCalendar_=()=>({});live.calendarBookingGet_=()=>({});
+  live.FormApp={openById:id=>({getResponses:()=>[response(id==='FORM-TRAINER'?trainer:participant,id==='FORM-TRAINER')]})};
+  live.findDemoSpreadsheet_=()=>({getSheetByName:name=>name});
+  function save(decision,name){
+    assert(locked);assert.equal(decision.disposition,'accepted');
+    source[name].push({form_id:decision.formId,response_id:decision.responseId,
+      session_id:decision.sessionId,case_id:decision.caseId,disposition:decision.disposition});
+    return {saved:true,decision};
+  }
+  live.saveTrainerAttempt_=(decision,name)=>save(decision,name);
+  live.saveParticipantAttempt_=(decision,name)=>save(decision,name);
+  const run=live.processVerifiedFormResponses_();
+  assert.deepEqual(Array.from(run.errors),[]);assert.equal(run.saved,2);
+  assert.equal(source.TrainerAssessments.length,1);assert.equal(source.ParticipantAcknowledgements.length,1);
+  const retry=live.processVerifiedFormResponses_();
+  assert.equal(retry.saved,0);assert.equal(retry.skipped,2);assert.equal(releases,2);assert.equal(locked,false);
+}
