@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { readFileSync } from 'node:fs';
+import vm from 'node:vm';
 import { GoogleSheetMemberSource, GoogleTrainingReader, type FormMetadata, type MemberCell, type MemberTables } from '../src/members/source.ts';
 import { memberSchema, memberTableNames } from '../src/members/tasks.ts';
 import { MemberError, type MemberTaskRef } from '../src/members/types.ts';
@@ -7,6 +9,16 @@ import { claims, eventId, fixture, NOW, ref, row } from './member-source-fixture
 
 const status = (expected: number) => (error: unknown): boolean => error instanceof MemberError && error.status === expected;
 const taskRef = (overrides: Partial<MemberTaskRef> = {}): MemberTaskRef => ({ role: 'assigned_participant', caseId: 'CASE-P1', sessionId: 'SES-1', action: 'open_participant_form', ...overrides });
+
+test('member schema keeps its explicit training-table scope when the owner adds an unrelated deadline ledger', () => {
+  const source = readFileSync(new URL('../../apps-script/Schema.gs', import.meta.url), 'utf8');
+  const owner = vm.runInNewContext(`${source}\nDEMO_SCHEMA.sheets`, {}, { timeout: 1000 });
+  assert.ok(Object.hasOwn(owner, 'DeadlineChanges'));
+  const schema = memberSchema();
+  assert.deepEqual(Object.keys(schema).sort(), [...memberTableNames].sort());
+  assert.equal(Object.hasOwn(schema, 'DeadlineChanges'), false);
+  for (const name of memberTableNames) assert.deepEqual(schema[name], Array.from(owner[name]));
+});
 
 test('private source separates two trainers and two participants sharing a session; dual roles stay assigned', async () => {
   const f = fixture();
@@ -276,6 +288,8 @@ test('Google reader rejects changed headers, missing/duplicate tabs, wrong workb
     (data: ReturnType<typeof batch>) => { data.valueRanges[1].range = data.valueRanges[0].range; },
     (data: ReturnType<typeof batch>) => { data.valueRanges[0].values[0] = [...data.valueRanges[0].values[0]].reverse(); },
     (data: ReturnType<typeof batch>) => { data.valueRanges[0].values[0].push('extra_header'); },
+    (data: ReturnType<typeof batch>) => { data.valueRanges[0].values[0].pop(); },
+    (data: ReturnType<typeof batch>) => { data.valueRanges[0].values[0][0] = 123; },
     (data: ReturnType<typeof batch>) => { data.valueRanges[0].values.push(['', 'orphan']); },
   ]) {
     const data = structuredClone(batch(f.tables)); mutation(data);

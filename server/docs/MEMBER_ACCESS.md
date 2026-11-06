@@ -14,6 +14,8 @@ Reports and confirmations open the existing native Google Forms after a fresh se
 
 The read projection evaluates the canonical `Schema.gs`, `Booking.gs`, `FormsIdentity.gs`, `TrainerAssessment.gs` and `ParticipantAcknowledgement.gs` in a read-only VM. Include these release-matched files in the image. Before activation, compare their schema and gates with the live owner deployment, especially after another Apps Script release. No Apps Script method is exposed for member administration.
 
+Its read allowlist contains only the required training tables. Schema 13's separate `DeadlineChanges` register is omitted; the extra owner register does not disable login or add deadline-history access. Required tables and every required header remain strict.
+
 ## Login and logout
 
 Google Identity Services loads only after the user selects sign-in. The official Google library verifies the token signature, issuer, audience, expiry, verified email and a one-use server challenge nonce. Gmail or authoritative Workspace email can bind by its exact configured People address. Other third-party Google account emails require an explicit Google `subject` pin in the grant. A role name, case ID or email supplied by the browser is never an authorization claim. See Google's [ID-token verification guidance](https://developers.google.com/identity/gsi/web/guides/verify-google-id-token).

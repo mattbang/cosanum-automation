@@ -70,10 +70,10 @@ function canonical(tables?: MemberTables, live = new Map<string, LiveForm>()): C
 
 export function memberSchema(): Record<MemberTableName, string[]> {
   const sheets = canonical().DEMO_SCHEMA.sheets;
-  if (Object.keys(sheets).length !== memberTableNames.length || memberTableNames.some(name => !Array.isArray(sheets[name]))) {
+  if (memberTableNames.some(name => !Array.isArray(sheets[name]))) {
     throw new MemberError(503, 'Das Schulungsschema ist nicht kompatibel.');
   }
-  return sheets;
+  return Object.fromEntries(memberTableNames.map(name => [name, [...sheets[name]]])) as Record<MemberTableName, string[]>;
 }
 
 export const text = (value: unknown): string => typeof value === 'string' ? value : typeof value === 'number' || typeof value === 'boolean' ? String(value) : '';
