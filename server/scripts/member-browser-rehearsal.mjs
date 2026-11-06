@@ -64,27 +64,19 @@ handler = createMemberHandler({
   googleClientId: '123456-member-test.apps.googleusercontent.com',
   sessions,
 });
-const profile = await mkdtemp(join(tmpdir(), 'cosanum-members-chrome-'));
-const chrome = spawn(
-  process.env.COSANUM_CHROME_PATH ||
-    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-  [
-    '--headless=new',
-    '--remote-debugging-port=0',
-    `--user-data-dir=${profile}`,
-    '--disable-background-networking',
-    '--disable-component-update',
-    '--disable-default-apps',
-    '--disable-extensions',
-    '--disable-sync',
-    '--no-first-run',
-    'about:blank',
-  ],
-  { stdio: ['ignore', 'ignore', 'pipe'] },
-);
 const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const sockets = [];
-let browser;
+let browser, profile, chrome, browserStartupMs;
+let stderrTail = '', launchError = '', chromeClosed = false;
+let waitForChromeClose = Promise.resolve();
+const startupDiagnostic = () => `exit=${chrome?.exitCode ?? 'pending'}, signal=${chrome?.signalCode ?? 'none'}, spawn=${launchError || 'none'}, profile=${JSON.stringify(profile)}, stderr=${JSON.stringify(stderrTail.trim() || 'empty')}`;
+async function awaitChromeClose(timeout) {
+  if (chromeClosed) return;
+  await new Promise(resolve => {
+    const timer = setTimeout(resolve, timeout);
+    waitForChromeClose.then(() => { clearTimeout(timer); resolve(); });
+  });
+}
 class Client {
   constructor(socket) {
     this.socket = socket;
@@ -171,18 +163,55 @@ class Client {
 const sdk = `(()=>{let options;window.google={accounts:{id:{initialize(value){options=value},renderButton(parent){const b=document.createElement('button');b.id='synthetic-google';b.textContent='Mit Google anmelden · lokale Testidentität';b.type='button';b.onclick=()=>{const all=${JSON.stringify(Object.fromEntries(['MATT', 'T2', 'P1', 'P2'].map((k) => [k, claims(k)])))};options.callback({credential:JSON.stringify({...all[window.__syntheticMember],nonce:options.nonce})})};parent.replaceChildren(b)},cancel(){},disableAutoSelect(){}}}}})()`;
 const checks = [];
 try {
+  profile = await mkdtemp(join(tmpdir(), 'cosanum-members-chrome-'));
+  try {
+    chrome = spawn(
+      process.env.COSANUM_CHROME_PATH ||
+        '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+      [
+        '--headless=new',
+        '--remote-debugging-port=0',
+        `--user-data-dir=${profile}`,
+        '--disable-background-networking',
+        '--disable-component-update',
+        '--disable-default-apps',
+        '--disable-extensions',
+        '--disable-sync',
+        '--no-first-run',
+        'about:blank',
+      ],
+      { stdio: ['ignore', 'ignore', 'pipe'] },
+    );
+  } catch (error) {
+    launchError = error.message;
+    throw new Error(`Headless Chrome failed to spawn (${startupDiagnostic()})`);
+  }
+  chrome.stderr?.setEncoding('utf8');
+  chrome.stderr?.on('data', chunk => { stderrTail = (stderrTail + chunk).slice(-8000); });
+  chrome.on('error', error => { launchError = `${error.code || 'unknown'}: ${error.message}`; });
+  waitForChromeClose = new Promise(resolve => {
+    chrome.once('close', () => { chromeClosed = true; resolve(); });
+  });
+  const startupStarted = performance.now();
+  const startupDeadline = startupStarted + 20_000;
   let port, browserPath;
-  for (let i = 0; i < 120; i++) {
+  while (performance.now() < startupDeadline) {
+    if (launchError || chrome.exitCode !== null || chrome.signalCode !== null || chromeClosed)
+      throw new Error(`Headless Chrome exited during startup (${startupDiagnostic()})`);
     try {
       const a = (await readFile(join(profile, 'DevToolsActivePort'), 'utf8'))
         .trim()
         .split('\n');
-      [port, browserPath] = a;
-      if (port) break;
+      const candidatePort = Number(a[0]);
+      if (/^\d+$/.test(a[0]) && candidatePort > 0 && candidatePort <= 65535 && /^\/devtools\/browser\/[A-Za-z0-9-]+$/.test(a[1])) {
+        [port, browserPath] = a;
+        break;
+      }
     } catch {}
-    await pause(30);
+    await pause(Math.min(50, Math.max(0, startupDeadline - performance.now())));
   }
-  assert(port);
+  if (!port) throw new Error(`Headless Chrome did not publish its DevTools port within 20000ms (${startupDiagnostic()})`);
+  browserStartupMs = Math.round(performance.now() - startupStarted);
   browser = await Client.open(`ws://127.0.0.1:${port}${browserPath}`);
   const make = async (key, context) => {
     if (!context)
@@ -427,6 +456,7 @@ try {
     passed: checks.length,
     externalGoogleCalls: false,
     realTrainingWrites: false,
+    browserStartupMs,
     source: 'canonical private-workflow projection with synthetic rows',
     screenshots: out,
   };
@@ -434,14 +464,17 @@ try {
   console.log(JSON.stringify(report));
 } finally {
   for (const s of sockets) s.close();
-  const exited =
-    chrome.exitCode === null
-      ? new Promise((resolve) => chrome.once('exit', resolve))
-      : Promise.resolve();
-  chrome.kill('SIGTERM');
-  await exited;
+  if (chrome) {
+    if (chrome.pid && chrome.exitCode === null && chrome.signalCode === null) chrome.kill('SIGTERM');
+    await awaitChromeClose(1500);
+    if (chrome.pid && chrome.exitCode === null && chrome.signalCode === null) {
+      chrome.kill('SIGKILL');
+      await awaitChromeClose(1500);
+    }
+  }
+  server.closeAllConnections();
   await new Promise((resolve) => server.close(resolve));
-  await rm(profile, {
+  if (profile) await rm(profile, {
     recursive: true,
     force: true,
     maxRetries: 6,
