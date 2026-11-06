@@ -9,9 +9,10 @@ import { dirname, resolve } from 'node:path';
 test('adapter supplies synthetic read views and rejects writes and unknown calls', async () => {
   const code = await readFile(resolve(dirname(fileURLToPath(import.meta.url)), 'local_preview_adapter.js'), 'utf8');
   const alert = { textContent: '', hidden: true };
+  let handleClick;
   const context = {
     window: {},
-    document: { getElementById: () => alert, addEventListener: () => {} },
+    document: { getElementById: () => alert, addEventListener: (type, handler) => { if (type === 'click') handleClick = handler; } },
     queueMicrotask
   };
   runInNewContext(code, context);
@@ -64,6 +65,17 @@ test('adapter supplies synthetic read views and rejects writes and unknown calls
   assert.match((await call('unknownRpc')).error, /blocked unknownRpc/);
   assert.match(alert.textContent, /blocked unknownRpc/);
   assert.equal(alert.hidden, false);
+  for (const [href, target, expectedBlocked] of [
+    ['#workspace', '_self', false],
+    ['#workspace', '_top', true],
+    ['https://example.test/#workspace', '_self', true],
+    ['https://example.test/', '_blank', true]
+  ]) {
+    let blocked = false;
+    handleClick({ target: { closest: () => ({ getAttribute: name => name === 'href' ? href : target }) },
+      preventDefault: () => { blocked = true; } });
+    assert.equal(blocked, expectedBlocked, `preview navigation boundary: ${href} ${target}`);
+  }
 });
 
 test('serves the real client with an offline adapter and no repository file routes', async () => {

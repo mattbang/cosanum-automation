@@ -115,6 +115,7 @@
   Object.defineProperty(window, 'google', { value: Object.freeze({ script: Object.freeze({ run }) }), writable: false, configurable: false });
   document.addEventListener('click', event => {
     const link = event.target.closest('a');
+    if (link && link.getAttribute('href') === '#workspace' && link.getAttribute('target') === '_self') return;
     if (link) { event.preventDefault(); notice('Offline preview blocked link navigation. No external pages or files are opened.'); }
   }, true);
 })();

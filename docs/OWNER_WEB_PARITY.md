@@ -15,3 +15,11 @@ This increment adds an owner overview with request counts, a bounded work queue,
 The Android build's local fixture and the shared Site's `TR-*` courses do not share IDs, phase rules, or persisted state with the private `TC_R*` Sheet. No synthetic completion or skill change is imported into the owner app. The owner-only manifest and mail scopes are unchanged.
 
 Local verification covers the projection tests, the existing suite, and an offline preview at desktop and 390 px widths. Connected readback of the new resource endpoint and a numbered owner-only deployment are separate checks.
+
+## UI refinement — 6 November 2026
+
+The owner interface now uses a shared type scale, spacing tokens, the approved plum and lilac surfaces, and a darker coral primary button with 5.06:1 text contrast. A compact navigation bar and view-specific headings make the current task clearer. The overview gives the new-request action priority and keeps saved counts, person-level responsibilities, and case details readable. Workflow steps scroll horizontally on smaller screens. The new-request action clears the previous selection and draft key before opening intake.
+
+Keyboard navigation includes a skip link, visible control focus, and programmatic current-view and current-step states. Overview loading uses placeholders instead of invented counts; read errors offer a retry, and empty overview and search results explain the next step. The offline adapter permits only the internal skip link while retaining its external-link and workflow-write blocks. Typography uses a local Manrope preference with the platform sans-serif fallback; no external font requests are added.
+
+The design audit follows [AI Design Skills](https://github.com/elayadesign/ai-design-skills) and its linked [existing-project redesign skill](https://github.com/elayadesign/redesign-skill), adapted to the established product workflow and [GUI baseline](GUI_DESIGN_BASELINE.md). Local synthetic browser review covers overview, resources, register, intake, and eligibility at 320, 390, 820, and 1440 px, plus loading, empty, and failed-read states. It checks overflow, button labels, keyboard focus, draft reset, and reduced motion. These checks do not establish connected Google acceptance or a deployed UI revision.
