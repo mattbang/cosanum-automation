@@ -162,46 +162,86 @@ console.log('Pass: Forms REST VERIFIED write/read-back, both response roles, wro
   assert.equal(scheduler.formsResponseTriggerReady_('TF-25','onTrainerFormSubmit'),true);
   assert.equal(JSON.stringify(triggers.map(item=>[item.getHandlerFunction(),item.getTriggerSourceId()])),before);
   const processed=[],opened=[],attempted=[];
+  tables.TrainerAssessments=[]; tables.ParticipantAcknowledgements=[];
+  let locked=false, released=0, reads=0, overlapped=false;
+  scheduler.LockService={getScriptLock:()=>({
+    tryLock:()=>{if(locked)return false;locked=true;return true;},
+    releaseLock:()=>{assert(locked);locked=false;released++;}
+  })};
+  scheduler.readDemoTables_=()=>{assert(locked,'poller must lock before its first Sheet read');reads++;return tables;};
+  const rawResponse=id=>({getId:()=>id});
   scheduler.FormApp={openById:id=>{
-    opened.push(id);
+    assert(locked);opened.push(id);
+    if(!overlapped){
+      overlapped=true;
+      const beforeReads=reads;
+      assert.equal(scheduler.processVerifiedFormResponses_().busy,true,'overlapping run must yield');
+      assert.equal(reads,beforeReads,'overlap must not read the Sheet');
+      assert(locked,'overlapping run must not release the active run lock');
+    }
     if(id==='TF-0')throw Error('private Form failure for TF-0');
-    return {getResponses:()=>id==='TF-1'?['private rejected response',id]:[id]};
+    const ids=id==='TF-1'?['private rejected response','RESPONSE']:id==='PF-29'?['RESPONSE','RESPONSE']:['RESPONSE'];
+    return {getResponses:()=>ids.map(rawResponse)};
   }};
-  scheduler.processTrainerResponse_=(id,response)=>{
-    attempted.push(response);
-    if(response==='private rejected response')throw Error('private response source text');
-    processed.push(id);return {saved:true};
-  };
-  scheduler.processParticipantResponse_=(id,response)=>{attempted.push(response);processed.push(id);return {saved:true};};
+  scheduler.processTrainerResponse_=scheduler.processParticipantResponse_=()=>{throw Error('must not reacquire/release the outer lock');};
+  function accept(id,response,ledger){
+    assert(locked);attempted.push(response.getId());
+    if(response.getId()==='private rejected response')throw Error('private response source text');
+    processed.push(id);ledger.push({form_id:id,response_id:response.getId()});return {saved:true};
+  }
+  scheduler.processTrainerResponseLocked_=(id,response)=>accept(id,response,tables.TrainerAssessments);
+  scheduler.processParticipantResponseLocked_=(id,response)=>accept(id,response,tables.ParticipantAcknowledgements);
   assert.throws(()=>scheduler.processVerifiedFormResponses_(),error=>{
     assert.equal(error.message,'Formular-Antwortabgleich fehlgeschlagen: 2 Fehler; 59 Antworten gespeichert.');
     return true;
   });
   assert.equal(opened.length,60);assert.equal(attempted.length,60);assert.equal(processed.length,59);
-  assert(processed.includes('TF-1'),'one rejected response must not starve later responses in the same Form');
+  assert(processed.includes('TF-1'),'one failed response must not starve later responses in the same Form');
   assert(processed.includes('PF-29'),'an unreadable trainer Form must not starve later participant Forms');
+  assert.equal(tables.ParticipantAcknowledgements.length,30,'repeated raw responses within one sweep must be skipped');
+  assert.equal(locked,false);assert.equal(released,1);
+  assert.throws(()=>scheduler.processVerifiedFormResponses_(),error=>{
+    assert.equal(error.message,'Formular-Antwortabgleich fehlgeschlagen: 2 Fehler; 0 Antworten gespeichert.');
+    return true;
+  });
+  assert.equal(processed.length,59,'recorded response IDs must bypass repeated processing');
+  assert.equal(attempted.length,61,'a failed response remains retryable');
+  assert.equal(locked,false);assert.equal(released,2);
 
   opened.length=0;
-  scheduler.FormApp={openById:id=>{opened.push(id);throw Error('private unavailable Form '+id);}};
+  scheduler.FormApp={openById:id=>{assert(locked);opened.push(id);throw Error('private unavailable Form '+id);}};
   assert.throws(()=>scheduler.processVerifiedFormResponses_(),error=>{
     assert.equal(error.message,'Formular-Antwortabgleich fehlgeschlagen: 60 Fehler; 0 Antworten gespeichert.');
     return true;
   });
   assert.equal(opened.length,60,'an all-Forms outage attempts every registered Form before reporting failure');
+  assert.equal(locked,false);assert.equal(released,3);
 
-  scheduler.FormApp={openById:id=>({getResponses:()=>[id]})};
-  scheduler.processTrainerResponse_=id=>({saved:id!=='TF-0'});
-  scheduler.processParticipantResponse_=()=>({saved:true});
-  assert.deepEqual(JSON.parse(JSON.stringify(scheduler.processVerifiedFormResponses_())),{processed:60,saved:59,errors:[]},
-    'successful runs retain the public result shape and saved/duplicate counts');
+  scheduler.FormApp={openById:id=>({getResponses:()=>[rawResponse('RESPONSE')]})};
+  assert.deepEqual(JSON.parse(JSON.stringify(scheduler.processVerifiedFormResponses_())),{processed:1,saved:1,skipped:59,errors:[]},
+    'response keys include Form IDs and successful replay counts remain visible');
+  assert.equal(locked,false);assert.equal(released,4);
+  tables.TrainerAssessments=[]; tables.ParticipantAcknowledgements=[];
+  scheduler.processTrainerResponseLocked_=(id,response)=>{const result=accept(id,response,tables.TrainerAssessments);result.saved=id!=='TF-0';return result;};
+  assert.deepEqual(JSON.parse(JSON.stringify(scheduler.processVerifiedFormResponses_())),{processed:60,saved:59,skipped:0,errors:[]},
+    'successful fresh runs retain processed and saved counts');
+  assert.equal(locked,false);assert.equal(released,5);
 
   let tableReads=0;
-  scheduler.readDemoTables_=()=>{if(++tableReads===1)throw Error('private workbook source text');return tables;};
+  tables.TrainerAssessments=[]; tables.ParticipantAcknowledgements=[];
+  scheduler.readDemoTables_=()=>{assert(locked);if(++tableReads===1)throw Error('private workbook source text');return tables;};
   assert.throws(()=>scheduler.processVerifiedFormResponses_(),error=>{
     assert.equal(error.message,'Formular-Antwortabgleich fehlgeschlagen: 1 Fehler; 30 Antworten gespeichert.');
     return true;
   });
   assert.equal(tableReads,2,'a failed registry read does not prevent attempting the later registry');
+  assert.equal(locked,false);assert.equal(released,6);
+  scheduler.readDemoTables_=()=>{assert(locked);throw Error('private Sheet source text');};
+  assert.throws(()=>scheduler.processVerifiedFormResponses_(),error=>{
+    assert.equal(error.message,'Formular-Antwortabgleich fehlgeschlagen: 2 Fehler; 0 Antworten gespeichert.');
+    return true;
+  });
+  assert.equal(locked,false,'failed initial reads must release the lock');assert.equal(released,7);
 }
 restFailure=false;
 state.set('FORM-TRAINER','VERIFIED');state.set('FORM-PARTICIPANT','VERIFIED');
@@ -210,3 +250,39 @@ assert.equal(ctx.prepareTrainerForm_({sessionId:'SESSION',caseId:'CASE-T',requir
 assert.equal(ctx.prepareParticipantForm_({sessionId:'SESSION',caseId:'CASE-P',requireExistingFormId:'FORM-PARTICIPANT'}).reused,true);
 assert.equal(JSON.stringify([trainerSheet.rows,participantSheet.rows]),beforeReplay,'shared-trigger replay must not write');
 console.log('Pass: preserved triggers on capacity/create failures, shared-poller migration, complete response attempts, sanitized failures and successful replay.');
+
+// Run the real response handlers: scheduler stubs alone cannot catch a missing core handler.
+{
+  const live=vm.createContext({Date,Set,Object,Array,Number,String,JSON,encodeURIComponent});
+  for(const file of ['FormsIdentity.gs','TrainerAssessment.gs','ParticipantAcknowledgement.gs'])
+    vm.runInContext(fs.readFileSync('apps-script/'+file,'utf8'),live);
+  let locked=false, releases=0;
+  live.LockService={getScriptLock:()=>({
+    tryLock:()=>{if(locked)return false;locked=true;return true;},
+    waitLock:()=>{assert.equal(locked,false,'real handler must not nest locks');locked=true;},
+    releaseLock:()=>{assert(locked);locked=false;releases++;}
+  })};
+  const source={TrainerForms:[{...savedTrainer,...trainerForm}],ParticipantForms:[{...savedParticipant,...participantForm}],
+    TrainerAssessments:[],ParticipantAcknowledgements:[]};
+  live.readDemoTables_=()=>{assert(locked);return source;};
+  live.trainerCaseContext_=(_tables,_sessionId,caseId)=>caseId==='CASE-T'
+    ? {...trainerContext,trainer:{...trainerContext.trainer,person_key:'MATT'}} : participantContext;
+  live.formsIdentityGate_=()=>({allowed:true});
+  live.participantAcknowledgementGate_=()=>({allowed:true,releasedAt:'2026-10-22T09:10:00Z'});
+  live.verifyTrainerCalendar_=()=>({});live.calendarBookingGet_=()=>({});
+  live.FormApp={openById:id=>({getResponses:()=>[response(id==='FORM-TRAINER'?trainer:participant,id==='FORM-TRAINER')]})};
+  live.findDemoSpreadsheet_=()=>({getSheetByName:name=>name});
+  function save(decision,name){
+    assert(locked);assert.equal(decision.disposition,'accepted');
+    source[name].push({form_id:decision.formId,response_id:decision.responseId,
+      session_id:decision.sessionId,case_id:decision.caseId,disposition:decision.disposition});
+    return {saved:true,decision};
+  }
+  live.saveTrainerAttempt_=(decision,name)=>save(decision,name);
+  live.saveParticipantAttempt_=(decision,name)=>save(decision,name);
+  const run=live.processVerifiedFormResponses_();
+  assert.deepEqual(Array.from(run.errors),[]);assert.equal(run.saved,2);
+  assert.equal(source.TrainerAssessments.length,1);assert.equal(source.ParticipantAcknowledgements.length,1);
+  const retry=live.processVerifiedFormResponses_();
+  assert.equal(retry.saved,0);assert.equal(retry.skipped,2);assert.equal(releases,2);assert.equal(locked,false);
+}

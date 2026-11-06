@@ -128,27 +128,37 @@ function installVerifiedFormResponseProcessor_() {
 }
 
 function processVerifiedFormResponses_() {
-  var result = { processed: 0, saved: 0, errors: [] };
-  ['TrainerForms', 'ParticipantForms'].forEach(function (name) {
-    var forms;
-    try {
-      forms = readDemoTables_()[name].filter(function (row) { return row.demo_marker === '[DEMO]'; });
-    } catch (_) { result.errors.push({}); return; }
-    forms.forEach(function (row) {
+  var result = { processed: 0, saved: 0, skipped: 0, errors: [] };
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(1)) { result.busy = true; return result; }
+  try {
+    ['TrainerForms', 'ParticipantForms'].forEach(function (name) {
+      var forms, recorded;
       try {
-        FormApp.openById(row.form_id).getResponses().forEach(function (response) {
-          try {
-            var attempt = name === 'TrainerForms' ? processTrainerResponse_(row.form_id, response) :
-              processParticipantResponse_(row.form_id, response);
-            result.processed++;
-            if (attempt.saved) result.saved++;
-          } catch (_) { result.errors.push({}); }
-        });
-      } catch (_) { result.errors.push({}); }
+        var tables = readDemoTables_();
+        var ledger = name === 'TrainerForms' ? 'TrainerAssessments' : 'ParticipantAcknowledgements';
+        recorded = new Set(tables[ledger].map(function (row) { return JSON.stringify([row.form_id, row.response_id]); }));
+        forms = tables[name].filter(function (row) { return row.demo_marker === '[DEMO]'; });
+      } catch (_) { result.errors.push({}); return; }
+      forms.forEach(function (row) {
+        try {
+          FormApp.openById(row.form_id).getResponses().forEach(function (response) {
+            try {
+              var key = JSON.stringify([row.form_id, String(response.getId() || '')]);
+              if (recorded.has(key)) { result.skipped++; return; }
+              var attempt = name === 'TrainerForms' ? processTrainerResponseLocked_(row.form_id, response) :
+                processParticipantResponseLocked_(row.form_id, response);
+              recorded.add(key);
+              result.processed++;
+              if (attempt.saved) result.saved++;
+            } catch (_) { result.errors.push({}); }
+          });
+        } catch (_) { result.errors.push({}); }
+      });
     });
-  });
-  if (result.errors.length) {
-    throw new Error('Formular-Antwortabgleich fehlgeschlagen: ' + result.errors.length + ' Fehler; ' + result.saved + ' Antworten gespeichert.');
-  }
-  return result;
+    if (result.errors.length) {
+      throw new Error('Formular-Antwortabgleich fehlgeschlagen: ' + result.errors.length + ' Fehler; ' + result.saved + ' Antworten gespeichert.');
+    }
+    return result;
+  } finally { lock.releaseLock(); }
 }
