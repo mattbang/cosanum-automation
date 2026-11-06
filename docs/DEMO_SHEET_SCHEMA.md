@@ -4,7 +4,7 @@ The Google Sheet used by the prototype is synthetic and marked `[DEMO]`. Local s
 
 ## Current Form dispatch and response reconciliation
 
-Form preparation installs one shared five-minute response processor for all registered trainer and participant Forms. It replaces only legacy submission triggers belonging to registered demo Forms; unrelated triggers remain intact. Response checks and manual refreshes retain the same identity and timing gates. A failed Form does not prevent other Forms from being reconciled. Read-only existing-Form replays accept a working shared processor or the original matching submission trigger and do not change triggers. No installation or connected acceptance is implied by source changes.
+Form preparation installs one shared five-minute private response processor (`processVerifiedFormResponses_`) for all registered trainer and participant Forms. It replaces only legacy submission triggers belonging to registered demo Forms; unrelated triggers remain intact. Response checks and manual refreshes retain the same identity and timing gates. A failed Form does not prevent other Forms from being reconciled. Read-only existing-Form replays accept a working shared processor or the original matching submission trigger and do not change triggers. No installation or connected acceptance is implied by source changes.
 
 Reminder links must match the published URL of the verified Form ID. Completed proof retries recheck the archived evidence against the historical starting skill level and return the existing proof without creating assets or rewriting records.
 

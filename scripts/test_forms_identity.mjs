@@ -10,7 +10,7 @@ const ctx = vm.createContext({ Date, Set, Object, Array, Number, String, JSON, e
 for (const file of ['FormsIdentity.gs', 'TrainerAssessment.gs', 'ParticipantAcknowledgement.gs']) {
   vm.runInContext(fs.readFileSync('apps-script/' + file, 'utf8'), ctx);
 }
-const triggers = [{ getHandlerFunction: () => 'processVerifiedFormResponses' }];
+const triggers = [{ getHandlerFunction: () => 'processVerifiedFormResponses_' }];
 ctx.ScriptApp = { getOAuthToken: () => 'private-test-token', getProjectTriggers: () => triggers };
 
 ctx.UrlFetchApp = { fetch(url, options) {
@@ -146,13 +146,13 @@ console.log('Pass: Forms REST VERIFIED write/read-back, both response roles, wro
   scheduler.FormApp={openById:id=>{if(id==='TF-0')throw Error('temporarily unavailable');return {getResponses:()=>[id]};}};
   scheduler.processTrainerResponse_=(id)=>{if(id==='TF-1')throw Error('bad response');processed.push(id);return {saved:true};};
   scheduler.processParticipantResponse_=(id)=>{processed.push(id);return {saved:true};};
-  const run=scheduler.processVerifiedFormResponses();
+  const run=scheduler.processVerifiedFormResponses_();
   assert.equal(run.errors.length,2);assert.equal(run.saved,58);assert.equal(processed.length,58);
   assert(processed.includes('PF-29'),'an unreadable trainer Form must not starve participant responses');
 }
 restFailure=false;
 state.set('FORM-TRAINER','VERIFIED');state.set('FORM-PARTICIPANT','VERIFIED');
 const beforeReplay=JSON.stringify([trainerSheet.rows,participantSheet.rows]);
-assert.equal(ctx.prepareTrainerForm({sessionId:'SESSION',caseId:'CASE-T',requireExistingFormId:'FORM-TRAINER'}).reused,true);
-assert.equal(ctx.prepareParticipantForm({sessionId:'SESSION',caseId:'CASE-P',requireExistingFormId:'FORM-PARTICIPANT'}).reused,true);
+assert.equal(ctx.prepareTrainerForm_({sessionId:'SESSION',caseId:'CASE-T',requireExistingFormId:'FORM-TRAINER'}).reused,true);
+assert.equal(ctx.prepareParticipantForm_({sessionId:'SESSION',caseId:'CASE-P',requireExistingFormId:'FORM-PARTICIPANT'}).reused,true);
 assert.equal(JSON.stringify([trainerSheet.rows,participantSheet.rows]),beforeReplay,'shared-trigger replay must not write');

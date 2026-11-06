@@ -10,6 +10,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const fixturePath = path.join(root, 'data/demo_fixture.json');
 const suites = [
   'test_alias_migration.mjs',
+  'test_app_sessions.mjs',
   'test_audit.mjs',
   'test_availability.mjs',
   'test_booking.mjs',
@@ -32,6 +33,7 @@ const suites = [
   'test_reader_navigation.mjs',
   'test_rsvp.mjs',
   'test_skill_update.mjs',
+  'test_session_client.mjs',
   'test_team_test_target.mjs',
   'test_trainer_assessment.mjs',
   'test_workflow_contract.mjs',

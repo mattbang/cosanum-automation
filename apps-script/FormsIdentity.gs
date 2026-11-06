@@ -89,7 +89,7 @@ function formsReadyForLink_(formRow, ownerEmail) {
 /** One response poller covers every retained Form, instead of one trigger per Form. */
 function formsResponseTriggerReady_(formId, handler) {
   var triggers = ScriptApp.getProjectTriggers();
-  var shared = triggers.filter(function (trigger) { return trigger.getHandlerFunction() === 'processVerifiedFormResponses'; });
+  var shared = triggers.filter(function (trigger) { return trigger.getHandlerFunction() === 'processVerifiedFormResponses_'; });
   var legacy = triggers.filter(function (trigger) {
     return trigger.getHandlerFunction() === handler && trigger.getTriggerSourceId() === formId;
   });
@@ -101,7 +101,7 @@ function formsResponseTriggerReady_(formId, handler) {
 function ensureFormResponseProcessor_() {
   var tables = readDemoTables_();
   var triggers = ScriptApp.getProjectTriggers();
-  var shared = triggers.filter(function (trigger) { return trigger.getHandlerFunction() === 'processVerifiedFormResponses'; });
+  var shared = triggers.filter(function (trigger) { return trigger.getHandlerFunction() === 'processVerifiedFormResponses_'; });
   if (shared.length > 1) throw new Error('Mehrere Formular-Antwortprozessoren vorhanden.');
   var legacy = triggers.filter(function (trigger) {
     var handler = trigger.getHandlerFunction();
@@ -114,19 +114,19 @@ function ensureFormResponseProcessor_() {
   if (!shared.length) {
     // At the service limit, replace one known handler to make room for the shared poller.
     if (triggers.length >= 20 && legacy.length) ScriptApp.deleteTrigger(legacy.shift());
-    ScriptApp.newTrigger('processVerifiedFormResponses').timeBased().everyMinutes(5).create();
+    ScriptApp.newTrigger('processVerifiedFormResponses_').timeBased().everyMinutes(5).create();
   }
   legacy.forEach(function (trigger) { ScriptApp.deleteTrigger(trigger); });
 }
 
-function installVerifiedFormResponseProcessor() {
+function installVerifiedFormResponseProcessor_() {
   var lock = LockService.getScriptLock();
   lock.waitLock(30000);
   try { ensureFormResponseProcessor_(); return { count: 1 }; }
   finally { lock.releaseLock(); }
 }
 
-function processVerifiedFormResponses() {
+function processVerifiedFormResponses_() {
   var result = { processed: 0, saved: 0, errors: [] };
   ['TrainerForms', 'ParticipantForms'].forEach(function (name) {
     var tables = readDemoTables_();

@@ -76,7 +76,9 @@ assert.throws(() => context.saveAppPreferences({token:first.token,preferences:{d
 authorizationRequired = false;
 
 assert.deepEqual(events.slice(-3), ['lock', 'business', 'release']);
-for (const method of ['constructor', '__proto__', 'setupDemo', 'resetDemoFixture_', 'beginAppSession']) {
+for (const method of ['constructor', '__proto__', 'setupDemo', 'resetDemoFixture_', 'beginAppSession',
+  'processVerifiedFormResponses', 'processVerifiedFormResponses_',
+  'installVerifiedFormResponseProcessor', 'installVerifiedFormResponseProcessor_']) {
   assert.throws(() => dispatch(first.token, method), /nicht verfügbar/);
 }
 assert.throws(() => dispatch(first.token, 'getCatalogue', [{}, {}, {}]), /nicht verfügbar/);
