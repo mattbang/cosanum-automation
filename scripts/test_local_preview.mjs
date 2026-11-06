@@ -52,6 +52,12 @@ test('adapter supplies synthetic read views and rejects writes and unknown calls
   assert.equal(exceptionRows.filter(row => row.flag === 'declined').length, 1);
   assert.equal(exceptionRows.find(row => row.flag === 'declined').responseStatus, 'declined');
   assert.equal(rsvp.errors.length, 0);
+  const readRsvp=(await call('getRsvpStatus')).value;
+  assert.equal(readRsvp.persisted,false);
+  assert.equal(readRsvp.rows.length,rsvp.rows.length);
+  const skillRows=(await call('getSkillUpdateQueue')).value;
+  assert.equal(skillRows.length,dashboard.value.reduce((count,request)=>count+request.cases.length,0));
+  assert.equal(skillRows.filter(row=>row.state==='applied').length,2);
   assert.equal(rsvp.rows.filter(row => row.caseId.startsWith('SAMPLE-INDIVIDUAL-')).length, 0);
   assert.equal(rsvp.rows.filter(row => row.caseId.startsWith('SAMPLE-GROUP-')).length, 4);
   const groupPlan = (await call('getSavedPhasePlan', 'SAMPLE-GROUP')).value;

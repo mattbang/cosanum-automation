@@ -93,6 +93,13 @@ function saveRsvpSnapshot_(snapshot, spreadsheet) {
   return snapshot;
 }
 
+function getRsvpStatus() {
+  auditOwner_();
+  var snapshot = rsvpSnapshotModel_(readDemoTables_(), calendarBookingGet_, new Date());
+  snapshot.persisted = false;
+  return snapshot;
+}
+
 function refreshRsvpStatus() {
   var lock = LockService.getScriptLock();
   lock.waitLock(30000);

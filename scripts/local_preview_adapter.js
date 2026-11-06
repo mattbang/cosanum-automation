@@ -70,6 +70,13 @@
       levels: topics.map((topic, topicIndex) => ({ topicId: topic.id, level: index === 2 ? '4' : topicIndex === 4 ? '–' : String((index + topicIndex) % 3) }))
     })), sheetUrl: '' }),
     getAuditDashboard: () => requests,
+    getRsvpStatus: () => ({ ...reads.getOfflineRsvpPreview(), persisted: false }),
+    getSkillUpdateQueue: () => requests.flatMap(request => request.cases.map(row => ({
+      caseId: row.caseId, requestId: request.requestId, personKey: row.personKey,
+      previousLevel: row.previousLevel, targetLevel: row.targetLevel,
+      state: row.skillStatus === 'applied' ? 'applied' : 'waiting',
+      reason: row.reason, appliedAt: row.skillStatus === 'applied' ? 'SAMPLE-TIME' : ''
+    }))),
     getSavedPhasePlan: id => plans[id] || null,
     getPhasePlanPreview: () => { throw new Error('Offline preview has no planning simulation for new requests.'); },
     getDemoFeedbackForRequest: input => ({ requestId: input.requestId, rows: [] }),
