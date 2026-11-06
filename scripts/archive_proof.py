@@ -317,8 +317,11 @@ class Source:
         values = result.get('values', [])
         if not values or values[0] != expected:
             raise ArchiveError(f'Sheet {tab} does not match the expected schema; run setupDemo() first.')
+        for number, row in enumerate(values[1:], 2):
+            if not row or row[0] == '':
+                raise ArchiveError(f'Sheet {tab} has a blank record at row {number}; refusing archive writes.')
         return [dict(zip(expected, row + [''] * (len(expected) - len(row))))
-                for row in values[1:] if row and row[0] != '']
+                for row in values[1:]]
 
     def update_row(self, tab: str, row_number: int, values: list) -> None:
         cell = f'{tab}!A{row_number}:{chr(64 + len(values))}{row_number}'

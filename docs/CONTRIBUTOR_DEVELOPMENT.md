@@ -24,6 +24,14 @@ The [contributor Google test-environment plan](TEAM_TEST_ENVIRONMENT.md) chooses
 
 The team sandbox is for contributor development. It does not grant trainers, participants, or Process & Quality operators access to the owner-only admin app; that product access decision is [#9](https://github.com/mattbang/cosanum-automation/issues/9). Keep credentials, private fixtures, personal addresses, live asset IDs, raw evidence, and replay footage outside the public repository.
 
+## Main-branch and review-asset policy
+
+`main` requires a pull request, an up-to-date base and resolved review conversations. Its eight required GitHub Actions checks are `Check (ubuntu-latest)`, `Check (windows-latest)`, `Check (macos-latest)`, `Dev container check (Ubuntu)`, `backend`, `mobile`, `participant-and-shared-demo` and `preflight-test`. Checks are bound to the GitHub Actions app. Protection applies to administrators and blocks force pushes and deletion. Merge commits remain allowed so integrated source heads retain their ancestry. Update the protection rule when intentionally renaming a required check.
+
+The personal repository does not require a second person's formal approval. Independent code review and the project acceptance gates still apply; passing CI does not authorize Google deployment or establish connected acceptance.
+
+Keep review screenshots outside the application source tree. Publish their exact commit under a unique `review-assets/<topic>-<source>` tag and use SHA-pinned image URLs in the PR. Screenshot commits do not need pull requests or source merges. For older screenshot branches, verify the archive tag points to the exact same commit before removing the branch. Archive a temporary code-base branch only after no open PR needs it and its source remains reachable through reviewed main history or an explicit archive tag. Use an expected-SHA lease for branch deletion and verify retained image contents afterward. Active feature branches and local worktrees remain with their owners.
+
 ## Effect on the release roadmap
 
 The v0.1 release still needs fresh Form identity [#3](https://github.com/mattbang/cosanum-automation/issues/3), controlled mail [#4](https://github.com/mattbang/cosanum-automation/issues/4), a reviewed owner-only deployment [#5](https://github.com/mattbang/cosanum-automation/issues/5), phone handoffs [#10](https://github.com/mattbang/cosanum-automation/issues/10), six connected scenarios [#6](https://github.com/mattbang/cosanum-automation/issues/6), and a private complete recording [#7](https://github.com/mattbang/cosanum-automation/issues/7). Local preview and CI can shorten their implementation loops but cannot close those connected checks.

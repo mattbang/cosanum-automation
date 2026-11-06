@@ -77,7 +77,7 @@ function feedbackItem_(form, title) {
 }
 
 /** Explicit owner action. Returning a URL never creates a training request or response. */
-function prepareDemoTourLink(input) {
+function prepareDemoTourLink_(input) {
   var tables = readDemoTables_();
   auditOwner_(tables);
   var request = feedbackRequest_(tables, input && input.requestId);
@@ -95,7 +95,7 @@ function prepareDemoTourLink(input) {
 }
 
 /** Read-only owner lookup. Form responses are feedback, never training evidence. */
-function getDemoFeedbackForRequest(input) {
+function getDemoFeedbackForRequest_(input) {
   var tables = readDemoTables_();
   auditOwner_(tables);
   var request = feedbackRequest_(tables, input && input.requestId);

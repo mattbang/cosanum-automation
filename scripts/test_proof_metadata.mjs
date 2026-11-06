@@ -42,11 +42,11 @@ ctx.Session = {getEffectiveUser: () => ({getEmail: () => 'owner@example.test'})}
 ctx.DEMO_SCHEMA = {sheets: {Proofs: keys}};
 ctx.LockService = {getScriptLock: () => ({waitLock: () => {}, releaseLock: () => {}})};
 
-let result = ctx.backfillProofMetadata({caseId: 'CASE-DEMO'});
+let result = ctx.backfillProofMetadata_({caseId: 'CASE-DEMO'});
 assert.equal(result.count, 2);
 assert.equal(updates, 2);
 assert.equal(files.get('doc').properties.other, 'preserved');
-result = ctx.backfillProofMetadata({caseId: 'CASE-DEMO'});
+result = ctx.backfillProofMetadata_({caseId: 'CASE-DEMO'});
 assert.equal(result.docId, 'doc');
 assert.equal(result.pdfId, 'pdf');
 assert.equal(updates, 2, 'retry leaves existing files untouched');

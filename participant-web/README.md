@@ -1,5 +1,7 @@
 # Hosted participant view foundation
 
+The new [`member/`](member/) page provides trainer and participant login against the existing private Google records. It is served together with its API at `/member/`; its public client configuration comes from the server, independently of this invitation page's `config.js`. Current server grants control role tabs and personal tasks, and existing native Google Forms retain reports and confirmations. See the [member access contract](../server/docs/MEMBER_ACCESS.md) for private setup and the connected activation gate. The original invitation flow below remains separate.
+
 This static, dependency-free page is a hosted participant front end for the API in `server/`. It does not use the demo browser's state or browser storage. A link may use `?case=CASE-ID#link=ONE_TIME_TOKEN`; the link token is carried in the URL fragment so it is not sent with the page request, is held only in page memory, and is removed from the address bar before any sign-in interaction. The case ID is only a locator. The API remains responsible for identity, assignment, role, expiry, revocation, and current state.
 
 The hosted-link service creates a random 256-bit secret, stores only its SHA-256 hash, and returns the secret for one-time display. Put it in the URL fragment (`#link=...`), never the query string. The fragment is not sent with the initial page request, and this page removes it from browser history before checking config or starting network activity. Query-string link secrets are rejected and stripped. The server rejects expired and revoked links, binds a claim to the verified issuer/subject, and rejects a different account after binding. A repeated claim by the same identity can refresh the claim; it does not turn the link into an identity credential. Use a short-lived link. Keep email and case details out of the URL; the notification should contain only the hosted URL and a brief instruction to sign in with the assigned account. Link delivery and any mail content remain outside this repository change.
@@ -32,3 +34,5 @@ npm test
 npm run check
 npm run build
 ```
+
+These commands include the member page and its client state tests. Member login requires a secure browser context and cross-tab coordination support; missing support keeps the private entrance blocked. Tests use synthetic identities and do not establish live Google sign-in acceptance.

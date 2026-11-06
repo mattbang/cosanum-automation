@@ -62,7 +62,7 @@ function rsvpSnapshotModel_(tables, getEvent, now) {
 
 function saveRsvpSnapshot_(snapshot, spreadsheet) {
   var sheet = spreadsheet.getSheetByName('SessionRsvps');
-  if (!sheet) throw new Error('RSVP-Register fehlt. setupDemo() ausführen.');
+  if (!sheet) throw new Error('RSVP-Register fehlt. setupDemo_() ausführen.');
   var values = sheet.getDataRange().getValues();
   assertHeaders_(values[0], DEMO_SCHEMA.sheets.SessionRsvps, 'SessionRsvps');
   var existing = {};
@@ -93,7 +93,15 @@ function saveRsvpSnapshot_(snapshot, spreadsheet) {
   return snapshot;
 }
 
-function refreshRsvpStatus() {
+function getRsvpStatus_() {
+  var tables = readDemoTables_();
+  auditOwner_(tables);
+  var snapshot = rsvpSnapshotModel_(tables, calendarBookingGet_, new Date());
+  snapshot.persisted = false;
+  return snapshot;
+}
+
+function refreshRsvpStatus_() {
   var lock = LockService.getScriptLock();
   lock.waitLock(30000);
   try {
@@ -103,12 +111,12 @@ function refreshRsvpStatus() {
 }
 
 /** Run after owner consents to script.scriptapp; repeated calls create no second trigger. */
-function installRsvpDailyMonitor() {
+function installRsvpDailyMonitor_() {
   var matches = ScriptApp.getProjectTriggers().filter(function (trigger) {
-    return trigger.getHandlerFunction() === 'refreshRsvpStatus';
+    return trigger.getHandlerFunction() === 'refreshRsvpStatus_';
   });
   if (matches.length > 1) throw new Error('Mehrere RSVP-Zeittrigger vorhanden. Bitte prüfen.');
   if (matches.length === 1) return { installed: true, reused: true };
-  ScriptApp.newTrigger('refreshRsvpStatus').timeBased().atHour(9).everyDays(1).inTimezone(SLOT_TIME_ZONE).create();
+  ScriptApp.newTrigger('refreshRsvpStatus_').timeBased().atHour(9).everyDays(1).inTimezone(SLOT_TIME_ZONE).create();
   return { installed: true, reused: false };
 }

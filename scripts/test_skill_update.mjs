@@ -49,72 +49,72 @@ function setup(){
 
 {
   const {ctx,skills,updates}=setup();
-  assert.equal(ctx.getSkillUpdateQueue()[0].state,'ready');
-  const first=ctx.applyVerifiedSkillUpdate({caseId:CASE});
+  assert.equal(ctx.getSkillUpdateQueue_()[0].state,'ready');
+  const first=ctx.applyVerifiedSkillUpdate_({caseId:CASE});
   assert.equal(first.status,'applied');assert.equal(first.reused,false);
   assert.equal(skills.rows[1][2],1);assert.equal(updates.rows.length,2);
   assert.equal(updates.rows[1][5],0);assert.equal(updates.rows[1][6],1);
   assert.equal(updates.rows[1][7],PROOF);assert.equal(updates.rows[1][12],'applied');
-  assert.ok(updates.rows[1][11]);assert.equal(ctx.getSkillUpdateQueue()[0].state,'applied');
-  const replay=ctx.applyVerifiedSkillUpdate({caseId:CASE});
+  assert.ok(updates.rows[1][11]);assert.equal(ctx.getSkillUpdateQueue_()[0].state,'applied');
+  const replay=ctx.applyVerifiedSkillUpdate_({caseId:CASE});
   assert.equal(replay.reused,true);assert.equal(skills.rows[1][2],1);assert.equal(updates.rows.length,2);
   // A later separate completion must not cause an old replay to downgrade the matrix.
-  skills.rows[1][2]=2;assert.equal(ctx.applyVerifiedSkillUpdate({caseId:CASE}).reused,true);
+  skills.rows[1][2]=2;assert.equal(ctx.applyVerifiedSkillUpdate_({caseId:CASE}).reused,true);
   assert.equal(skills.rows[1][2],2);
 }
 {
   const {ctx,skills,updates}=setup();
-  const first=ctx.processVerifiedSkillUpdates();
+  const first=ctx.processVerifiedSkillUpdates_();
   assert.equal(first.applied.length,1);assert.equal(first.errors.length,0);
   assert.equal(first.rows[0].state,'applied');assert.equal(skills.rows[1][2],1);
-  const second=ctx.processVerifiedSkillUpdates();
+  const second=ctx.processVerifiedSkillUpdates_();
   assert.equal(second.applied.length,0);assert.equal(updates.rows.length,2);
 }
 {
   const {ctx,skills,updates}=setup();
   skills.rows[1][2]=2;
-  assert.equal(ctx.getSkillUpdateQueue()[0].state,'ready'); // UI source stub does not inspect the matrix.
-  assert.throws(()=>ctx.applyVerifiedSkillUpdate({caseId:CASE}),/Skillkonflikt/);
+  assert.equal(ctx.getSkillUpdateQueue_()[0].state,'ready'); // UI source stub does not inspect the matrix.
+  assert.throws(()=>ctx.applyVerifiedSkillUpdate_({caseId:CASE}),/Skillkonflikt/);
   assert.equal(skills.rows[1][2],2);assert.equal(updates.rows.length,1);
 }
 {
   const {ctx,tables,skills,updates}=setup();
   tables.Proofs[0].status='pending_local_archive';
-  assert.throws(()=>ctx.applyVerifiedSkillUpdate({caseId:CASE}),/Archive/);
+  assert.throws(()=>ctx.applyVerifiedSkillUpdate_({caseId:CASE}),/Archive/);
   assert.equal(skills.rows[1][2],0);assert.equal(updates.rows.length,1);
 }
 {
   const {ctx,tables}=setup();tables.ArchiveReceipts[0].local_pdf_sha256='f'.repeat(64);
-  assert.throws(()=>ctx.applyVerifiedSkillUpdate({caseId:CASE}),/Archivbeleg/);
+  assert.throws(()=>ctx.applyVerifiedSkillUpdate_({caseId:CASE}),/Archivbeleg/);
 }
 {
   const {ctx,skills,updates}=setup();
   ctx.proofMetadataLookup_=()=>{throw Error('Stored Drive checksum unavailable')};
-  assert.throws(()=>ctx.applyVerifiedSkillUpdate({caseId:CASE}),/checksum unavailable/);
+  assert.throws(()=>ctx.applyVerifiedSkillUpdate_({caseId:CASE}),/checksum unavailable/);
   assert.equal(skills.rows[1][2],0);
   assert.equal(updates.rows.length,1);
 }
 {
   const {ctx,tables}=setup();tables.ParticipantCases[0].target_level=4;
-  assert.throws(()=>ctx.applyVerifiedSkillUpdate({caseId:CASE}),/Stufe 4/);
+  assert.throws(()=>ctx.applyVerifiedSkillUpdate_({caseId:CASE}),/Stufe 4/);
 }
 {
   const {ctx,skills,updates}=setup();
   updates.rows.push(['SKILL-'+PROOF+'-v1',CASE,'REQ-ABCD','SUMNER','TC_R052',0,1,PROOF,1,HASH,'2026-10-23T12:00:00.000Z','','pending','','[DEMO]']);
   skills.rows[1][2]=1;
-  const recovered=ctx.applyVerifiedSkillUpdate({caseId:CASE});
+  const recovered=ctx.applyVerifiedSkillUpdate_({caseId:CASE});
   assert.equal(recovered.status,'applied');assert.equal(updates.rows.length,2);
 }
 {
   const {ctx}=setup();ctx.proofSourceModel_=()=>{throw Error('Trainerbericht fehlt')};
-  assert.throws(()=>ctx.applyVerifiedSkillUpdate({caseId:CASE}),/Trainerbericht/);
+  assert.throws(()=>ctx.applyVerifiedSkillUpdate_({caseId:CASE}),/Trainerbericht/);
 }
 {
   const {ctx}=setup();let triggers=[];
   ctx.SLOT_TIME_ZONE='Europe/Zurich';
-  ctx.ScriptApp={getProjectTriggers:()=>triggers,newTrigger:handler=>({timeBased:()=>({atHour:hour=>({everyDays:days=>({inTimezone:zone=>({create:()=>{assert.equal(handler,'processVerifiedSkillUpdates');assert.equal(hour,9);assert.equal(days,1);assert.equal(zone,'Europe/Zurich');triggers.push({getHandlerFunction:()=>handler})}})})})})})};
-  assert.equal(ctx.installSkillDailyProcessor().reused,false);
-  assert.equal(ctx.installSkillDailyProcessor().reused,true);
+  ctx.ScriptApp={getProjectTriggers:()=>triggers,newTrigger:handler=>({timeBased:()=>({atHour:hour=>({everyDays:days=>({inTimezone:zone=>({create:()=>{assert.equal(handler,'processVerifiedSkillUpdates_');assert.equal(hour,9);assert.equal(days,1);assert.equal(zone,'Europe/Zurich');triggers.push({getHandlerFunction:()=>handler})}})})})})})};
+  assert.equal(ctx.installSkillDailyProcessor_().reused,false);
+  assert.equal(ctx.installSkillDailyProcessor_().reused,true);
   assert.equal(triggers.length,1);
 }
 console.log('Pass: gated archive receipt, one synthetic skill write, idempotent replay, conflict, level-4 block, and interrupted recovery.');

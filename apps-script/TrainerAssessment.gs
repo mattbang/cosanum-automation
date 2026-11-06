@@ -9,11 +9,7 @@ var TRAINER_QUESTIONS = Object.freeze({
 /** FormApp cannot select VERIFIED; FormsIdentity uses REST with manual fallback. */
 
 function ensureTrainerFormTrigger_(formId) {
-  var matches = ScriptApp.getProjectTriggers().filter(function (trigger) {
-    return trigger.getHandlerFunction() === 'onTrainerFormSubmit' && trigger.getTriggerSourceId() === formId;
-  });
-  if (matches.length > 1) throw new Error('Mehrere Abgabe-Trigger für dasselbe Trainerformular.');
-  if (!matches.length) ScriptApp.newTrigger('onTrainerFormSubmit').forForm(formId).onFormSubmit().create();
+  ensureFormResponseProcessor_();
 }
 
 function uniqueTrainerRow_(rows, predicate, label) {
@@ -116,7 +112,7 @@ function trainerFormRow_(tables, sessionId, caseId) {
 }
 
 /** Preparing a link does not report attendance. Process & Quality can share it after training. */
-function prepareTrainerForm(input) {
+function prepareTrainerForm_(input) {
   if (!input || typeof input.sessionId !== 'string' || typeof input.caseId !== 'string') throw new Error('Session und Personenfall fehlen.');
   var lock = LockService.getScriptLock();
   lock.waitLock(30000);
@@ -130,11 +126,7 @@ function prepareTrainerForm(input) {
       if (typeof input.requireExistingFormId !== 'string' || !saved || saved.form_id !== input.requireExistingFormId) {
         throw new Error('Erwartetes bestehendes Trainerformular fehlt; keine Neuanlage.');
       }
-      var expectedTriggers = ScriptApp.getProjectTriggers().filter(function (trigger) {
-        return trigger.getHandlerFunction() === 'onTrainerFormSubmit' &&
-          trigger.getTriggerSourceId() === saved.form_id;
-      });
-      if (expectedTriggers.length !== 1 || !saved.verified_at || !saved.verified_by) {
+      if (!formsResponseTriggerReady_(saved.form_id, 'onTrainerFormSubmit') || !saved.verified_at || !saved.verified_by) {
         throw new Error('Bestehendes Trainerformular ist für eine schreibfreie Wiederholung nicht bereit.');
       }
     }
@@ -170,7 +162,7 @@ function prepareTrainerForm(input) {
 }
 
 /** Explicit owner attestation after inspecting Google Form Settings > Responses. */
-function confirmTrainerVerifiedEmail(input) {
+function confirmTrainerVerifiedEmail_(input) {
   if (!input || input.confirmation !== true || typeof input.sessionId !== 'string' || typeof input.caseId !== 'string') {
     throw new Error('Bitte die Einstellung „Verifiziert“ im Google-Formular prüfen und bestätigen.');
   }
@@ -271,34 +263,40 @@ function saveTrainerAttempt_(decision, sheet) {
   return { saved: true, decision: decision };
 }
 
+function processTrainerResponseLocked_(formId, response) {
+  var tables = readDemoTables_();
+  var formRow = uniqueTrainerRow_(tables.TrainerForms, function (row) {
+    return row.form_id === formId && row.demo_marker === '[DEMO]';
+  }, 'Trainerformular');
+  var context = trainerCaseContext_(tables, formRow.session_id, formRow.case_id);
+  if (formRow.person_key !== context.person.person_key || formRow.trainer_key !== context.trainer.person_key ||
+      String(formRow.trainer_email).trim().toLowerCase() !== String(context.trainer.email).trim().toLowerCase()) {
+    throw new Error('Trainerformular und Fallzuweisung stimmen nicht überein.');
+  }
+  var existing = tables.TrainerAssessments.filter(function (row) {
+    return row.form_id === formId && row.session_id === formRow.session_id && row.case_id === formRow.case_id;
+  });
+  var decision = trainerAssessmentDecision_(context, formRow, response, existing, calendarBookingGet_);
+  return saveTrainerAttempt_(decision, findDemoSpreadsheet_().getSheetByName('TrainerAssessments'));
+}
+
 function processTrainerResponse_(formId, response) {
   var lock = LockService.getScriptLock();
   lock.waitLock(30000);
   try {
-    var tables = readDemoTables_();
-    var formRow = uniqueTrainerRow_(tables.TrainerForms, function (row) {
-      return row.form_id === formId && row.demo_marker === '[DEMO]';
-    }, 'Trainerformular');
-    var context = trainerCaseContext_(tables, formRow.session_id, formRow.case_id);
-    if (formRow.person_key !== context.person.person_key || formRow.trainer_key !== context.trainer.person_key ||
-        String(formRow.trainer_email).trim().toLowerCase() !== String(context.trainer.email).trim().toLowerCase()) {
-      throw new Error('Trainerformular und Fallzuweisung stimmen nicht überein.');
-    }
-    var existing = tables.TrainerAssessments.filter(function (row) {
-      return row.form_id === formId && row.session_id === formRow.session_id && row.case_id === formRow.case_id;
-    });
-    var decision = trainerAssessmentDecision_(context, formRow, response, existing, calendarBookingGet_);
-    return saveTrainerAttempt_(decision, findDemoSpreadsheet_().getSheetByName('TrainerAssessments'));
+    return processTrainerResponseLocked_(formId, response);
   } finally { lock.releaseLock(); }
 }
 
 function onTrainerFormSubmit(event) {
-  if (!event || !event.source || !event.response) throw new Error('Formularereignis fehlt.');
+  if (!event || !event.source || typeof event.source.getId !== 'function' || !event.response ||
+      typeof event.response.getId !== 'function' || typeof event.response.getTimestamp !== 'function' ||
+      typeof event.response.getRespondentEmail !== 'function') throw new Error('Gültiges Google-Formularereignis fehlt.');
   return processTrainerResponse_(event.source.getId(), event.response);
 }
 
 /** Replay retained raw Form responses if a submission trigger was interrupted. */
-function refreshTrainerAssessments() {
+function refreshTrainerAssessments_() {
   var tables = readDemoTables_();
   var results = [];
   tables.TrainerForms.filter(function (row) { return row.demo_marker === '[DEMO]'; }).forEach(function (row) {
@@ -336,4 +334,4 @@ function trainerAssessmentQueue_() {
   }, []);
 }
 
-function getTrainerAssessmentQueue() { return trainerAssessmentQueue_(); }
+function getTrainerAssessmentQueue_() { return trainerAssessmentQueue_(); }

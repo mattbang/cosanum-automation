@@ -1,54 +1,664 @@
 <!doctype html>
-<html lang="de"><head><base target="_top"><meta name="viewport" content="width=device-width,initial-scale=1"><style>
-body{margin:0;background:#f3f6f8;color:#17324d;font:16px/1.5 system-ui,sans-serif}main{max-width:960px;margin:auto;padding:30px 20px}section{background:white;border:1px solid #dce5eb;border-radius:9px;padding:22px;margin:20px 0}h1{margin:12px 0 4px}.muted{color:#52687a}.marker{background:#ffe0a3;color:#543600;font-weight:800;padding:4px 9px;border-radius:5px}label{display:block;font-weight:650;margin:12px 0 5px}select,button{font:inherit;padding:9px;border-radius:5px}select{border:1px solid #a8bac8;background:white;min-width:300px}button{background:#1d3854;color:white;border:0;cursor:pointer}button:disabled{opacity:.45;cursor:default}.secondary{background:#e4edf3;color:#17324d}.people{display:flex;flex-wrap:wrap;gap:9px}.people label{border:1px solid #dce5eb;padding:8px;border-radius:5px;font-weight:500;margin:0}table{width:100%;border-collapse:collapse}th,td{padding:10px;text-align:left;border-bottom:1px solid #dce5eb}th{background:#1d3854;color:white}.blocked,#error{color:#a32f2f}.allowed{color:#126046}[hidden]{display:none!important}.scroll{overflow-x:auto}.phase-select{min-width:190px}.note{border-left:4px solid #c08727;background:#fff8e9;padding:10px 14px}.id{font:12px ui-monospace,monospace;overflow-wrap:anywhere}
-
-:root{--plum:#452347;--rose:#ca5864;--paper:#f7f4f8;--line:#e9e0ea}
-body{background:var(--paper);color:#352b38}main{max-width:1190px}section{border-color:var(--line);border-radius:16px;box-shadow:0 6px 24px rgba(71,40,74,.045)}
-h1,h2,h3{color:#412644}button{background:var(--rose);border-radius:9px}button:hover:not(:disabled){filter:brightness(.95)}.secondary{background:#f0e4f1;color:#5c3b61}
-input[type=search],input[type=text]{font:inherit;padding:9px;border:1px solid #a8bac8;border-radius:5px;max-width:100%}
-.hub-header{display:flex;justify-content:space-between;align-items:center;gap:16px}.hub-nav{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0}.hub-nav button{background:transparent;color:#5c3b61;border:1px solid #d9c8dc}.hub-nav button.active{background:var(--plum);color:white}
-.hub-lead{max-width:690px;color:#706273}.scenario-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.scenario-card{background:#fbf9fc;color:#443647;border:1.5px solid var(--line);padding:16px;text-align:left;min-height:132px}.scenario-card strong,.scenario-card span{display:block}.scenario-card span{font-size:.86rem;font-weight:400;margin-top:7px}.scenario-card.selected{border-color:#a769a5;background:#f6edf7}
-.hub-layout{display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:20px}.hub-layout section{margin:0 0 18px}.hub-status-list{list-style:none;margin:0;padding:0}.hub-status-list li{border-top:1px solid var(--line);padding:12px 0}.hub-status-list strong{display:block}.hub-status-list small{display:block;color:#706273}.status-badge{display:inline-block;padding:3px 8px;border-radius:99px;background:#eef1f4;color:#52687a;font-size:.78rem;font-weight:700}.status-badge.complete{background:#e4f3e9;color:#126046}.status-badge.open{background:#fbe6e6;color:#a32f2f}
-.task-stepper{display:flex;flex-wrap:wrap;gap:6px;list-style:none;padding:0}.task-stepper li{flex:1;min-width:105px}.task-stepper button{width:100%;height:100%;padding:10px;text-align:left;background:#f4edf4;color:#5c3b61;border:1px solid #e7dce8}.task-stepper button.current{background:var(--plum);color:white}.task-stepper button.done{border-color:#92bea1}.task-stepper button small{display:block;font-size:.72rem}
-#workflowView [data-task]:not(.selected-task){display:none!important}.task-head{margin:16px 0}.task-head h2{margin-bottom:0}.task-head p{margin-top:4px}.request-picker{min-width:240px}
-@media(max-width:820px){.hub-layout{grid-template-columns:1fr}.scenario-grid{grid-template-columns:1fr}main{padding:18px}.hub-header{align-items:flex-start;flex-direction:column}select{min-width:0;max-width:100%}}
-*{box-sizing:border-box}main,section,.hub-layout>*,.hub-layout section{min-width:0}p,li,td,summary,#hubSummary,#hubNext,#error{overflow-wrap:anywhere}
-button,select,input[type=search],input[type=text]{min-height:44px}button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var(--plum);outline-offset:2px}
-.people label{display:flex;align-items:center;gap:8px;min-height:44px}.people input{width:20px;height:20px;flex:none}
-.scroll{max-width:100%}a{overflow-wrap:anywhere}details>summary{cursor:pointer;min-height:44px;padding:10px 0}
-@media(max-width:600px){
-  main{padding:12px 12px 40px}section{padding:16px;margin:12px 0}.hub-nav{display:grid;grid-template-columns:1fr;margin:12px 0}.hub-nav button{width:100%;text-align:left}
-  .hub-layout{gap:0}.scenario-card{min-height:96px}.task-stepper{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.task-stepper li{min-width:0}
-  select,input[type=search],input[type=text],.request-picker,.phase-select{width:100%;min-width:0;max-width:100%}section button:not(.scenario-card),#hubOpen,#hubRegister{max-width:100%}
-  .scroll{overflow:visible}.scroll table,.scroll tbody,.scroll tr,.scroll td{display:block;width:100%}.scroll thead{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
-  .scroll tr{border:1px solid var(--line);border-radius:10px;margin:12px 0;padding:8px;background:#fff}.scroll td{border:0;padding:6px 4px;min-width:0}.scroll td+td{border-top:1px solid var(--line)}.scroll td::before{content:attr(data-label);display:block;font-size:.78rem;font-weight:700;color:#5c3b61;margin-bottom:2px}
-  .scroll td button,.scroll td select,.scroll td input[type=text]{width:100%;margin:4px 0}.scroll td a{display:inline-block;min-height:44px;padding:10px 0}
+<html lang="de"><head><meta charset="utf-8"><title>Cosanum · Schulungsdemo</title><meta name="description" content="Schulungsbedarf planen und Nachweise je Person prüfen."><meta name="robots" content="noindex,nofollow"><base target="_top"><meta name="viewport" content="width=device-width,initial-scale=1"><style>
+:root {
+  color-scheme: light;
+  --plum: #452347;
+  --rose: #b84a56;
+  --paper: #f7f4f8;
+  --surface: #fff;
+  --surface-muted: #fbf9fc;
+  --lilac: #f0e4f1;
+  --ink: #352b38;
+  --muted: #706273;
+  --line: #e9e0ea;
+  --success: #126046;
+  --success-surface: #e4f3e9;
+  --danger: #a32f2f;
+  --danger-surface: #fbe6e6;
+  --warning: #73531c;
+  --warning-surface: #fff8e9;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --motion: cubic-bezier(0.22, 1, 0.36, 1);
+  --heading-3: 600 36px/40px var(--font);
+  --heading-4: 600 30px/36px var(--font);
+  --heading-5: 600 24px/32px var(--font);
+  --heading-6: 600 20px/28px var(--font);
+  --title-3: 600 16px/24px var(--font);
+  --body-3: 400 16px/24px var(--font);
+  --body-6: 400 14px/20px var(--font);
+  --button-md: 600 16px/24px var(--font);
+  --button-sm: 600 14px/20px var(--font);
+  --caption-4: 500 12px/16px var(--font);
+  --font: "Manrope", ui-sans-serif, system-ui, sans-serif;
 }
-</style></head><body><main><header class="hub-header"><div><span class="marker">[DEMO]</span> <span class="muted" id="demoVersion">Version 0.5</span><h1>Cosanum · Schulungsdemo</h1><p class="hub-lead">Process &amp; Quality startet einen Schulungsbedarf, bucht einen Termin und prüft den Nachweis je Person. Der Status wird aus dem Demo-Register gelesen.</p></div><p class="muted">Nur für das Demo-Eigentümerkonto</p></header>
-<nav class="hub-nav" aria-label="Hauptnavigation"><button type="button" data-view="hub" class="active">Demo Hub</button><button type="button" data-view="workflow">Process &amp; Quality</button><button type="button" data-view="register">Ergebnisse &amp; Register</button></nav>
-<div id="hubView"><div class="hub-layout"><div><section><h2>Testfall wählen</h2><p class="muted">Die Karten öffnen passende vorhandene Aufträge. Fehlt ein passender Auftrag, beginnt ein neuer Bedarf.</p><div id="scenarioCards" class="scenario-grid"></div></section><section><h2>Aktueller Auftrag</h2><label for="hubRequest">Auftrag</label><select id="hubRequest" class="request-picker"><option value="">Neuen Auftrag beginnen</option></select><p id="hubSummary" role="status"></p><details id="requestTechnical" hidden><summary>Technische Auftrags-ID</summary><code id="requestTechnicalValue" class="id"></code></details><p id="hubNext"></p><button type="button" id="hubOpen">Nächste Aufgabe öffnen</button></section><section><h2>Startlink für die Gruppe</h2><p class="muted">Öffentlicher Rollenrundgang ohne Fallakten oder Admin-Zugriff. Die Schulungsaktionen erfolgen über persönliche Kalender- und Formularlinks. Erst nach Veröffentlichung der statischen Seite teilen.</p><button type="button" class="secondary" id="prepareTour" disabled>Startlink vorbereiten</button><p id="tourStatus" role="status"></p><p><a id="tourLink" target="_blank" rel="noopener noreferrer" hidden>Rundgang öffnen</a></p></section></div><aside><section><h2>Personen im ausgewählten Auftrag</h2><ul id="hubCases" class="hub-status-list"><li>Noch kein Auftrag gewählt.</li></ul></section><section><h2>Belege im Register</h2><p class="muted">Kalender, Formulare, Nachweis, beide Archive und Skilländerung bleiben je Personenfall nachvollziehbar.</p><button type="button" class="secondary" id="hubRegister">Ergebnisse öffnen</button></section></aside></div></div>
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: var(--space-6); }
+body { margin: 0; background: var(--paper); color: var(--ink); font: var(--body-3); -webkit-font-smoothing: antialiased; }
+[hidden] { display: none !important; }
+main { width: 100%; max-width: 1280px; margin: auto; padding: var(--space-8) var(--space-10) var(--space-12); }
+main:focus { outline: none; }
+main, section, .hub-layout > *, .overview-head > *, .queue-card > * { min-width: 0; }
+h1, h2, h3, h4 { color: var(--plum); text-wrap: balance; }
+h1 { font: var(--heading-3); letter-spacing: -.035em; margin: 0 0 var(--space-3); }
+h2 { font: var(--heading-5); letter-spacing: -.025em; margin: 0 0 var(--space-3); }
+h3 { font: var(--heading-6); letter-spacing: -.02em; margin: var(--space-6) 0 var(--space-3); }
+h4 { font: var(--title-3); margin: 0 0 var(--space-1); }
+p { margin: var(--space-3) 0; text-wrap: pretty; }
+p, li, td, summary, code { overflow-wrap: anywhere; }
+section > .muted, .hub-lead { max-width: 65ch; }
+.muted { color: var(--muted); }
+a { color: var(--plum); text-decoration-thickness: 1px; text-underline-offset: 4px; overflow-wrap: anywhere; }
+a:hover { text-decoration-thickness: 2px; }
+button, input, select, textarea { font: inherit; }
+button, select, input[type=search], input[type=text], input[type=date], textarea { min-height: 48px; max-width: 100%; }
+button { padding: var(--space-3) var(--space-4); border: 1px solid transparent; border-radius: var(--radius-md); background: var(--rose); color: var(--surface); font: var(--button-md); cursor: pointer; transition: opacity 300ms var(--motion), transform 300ms var(--motion); }
+button:hover:not(:disabled) { opacity: .86; }
+button:active:not(:disabled) { transform: translateY(1px); }
+button:disabled { opacity: .45; cursor: not-allowed; }
+.secondary { background: var(--lilac); color: var(--plum); }
+button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visible, summary:focus-visible { outline: 3px solid var(--plum); outline-offset: 4px; }
+label { display: block; font: var(--title-3); margin: var(--space-6) 0 var(--space-2); }
+select, input[type=search], input[type=text], input[type=date], textarea { width: min(100%, 36rem); min-width: 0; padding: var(--space-3); border: 1px solid #d9c8dc; border-radius: var(--radius-md); background: var(--surface); color: var(--ink); }
+select:disabled { background: var(--surface-muted); color: var(--muted); cursor: not-allowed; }
+.request-picker { width: 100%; }
+.phase-select { width: 100%; min-width: 12rem; }
+.skip-link { position: absolute; top: var(--space-3); left: var(--space-3); z-index: 2; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--plum); color: var(--surface); transform: translateY(-200%); }
+.skip-link:focus { transform: translateY(0); }
+.app-bar { display: flex; justify-content: space-between; align-items: center; gap: var(--space-4); margin-bottom: var(--space-8); }
+.brand { display: flex; gap: var(--space-3); align-items: center; color: var(--plum); font: var(--title-3); letter-spacing: -.02em; }
+.brand-mark { display: grid; place-items: center; width: 40px; height: 40px; border-radius: var(--radius-lg); background: var(--plum); color: var(--surface); font: var(--heading-5); }
+.brand small { display: block; color: var(--muted); font: var(--caption-4); letter-spacing: 0; }
+.app-meta { display: flex; align-items: center; gap: var(--space-2); font: var(--caption-4); }
+.marker { padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); background: var(--lilac); color: var(--plum); font: var(--caption-4); }
+.hub-header { display: flex; justify-content: space-between; align-items: center; gap: var(--space-8); }
+.hub-lead { margin: 0; color: var(--muted); }
+.header-action { flex-shrink: 0; }
+.hub-nav { display: flex; gap: var(--space-1); width: fit-content; max-width: 100%; margin: var(--space-6) 0 var(--space-8); padding: var(--space-1); border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); }
+.hub-nav button { min-height: 40px; padding: var(--space-2) var(--space-4); background: transparent; color: var(--muted); font: var(--button-sm); }
+.hub-nav button.active { background: var(--plum); color: var(--surface); }
+section { margin: 0 0 var(--space-6); padding: var(--space-8); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-xl); }
+.overview-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-6); }
+.overview-head h2 { margin: 0; }
+.overview-head p { margin-bottom: 0; font: var(--body-6); }
+.overview-head button { flex-shrink: 0; font: var(--button-sm); background: var(--surface-muted); }
+.overview-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-6); margin: var(--space-6) 0 var(--space-8); }
+.metric { padding: var(--space-4); border-radius: var(--radius-md); background: var(--surface-muted); font-variant-numeric: tabular-nums; }
+.metric:first-child { background: var(--lilac); }
+.metric strong { display: block; color: var(--plum); font: var(--heading-4); letter-spacing: -.035em; }
+.metric span { display: block; margin-top: var(--space-1); color: var(--muted); font: var(--body-6); }
+.skeleton-number, .skeleton-label { display: block; border-radius: var(--radius-sm); background: var(--line); }
+.metric .skeleton-number { width: 40px; height: 32px; margin: 0 0 var(--space-2); }
+.metric .skeleton-label { width: 80%; height: 16px; }
+.queue-list { display: grid; gap: var(--space-3); }
+.queue-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--space-6); padding: var(--space-4); border-radius: var(--radius-md); background: var(--surface-muted); }
+.queue-card.selected { background: #f6edf7; }
+.queue-card h4 { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); }
+.queue-card p { margin: var(--space-1) 0 0; color: var(--muted); font: var(--body-6); }
+.queue-card .queue-next { margin-top: var(--space-2); color: var(--plum); }
+.queue-card button { background: transparent; color: var(--plum); font: var(--button-sm); }
+.queue-card button:hover { text-decoration: underline; text-underline-offset: 4px; }
+.hub-layout { display: grid; grid-template-columns: minmax(0, 1fr) 20rem; align-items: start; gap: var(--space-6); }
+.hub-layout aside section { background: #f6eff7; }
+.hub-layout aside h2 { font: var(--heading-6); }
+.hub-status-list, .calendar-list { list-style: none; margin: 0; padding: 0; }
+.hub-status-list li, .calendar-list li { padding: var(--space-4) 0; }
+.hub-status-list li + li, .calendar-list li + li { border-top: 1px solid var(--line); }
+.hub-status-list strong, .calendar-list strong { display: block; font: var(--title-3); margin-bottom: var(--space-2); }
+.hub-status-list small, .calendar-list span { display: block; margin-top: var(--space-2); color: var(--muted); font: var(--body-6); }
+.status-badge { display: inline-block; padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); background: var(--lilac); color: var(--plum); font: var(--caption-4); }
+.status-badge.complete { background: var(--success-surface); color: var(--success); }
+.status-badge.open { background: var(--danger-surface); color: var(--danger); }
+.scenario-grid { display: grid; gap: var(--space-2); }
+.scenario-card { display: grid; grid-template-columns: minmax(8rem, 1fr) 2fr; align-items: center; gap: var(--space-4); width: 100%; min-height: 64px; padding: var(--space-4); text-align: left; color: var(--plum); background: var(--surface-muted); border: 1px solid var(--line); }
+.scenario-card strong { font: var(--title-3); }
+.scenario-card span { color: var(--muted); font: var(--body-6); }
+.scenario-card.selected { border-color: var(--plum); background: #f6edf7; }
+.task-head { margin: 0 0 var(--space-6); }
+.task-head p { color: var(--muted); }
+.task-stepper { display: flex; flex-wrap: nowrap; list-style: none; gap: var(--space-2); padding: 0; margin: 0 0 var(--space-6); }
+.task-stepper li { flex: 1 1 0; min-width: 0; }
+.task-stepper button { width: 100%; height: 100%; padding: var(--space-3); background: var(--surface); color: var(--plum); border: 1px solid var(--line); text-align: left; font: var(--button-sm); overflow-wrap: anywhere; }
+.task-stepper button.current { background: var(--plum); color: var(--surface); }
+.task-stepper button.done:not(.current) { background: var(--success-surface); color: var(--success); }
+.task-stepper small { display: block; margin-top: var(--space-1); font: var(--caption-4); }
+#workflowView [data-task]:not(.selected-task) { display: none !important; }
+.note { padding: var(--space-4); margin: var(--space-4) 0; border: 1px solid #e7dce8; border-radius: var(--radius-md); background: #f6eff7; color: var(--plum); font: var(--body-6); }
+.people { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); }
+.people label { display: flex; align-items: center; gap: var(--space-3); min-height: 64px; margin: 0; padding: var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-md); font: var(--body-6); cursor: pointer; }
+.people label:has(:checked) { border-color: var(--plum); background: #f6edf7; }
+.people input { width: 20px; height: 20px; flex: none; accent-color: var(--plum); }
+.scroll { max-width: 100%; overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font: var(--body-6); font-variant-numeric: tabular-nums; }
+th, td { padding: var(--space-4) var(--space-3); text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
+th { background: var(--surface-muted); color: var(--plum); font-weight: 600; }
+td button { font: var(--button-sm); }
+td .id { margin-top: var(--space-2); }
+.blocked, #error { color: var(--danger); }
+.allowed { color: var(--success); }
+.id { font: var(--caption-4); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+details { margin: var(--space-3) 0; }
+details > summary { padding: var(--space-3) 0; min-height: 48px; color: var(--plum); font: var(--button-sm); cursor: pointer; }
+#auditRows details { padding: 0 var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-md); }
+#auditRows details p { font: var(--body-6); }
+#auditRows > h3 { margin-top: var(--space-8); }
+.resource-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); }
+.resource-card { padding: var(--space-6); border-radius: var(--radius-md); background: var(--surface-muted); }
+.resource-card h3 { margin: 0 0 var(--space-3); font: var(--heading-6); }
+.resource-card p { font: var(--body-6); }
+.empty-state { padding: var(--space-8); background: var(--surface-muted); border-radius: var(--radius-md); }
+.empty-state h4 { font: var(--heading-6); }
+.empty-state p { max-width: 55ch; margin-bottom: 0; color: var(--muted); font: var(--body-6); }
+[role=status]:empty, #error:empty { display: none; }
+.status-error, #error:not(:empty) { padding: var(--space-4); background: var(--danger-surface); border-radius: var(--radius-md); color: var(--danger); font: var(--body-6); }
+.app-footer { color: var(--muted); font: var(--caption-4); margin-top: var(--space-8); }
+@media (max-width: 1000px) {
+  .task-stepper { overflow-x: auto; padding: var(--space-1); }
+  .task-stepper li { flex: 0 0 9rem; }
+  .hub-layout { grid-template-columns: minmax(0, 1fr) 17rem; }
+  .hub-layout section { padding: var(--space-6); }
+  .hub-header { align-items: flex-start; }
+}
+@media (max-width: 820px) {
+  main { padding: var(--space-6); }
+  .hub-layout { grid-template-columns: 1fr; }
+  .overview-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); }
+  .hub-header { flex-direction: column; gap: var(--space-4); }
+  .resource-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  main { padding: var(--space-4) var(--space-4) var(--space-10); }
+  .app-bar { margin-bottom: var(--space-6); align-items: flex-start; }
+  .app-meta { align-items: flex-end; flex-direction: column; gap: var(--space-1); }
+  .brand-mark { width: 32px; height: 32px; border-radius: var(--radius-md); font: var(--heading-6); }
+  .brand { gap: var(--space-2); }
+  h1 { font: var(--heading-4); }
+  h2 { font: var(--heading-6); }
+  .hub-lead { font: var(--body-6); }
+  .header-action { width: 100%; }
+  .hub-nav { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; margin-bottom: var(--space-6); }
+  .hub-nav button { padding: var(--space-2); min-height: 48px; }
+  section, .hub-layout section { padding: var(--space-6) var(--space-4); border-radius: var(--radius-lg); }
+  .overview-head { flex-direction: column; gap: var(--space-3); }
+  .overview-head button { min-height: 40px; padding: var(--space-2) var(--space-3); }
+  .overview-metrics { margin: var(--space-6) 0; }
+  .metric { padding: var(--space-3); }
+  .metric span { min-height: 40px; }
+  .queue-card { grid-template-columns: 1fr; gap: var(--space-2); padding: var(--space-4); }
+  .queue-card button { justify-self: start; padding: var(--space-2) 0; }
+  .scenario-card { grid-template-columns: 1fr; gap: var(--space-1); }
+  main:not([data-view="hub"]) .hub-header h1 { font: var(--heading-5); margin: 0; }
+  main:not([data-view="hub"]) .hub-lead { display: none; }
+  .task-head h2 { display: none; }
+  .task-stepper { margin-bottom: var(--space-4); }
+  .people { grid-template-columns: 1fr; }
+  select, input[type=search], input[type=text], input[type=date], textarea, .request-picker, .phase-select { width: 100%; min-width: 0; }
+  .scroll { overflow: visible; }
+  .scroll table, .scroll tbody, .scroll tr, .scroll td { display: block; width: 100%; }
+  .scroll thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .scroll tr { border: 1px solid var(--line); border-radius: var(--radius-md); margin: var(--space-3) 0; padding: var(--space-2); }
+  .scroll td { border: 0; padding: var(--space-3) var(--space-2); }
+  .scroll td + td { border-top: 1px solid var(--line); }
+  .scroll td::before { content: attr(data-label); display: block; margin-bottom: var(--space-1); color: var(--plum); font: var(--caption-4); }
+  .scroll td button, .scroll td select, .scroll td input[type=text] { width: 100%; margin: var(--space-1) 0; }
+  .scroll td a { display: inline-block; min-height: 48px; padding: var(--space-3) 0; }
+  .empty-state { padding: var(--space-6) var(--space-4); }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  button { transition: none; }
+  button:active:not(:disabled) { transform: none; }
+}
+
+.app-controls { display: flex; align-items: center; gap: var(--space-4); }
+.account-control { position: relative; flex-shrink: 0; }
+.account-badge { display: grid; place-items: center; width: 48px; height: 48px; padding: 0; border-radius: 50%; background: var(--plum); color: var(--surface); font: var(--title-3); letter-spacing: .01em; }
+.account-badge[aria-expanded="true"] { outline: 2px solid var(--plum); outline-offset: 3px; }
+.account-menu { position: absolute; top: calc(100% + var(--space-3)); right: 0; z-index: 20; width: min(21rem, calc(100vw - 32px)); padding: var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); box-shadow: 0 12px 36px #352b381f; }
+.account-identity { display: grid; gap: var(--space-1); padding: var(--space-3); border-bottom: 1px solid var(--line); margin-bottom: var(--space-2); overflow-wrap: anywhere; }
+.account-identity strong { color: var(--plum); font: var(--title-3); }
+.account-identity span { color: var(--muted); font: var(--body-6); }
+.account-menu button { display: block; width: 100%; text-align: left; background: transparent; color: var(--plum); font: var(--button-sm); }
+.account-menu button:hover, .account-menu button:focus-visible { background: var(--surface-muted); opacity: 1; }
+.account-menu .logout-action { color: var(--danger); }
+.login-view { max-width: 1040px; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; padding-top: var(--space-12); padding-bottom: var(--space-12); }
+.login-brand { margin-bottom: var(--space-8); }
+.login-brand .marker { margin-left: auto; }
+.login-card { max-width: 620px; width: 100%; padding: var(--space-12); margin: 0 auto; }
+.login-eyebrow { display: block; margin-bottom: var(--space-4); color: var(--muted); font: var(--title-3); }
+.login-card h1 { margin-bottom: var(--space-6); font: 600 48px/1.12 var(--font); letter-spacing: -.04em; }
+.login-card > .muted { max-width: 42ch; }
+.login-action { display: block; width: 100%; margin-top: var(--space-8); }
+.login-status { min-height: 48px; margin: var(--space-4) 0; font: var(--body-6); }
+.authorization-link { display: block; min-height: 48px; margin: 0 0 var(--space-4); padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--lilac); color: var(--plum); font: var(--button-md); text-align: center; text-decoration: none; }
+.authorization-link:hover { text-decoration: underline; }
+.login-scope { padding-top: var(--space-6); margin-top: var(--space-6); border-top: 1px solid var(--line); color: var(--muted); font: var(--body-6); }
+.profile-dialog { width: min(36rem, calc(100vw - 32px)); max-height: calc(100dvh - 32px); margin: auto; padding: var(--space-8); border: 1px solid var(--line); border-radius: var(--radius-xl); color: var(--ink); background: var(--surface); overflow: auto; }
+.profile-dialog::backdrop { background: #352b3859; }
+.profile-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-4); }
+.profile-heading h2 { margin-bottom: 0; }
+.profile-heading button { flex-shrink: 0; min-height: 40px; padding: var(--space-2) var(--space-3); font: var(--button-sm); }
+.profile-details { margin: var(--space-6) 0 0; }
+.profile-details div + div { margin-top: var(--space-4); }
+.profile-details dt { color: var(--muted); font: var(--caption-4); }
+.profile-details dd { margin: var(--space-1) 0 0; font: var(--title-3); overflow-wrap: anywhere; }
+.profile-note { font: var(--body-6); }
+.profile-dialog select { width: 100%; }
+.profile-dialog #saveProfile { margin-top: var(--space-4); }
+html[data-density="compact"] .scroll td, html[data-density="compact"] .scroll th { padding-top: var(--space-2); padding-bottom: var(--space-2); }
+html[data-density="compact"] .queue-card { padding-top: var(--space-3); padding-bottom: var(--space-3); }
+html[data-motion="reduce"] { scroll-behavior: auto; }
+html[data-motion="reduce"] button { transition: none; }
+html[data-motion="reduce"] button:active:not(:disabled) { transform: none; }
+@media (max-width: 600px) {
+  .app-controls { gap: var(--space-2); }
+  .app-meta #demoVersion { display: none; }
+  .login-view { padding: var(--space-6) var(--space-4); justify-content: flex-start; }
+  .login-brand { margin-bottom: var(--space-6); }
+  .login-card { padding: var(--space-8) var(--space-6); }
+  .login-card h1 { font: var(--heading-3); letter-spacing: -.035em; }
+  .profile-dialog { padding: var(--space-6) var(--space-4); border-radius: var(--radius-lg); }
+  .profile-heading { flex-direction: column; gap: var(--space-2); }
+  .profile-heading button { align-self: flex-end; }
+}
+@media (max-width: 360px) { .app-bar .brand small { display: none; } }
+</style></head><body>
+<main id="loginView" class="login-view" aria-labelledby="loginTitle">
+  <div class="brand login-brand"><span class="brand-mark" aria-hidden="true">c</span><div>Cosanum<small>Schulungsverwaltung</small></div><span class="marker">[DEMO]</span></div>
+  <section class="login-card">
+    <span class="login-eyebrow">Private Schulungsverwaltung</span>
+    <h1 id="loginTitle">Deine Schulungen.<br>Alles im Blick.</h1>
+    <p class="muted">Bedarf planen, Aufgaben koordinieren und Nachweise je Person prüfen.</p>
+    <button type="button" id="loginButton" class="login-action">Mit Google fortfahren</button>
+    <p id="loginStatus" class="login-status muted" role="status" aria-live="polite">Anmeldung wird vorbereitet …</p>
+    <a id="authorizationLink" class="authorization-link" target="_blank" rel="noopener noreferrer" hidden>Google-Zugriff bestätigen</a>
+    <button type="button" id="restoreRetry" class="secondary" hidden>Sitzung erneut prüfen</button>
+    <button type="button" id="logoutRetry" class="secondary" hidden>Abmeldung erneut versuchen</button>
+    <p class="login-scope">Zugriff für das Demo-Eigentümerkonto.<br>Die Demo verwendet synthetische Testdaten.</p>
+  </section>
+</main>
+<div id="trainingHost" hidden inert></div>
+<dialog id="profileDialog" class="profile-dialog" aria-labelledby="profileTitle">
+  <div class="profile-heading"><h2 id="profileTitle">Profil &amp; Einstellungen</h2><button type="button" id="closeProfile" class="secondary" aria-label="Profil schließen">Schließen</button></div>
+  <form id="profileForm">
+    <dl class="profile-details"><div><dt>Name</dt><dd id="profileName"></dd></div><div><dt>Google-Konto</dt><dd id="profileEmail"></dd></div><div><dt>Rolle</dt><dd id="profileRole"></dd></div></dl>
+    <p class="muted profile-note">Name und E-Mail werden über dein Google-Konto verwaltet. Die Rolle ist für diese private Demo festgelegt.</p>
+    <a href="https://myaccount.google.com/" target="_blank" rel="noopener noreferrer">Google-Konto verwalten</a>
+    <label for="profileDensity">Tabellen und Abstände</label><select id="profileDensity"><option value="comfortable">Komfortabel</option><option value="compact">Kompakt</option></select>
+    <label for="profileMotion">Bewegung</label><select id="profileMotion"><option value="system">Geräteeinstellung</option><option value="reduce">Bewegung reduzieren</option></select>
+    <p id="profileStatus" role="status" aria-live="polite"></p><button type="submit" id="saveProfile">Einstellungen speichern</button>
+  </form>
+</dialog>
+<template id="trainingTemplate">
+<a class="skip-link" href="#workspace" target="_self">Zum Inhalt springen</a>
+<main id="workspace" tabindex="-1" data-view="hub">
+  <div class="app-bar">
+    <div class="brand"><span class="brand-mark" aria-hidden="true">c</span><div>Cosanum<small>Schulungsverwaltung</small></div></div>
+    <div class="app-controls"><div class="app-meta"><span class="marker">[DEMO]</span><span class="muted" id="demoVersion">Oberfläche 0.6</span></div><div class="account-control"><button type="button" id="accountBadge" class="account-badge" aria-haspopup="menu" aria-expanded="false" aria-controls="accountMenu" aria-label="Kontomenü öffnen"></button><div id="accountMenu" class="account-menu" role="menu" aria-label="Dein Konto" hidden><div class="account-identity" role="presentation"><strong id="accountName"></strong><span id="accountEmail"></span><span id="accountRole"></span></div><button type="button" id="openProfile" role="menuitem" tabindex="-1">Profil &amp; Einstellungen</button><button type="button" id="logoutButton" class="logout-action" role="menuitem" tabindex="-1">Abmelden</button></div></div></div>
+  </div>
+  <header class="hub-header">
+    <div><h1 id="pageTitle">Schulungen koordinieren.</h1><p class="hub-lead" id="pageLead">Bedarf planen, nächste Aufgaben bearbeiten und Nachweise je Person prüfen.</p></div>
+    <button type="button" id="newRequest" class="header-action">Neuen Bedarf erfassen</button>
+  </header>
+<nav class="hub-nav" aria-label="Hauptnavigation"><button type="button" data-view="hub" class="active" aria-current="page">Übersicht</button><button type="button" data-view="workflow">Process &amp; Quality</button><button type="button" data-view="resources">Themen &amp; Matrix</button><button type="button" data-view="register">Ergebnisse &amp; Register</button></nav>
+<div id="hubView"><section id="overviewPanel" aria-labelledby="overviewTitle" aria-busy="true"><div class="overview-head"><div><h2 id="overviewTitle">Aufträge im Blick</h2><p class="muted">Die nächste Aufgabe und Zuständigkeit kommen aus dem gespeicherten Register.</p></div><button type="button" class="secondary" id="refreshOverview">Register neu lesen</button></div><p id="overviewStatus" role="status">Aufträge werden gelesen …</p><div id="overviewMetrics" class="overview-metrics" role="group" aria-label="Auftragsübersicht"><div class="metric skeleton" aria-hidden="true"><span class="skeleton-number"></span><span class="skeleton-label"></span></div><div class="metric skeleton" aria-hidden="true"><span class="skeleton-number"></span><span class="skeleton-label"></span></div><div class="metric skeleton" aria-hidden="true"><span class="skeleton-number"></span><span class="skeleton-label"></span></div><div class="metric skeleton" aria-hidden="true"><span class="skeleton-number"></span><span class="skeleton-label"></span></div></div><h3>Überfällige Personenfälle</h3><p class="muted">Fristen gelten bis Tagesende in Europe/Zurich. Eine Überfälligkeit ändert keinen Schulungsbeleg.</p><div id="deadlineQueue" class="queue-list"></div><h3>Offene Arbeit</h3><div id="hubQueue" class="queue-list"></div></section><div class="hub-layout"><div><section id="currentRequestSection"><h2>Aktueller Auftrag</h2><label for="hubRequest">Auftrag</label><select id="hubRequest" class="request-picker"><option value="">Neuen Auftrag beginnen</option></select><p id="hubSummary" role="status"></p><details id="requestTechnical" hidden><summary>Technische Auftrags-ID</summary><code id="requestTechnicalValue" class="id"></code></details><p id="hubNext"></p><button type="button" id="hubOpen" class="secondary">Nächste Aufgabe öffnen</button></section><section id="deadlinePanel"><h2>Abschlussfrist</h2><p id="deadlineSummary" role="status">Zuerst einen Auftrag wählen.</p><form id="deadlineForm"><label for="deadlineScope">Geltungsbereich</label><select id="deadlineScope"><option value="">Gesamter Auftrag</option></select><label for="deadlineDate">Abschluss bis · Europe/Zurich</label><input id="deadlineDate" type="date" required><label for="deadlineReference">Quelle · bei Vorgaben mit Regelversion</label><input id="deadlineReference" type="text" maxlength="160" required><label id="deadlineApprovalRow" hidden><input id="deadlinePolicyApproved" type="checkbox">Diese personenbezogene Vorgabe ist bereits freigegeben</label><label for="deadlineReason">Grund der Erfassung oder Änderung</label><textarea id="deadlineReason" maxlength="500" rows="3" required></textarea><p><button id="deadlineSave" type="submit" disabled>Frist speichern</button></p></form><p id="deadlineStatus" role="status"></p><details><summary>Datumsquellen und Änderungen</summary><div id="deadlineHistory"></div></details></section><section><h2>Testfall wählen</h2><p class="muted">Die Karten öffnen passende vorhandene Aufträge. Fehlt ein passender Auftrag, beginnt ein neuer Bedarf.</p><div id="scenarioCards" class="scenario-grid"></div></section><section><h2>Startlink für die Gruppe</h2><p class="muted">Öffentlicher Rollenrundgang ohne Fallakten oder Admin-Zugriff. Die Schulungsaktionen erfolgen über persönliche Kalender- und Formularlinks. Erst nach Veröffentlichung der statischen Seite teilen.</p><button type="button" class="secondary" id="prepareTour" disabled>Startlink vorbereiten</button><p id="tourStatus" role="status"></p><p><a id="tourLink" target="_blank" rel="noopener noreferrer" hidden>Rundgang öffnen</a></p></section></div><aside><section><h2>Personen im ausgewählten Auftrag</h2><ul id="hubCases" class="hub-status-list"><li>Noch kein Auftrag gewählt.</li></ul></section><section><h2>Belege im Register</h2><p class="muted">Kalender, Formulare, Nachweis, beide Archive und Skilländerung bleiben je Personenfall nachvollziehbar.</p><button type="button" class="secondary" id="hubRegister">Ergebnisse öffnen</button></section></aside></div></div>
+<div id="resourcesView" hidden><section><div class="overview-head"><div><h2>Themen und Quellen</h2><p class="muted">Katalog und Skillstufen werden aus dem privaten Demo-Sheet gelesen. Die Quellenbezeichnung ist noch kein freigegebener Materiallink.</p></div><button type="button" class="secondary" id="refreshResources">Matrix neu lesen</button></div><p id="resourceStatus" role="status">Noch nicht geladen.</p><div id="resourceTopics" class="resource-grid"></div></section><section><h2>Aktuelle Skillmatrix</h2><p class="muted">Stufe 4 kennzeichnet in der Demo eine mögliche schulende Person. Leere oder nicht vorgesehene Einträge bleiben sichtbar und werden nicht als Stufe 0 behandelt.</p><div class="scroll"><table><thead id="resourceMatrixHead"></thead><tbody id="resourceMatrixRows"></tbody></table></div><p><a id="resourceSheetLink" target="_blank" rel="noopener noreferrer" hidden>Demo-Sheet öffnen</a></p></section><section><h2>Gebuchte Termine</h2><p class="muted">Neueste Termine aus den Aufträgen, pro gemeinsamer Session einmal angezeigt. Freie Vorschläge und Kalenderzugriff werden im konkreten Auftrag geprüft.</p><ul id="calendarRows" class="calendar-list"><li>Register wird geladen …</li></ul></section></div>
 <div id="workflowView" hidden><div class="task-head"><h2>Process &amp; Quality</h2><p class="muted" id="workflowContext">Schulungsbedarf erfassen und den nächsten Schritt bearbeiten.</p><label for="workflowRequest">Auftrag wählen</label><select id="workflowRequest" class="request-picker"><option value="">Neuer Auftrag</option></select></div><ol id="taskStepper" class="task-stepper" aria-label="Arbeitsschritte"></ol><p id="taskInstruction" class="note"></p>
 
-<section><h2>1. Thema und Personen wählen</h2><label for="topic">Thema</label><select id="topic"><option value="">Bitte wählen</option></select><label for="target">Vorgesehene Skillstufe</label><select id="target" disabled><option value="">Zuerst Thema wählen</option></select><p id="targetHint" class="muted"></p><label>Testpersonen</label><p class="muted">Anzeigenamen aus den Personas im Bericht 05 · Demo-Aliasse</p><div id="people" class="people"></div><p><button id="review" class="secondary" disabled>Skillstufen prüfen</button></p></section>
-<section id="reviewPanel" hidden><h2>2. Skillstufen prüfen</h2><p id="reviewStatus" role="status"></p><div class="scroll"><table><thead><tr><th>Person</th><th>Aktuell</th><th>Vorgesehen</th><th>Prüfung</th><th>Demo-Sheet</th></tr></thead><tbody id="reviewRows"></tbody></table></div><p><button id="refresh" class="secondary">Nach Korrektur neu lesen</button> <button id="save" disabled>Entwurf speichern</button></p></section>
+<section><h2>Thema und Personen wählen</h2><label for="topic">Thema</label><select id="topic"><option value="">Bitte wählen</option></select><label for="target">Vorgesehene Skillstufe</label><select id="target" disabled><option value="">Zuerst Thema wählen</option></select><p id="targetHint" class="muted"></p><label>Testpersonen</label><p class="muted">Anzeigenamen aus den Personas im Bericht 05 · Demo-Aliasse</p><div id="people" class="people"></div><label for="initialDeadlineDate">Gewünschter Abschluss · Europe/Zurich</label><input id="initialDeadlineDate" type="date" required><label for="initialDeadlineReference">Quelle der Anfragefrist</label><input id="initialDeadlineReference" type="text" maxlength="160" value="Bedarfsanfrage" required><p class="muted">Eine frühere freigegebene Vorgabe pro Person bleibt massgebend.</p><p><button id="review" disabled>Skillstufen prüfen</button></p></section>
+<section id="reviewPanel" hidden><h2>Skillstufen prüfen</h2><p id="reviewStatus" role="status"></p><div class="scroll"><table><thead><tr><th>Person</th><th>Aktuell</th><th>Vorgesehen</th><th>Prüfung</th><th>Demo-Sheet</th></tr></thead><tbody id="reviewRows"></tbody></table></div><p><button id="refresh" class="secondary">Nach Korrektur neu lesen</button> <button id="save" disabled>Entwurf speichern</button></p></section>
 <section id="resultPanel" hidden><h2>Entwurf gespeichert</h2><p id="result"></p><ul id="caseList"></ul></section>
-<section id="planPanel" hidden><h2>3. Modus und Phasenplan</h2><p class="muted">Planung mit synthetischen Qualifikationen. Es werden noch keine Einladungen versendet.</p><label for="mode">Schulungsmodus</label><select id="mode"><option value="group">Gruppe</option><option value="individual">Einzeltraining</option></select><p id="planStatus" role="status"></p><div class="scroll"><table><thead><tr><th>Reihenfolge / Phase</th><th>Personen und Session</th><th>Dauer</th><th>Trainer</th><th>Voraussetzung</th></tr></thead><tbody id="planRows"></tbody></table></div><p class="note" id="planRule"></p><button id="planSave" disabled>Phasenplan speichern</button></section>
-<section id="schedulePanel" hidden><h2>4. Freie Termine prüfen und buchen</h2><p class="muted">Montag–Freitag · 09:00–17:00 · Europe/Zurich · Beim Buchen versendet Google Kalender eine Einladung an die Testkonten.</p><p class="muted">Terminvorschläge prüfen nur die Kalender der zugewiesenen Personen und der schulenden Person.</p><div id="scheduleRows"></div></section>
-<section id="rsvpPanel"><h2>5. Antworten auf Einladungen</h2><p class="muted">Antworten sind Planungshinweise, kein Anwesenheitsnachweis. Bei einer Absage bleibt der Gruppentermin für die anderen bestehen.</p><p><button id="refreshRsvps" class="secondary">Kalenderantworten prüfen</button></p><p id="rsvpStatus" role="status"></p><div class="scroll"><table><thead><tr><th>Personenfall</th><th>Schulungstermin</th><th>Antwort</th><th>Process & Quality: nächster Schritt</th></tr></thead><tbody id="rsvpRows"></tbody></table></div><div id="rsvpErrors" role="alert"></div></section>
-<section id="trainerPanel"><h2>6. Beurteilung durch die schulende Person</h2><p class="muted">Ein Formular pro Person und Schulungsteil. Nur der zugewiesene Trainerbericht mit „anwesend“ und „bestanden“ gibt die persönliche Bestätigung frei. Kalenderantworten zählen nicht als Anwesenheit.</p><p class="note">Die Google Forms API setzt und prüft „Verifiziert“ vor der Freigabe. Bleibt die Prüfung offen, kontrolliert Process & Quality die Einstellung im Form und startet hier eine erneute API-Prüfung. Eine spätere Änderung sperrt die nächste Aktion bis zur erneuten Prüfung.</p><p><button id="refreshTrainer" class="secondary">Trainerberichte prüfen</button></p><p id="trainerStatus" role="status"></p><div class="scroll"><table><thead><tr><th>Personenfall / Teil</th><th>Trainer / Terminende</th><th>Beurteilung</th><th>Formular / nächster Schritt</th></tr></thead><tbody id="trainerRows"></tbody></table></div></section>
-<section id="participantPanel"><h2>7. Persönliche Teilnahmebestätigung</h2><p class="muted">Jede Person bestätigt ihren Schulungsteil mit dem eigenen Google-Konto, einem Häkchen und Namen. Nur die zugewiesene Person kann den Fall abschließen.</p><p class="note">Die Google Forms API setzt und prüft „Verifiziert“ vor der Freigabe. Bleibt die Prüfung offen, kontrolliert Process & Quality die Einstellung im Form und startet hier eine erneute API-Prüfung. Eine spätere Änderung sperrt die nächste Aktion bis zur erneuten Prüfung.</p><p><button id="refreshParticipant" class="secondary">Teilnahmeantworten prüfen</button></p><p id="participantStatus" role="status"></p><div class="scroll"><table><thead><tr><th>Personenfall / Teil</th><th>Status und Identität</th><th>Formular / nächster Schritt</th></tr></thead><tbody id="participantRows"></tbody></table></div></section>
-<section id="proofPanel"><h2>8. Persönliche Nachweise</h2><p class="muted">Erst nach bestandenem Trainerbericht und bestätigter Teilnahme für alle erforderlichen Teile. Der Google Doc und das PDF enthalten Quellen und Zielstufe. Die lokale Archivprüfung folgt danach.</p><p><button id="refreshProof" class="secondary">Nachweise prüfen</button></p><p id="proofStatus" role="status"></p><div class="scroll"><table><thead><tr><th>Personenfall</th><th>Prüfung</th><th>Nachweis</th></tr></thead><tbody id="proofRows"></tbody></table></div></section>
-<section id="followUpPanel"><h2>9. Offene Teilnahmebestätigungen</h2><p class="muted">Zwei und fünf Kalendertage nach dem Termin prüft der tägliche Lauf die persönliche Bestätigung. Nach Tag 5 bleibt ein ungeklärter Fall hier offen; eine Notiz oder Nachverfolgung ersetzt keine Bestätigung.</p><p><button id="refreshFollowUps" class="secondary">Offene Fälle prüfen</button></p><p id="followUpStatus" role="status"></p><div class="scroll"><table><thead><tr><th>Personenfall</th><th>Erinnerungen</th><th>Process &amp; Quality</th></tr></thead><tbody id="followUpRows"></tbody></table></div></section>
-<section id="skillPanel"><h2>10. Skillstufe übernehmen</h2><p class="muted">Nur nach gültigem Trainerbericht, persönlicher Bestätigung und Prüfung beider Archive. Die Stufe wird beim Abgleich und im täglichen Prüflauf automatisch im synthetischen Demo-Sheet eingetragen.</p><p><button id="refreshSkills" class="secondary">Skillübernahmen abgleichen</button></p><p id="skillStatus" role="status"></p><div class="scroll"><table><thead><tr><th>Personenfall</th><th>Stufe</th><th>Prüfung</th><th>Aktion</th></tr></thead><tbody id="skillRows"></tbody></table></div></section>
-</div><div id="registerView" hidden><section id="auditPanel"><h2>11. Aufträge und Nachweise prüfen</h2><p class="muted">Nur für das Demo-Eigentümerkonto. Der Abschluss wird aus Trainerbericht, persönlicher Bestätigung, beiden Archiven und Skillregister abgeleitet. Offene Fälle bleiben im Auftrag; eine Notiz ersetzt keine Belege.</p><p><button id="refreshAudit" class="secondary">Auditansicht aktualisieren</button></p><p id="auditStatus" role="status"></p><label for="auditSearch">Thema, Person oder Auftrags-ID</label><input id="auditSearch" type="search" placeholder="Suchen"><label for="auditState">Status</label><select id="auditState"><option value="open">Offene Fälle</option><option value="all">Alle</option><option value="waiting">Ausstehend</option><option value="complete">Abgeschlossen</option></select><div id="auditRows"></div></section>
-<section><h2>Feedback zum ausgewählten Auftrag</h2><p class="muted">Nur für das Demo-Eigentümerkonto. Rückmeldungen sind keine Schulungsbelege.</p><button type="button" class="secondary" id="refreshFeedback">Feedback abrufen</button><p id="feedbackStatus" role="status"></p><div id="feedbackRows"></div></section><details><summary>Demo-Katalog und Planungsdauer</summary><div class="scroll"><table><thead><tr><th>ID</th><th>Thema</th><th>Theorie</th><th>Praxis</th><th>Planungsdauer</th></tr></thead><tbody id="catalogueRows"></tbody></table></div></details></div><p id="error" role="alert"></p></main>
+<section id="planPanel" hidden><h2>Modus und Phasenplan</h2><p class="muted">Planung mit synthetischen Qualifikationen. Es werden noch keine Einladungen versendet.</p><label for="mode">Schulungsmodus</label><select id="mode"><option value="group">Gruppe</option><option value="individual">Einzeltraining</option></select><p id="planStatus" role="status"></p><div class="scroll"><table><thead><tr><th>Reihenfolge / Phase</th><th>Personen und Session</th><th>Dauer</th><th>Trainer</th><th>Voraussetzung</th></tr></thead><tbody id="planRows"></tbody></table></div><p class="note" id="planRule"></p><button id="planSave" disabled>Phasenplan speichern</button></section>
+<section id="schedulePanel" hidden><h2>Freie Termine prüfen und buchen</h2><p class="muted">Montag–Freitag · 09:00–17:00 · Europe/Zurich · Beim Buchen versendet Google Kalender eine Einladung an die Testkonten.</p><p class="muted">Terminvorschläge prüfen nur die Kalender der zugewiesenen Personen und der schulenden Person.</p><div id="scheduleRows"></div></section>
+<section id="rsvpPanel"><h2>Antworten auf Einladungen</h2><p class="muted">Antworten sind Planungshinweise, kein Anwesenheitsnachweis. Bei einer Absage bleibt der Gruppentermin für die anderen bestehen.</p><p><button id="refreshRsvps" class="secondary">Kalenderantworten prüfen</button></p><p id="rsvpStatus" role="status"></p><div class="scroll"><table><thead><tr><th>Personenfall</th><th>Schulungstermin</th><th>Antwort</th><th>Process & Quality: nächster Schritt</th></tr></thead><tbody id="rsvpRows"></tbody></table></div><div id="rsvpErrors" role="alert"></div></section>
+<section id="trainerPanel"><h2>Beurteilung durch die schulende Person</h2><p class="muted">Ein Formular pro Person und Schulungsteil. Nur der zugewiesene Trainerbericht mit „anwesend“ und „bestanden“ gibt die persönliche Bestätigung frei. Kalenderantworten zählen nicht als Anwesenheit.</p><p class="note">Die Google Forms API setzt und prüft „Verifiziert“ vor der Freigabe. Bleibt die Prüfung offen, kontrolliert Process & Quality die Einstellung im Form und startet hier eine erneute API-Prüfung. Eine spätere Änderung sperrt die nächste Aktion bis zur erneuten Prüfung.</p><p><button id="refreshTrainer" class="secondary">Trainerberichte prüfen</button></p><p id="trainerStatus" role="status"></p><div class="scroll"><table><thead><tr><th>Personenfall / Teil</th><th>Trainer / Terminende</th><th>Beurteilung</th><th>Formular / nächster Schritt</th></tr></thead><tbody id="trainerRows"></tbody></table></div></section>
+<section id="participantPanel"><h2>Persönliche Teilnahmebestätigung</h2><p class="muted">Jede Person bestätigt ihren Schulungsteil mit dem eigenen Google-Konto, einem Häkchen und Namen. Nur die zugewiesene Person kann den Fall abschließen.</p><p class="note">Die Google Forms API setzt und prüft „Verifiziert“ vor der Freigabe. Bleibt die Prüfung offen, kontrolliert Process & Quality die Einstellung im Form und startet hier eine erneute API-Prüfung. Eine spätere Änderung sperrt die nächste Aktion bis zur erneuten Prüfung.</p><p><button id="refreshParticipant" class="secondary">Teilnahmeantworten prüfen</button></p><p id="participantStatus" role="status"></p><div class="scroll"><table><thead><tr><th>Personenfall / Teil</th><th>Status und Identität</th><th>Formular / nächster Schritt</th></tr></thead><tbody id="participantRows"></tbody></table></div></section>
+<section id="proofPanel"><h2>Persönliche Nachweise</h2><p class="muted">Erst nach bestandenem Trainerbericht und bestätigter Teilnahme für alle erforderlichen Teile. Der Google Doc und das PDF enthalten Quellen und Zielstufe. Die lokale Archivprüfung folgt danach.</p><p><button id="refreshProof" class="secondary">Nachweise prüfen</button></p><p id="proofStatus" role="status"></p><div class="scroll"><table><thead><tr><th>Personenfall</th><th>Prüfung</th><th>Nachweis</th></tr></thead><tbody id="proofRows"></tbody></table></div></section>
+<section id="followUpPanel"><h2>Offene Teilnahmebestätigungen</h2><p class="muted">Zwei und fünf Kalendertage nach dem Termin prüft der tägliche Lauf die persönliche Bestätigung. Nach Tag 5 bleibt ein ungeklärter Fall hier offen; eine Notiz oder Nachverfolgung ersetzt keine Bestätigung.</p><p><button id="refreshFollowUps" class="secondary">Offene Fälle prüfen</button></p><p id="followUpStatus" role="status"></p><div class="scroll"><table><thead><tr><th>Personenfall</th><th>Erinnerungen</th><th>Process &amp; Quality</th></tr></thead><tbody id="followUpRows"></tbody></table></div></section>
+<section id="skillPanel"><h2>Skillstufe übernehmen</h2><p class="muted">Nur nach gültigem Trainerbericht, persönlicher Bestätigung und Prüfung beider Archive. Die Stufe wird beim Abgleich und im täglichen Prüflauf automatisch im synthetischen Demo-Sheet eingetragen. Der Abgleich verarbeitet alle freigegebenen Fälle, auch aus anderen Aufträgen.</p><p><button id="refreshSkills" class="secondary">Alle freigegebenen Skillstufen übernehmen</button></p><p id="skillStatus" role="status"></p><div class="scroll"><table><thead><tr><th>Personenfall</th><th>Stufe</th><th>Prüfung</th><th>Aktion</th></tr></thead><tbody id="skillRows"></tbody></table></div></section>
+</div><div id="registerView" hidden><section id="auditPanel"><h2>Aufträge und Nachweise prüfen</h2><p class="muted">Nur für das Demo-Eigentümerkonto. Der Abschluss wird aus Trainerbericht, persönlicher Bestätigung, beiden Archiven und Skillregister abgeleitet. Offene Fälle bleiben im Auftrag; eine Notiz ersetzt keine Belege.</p><p><button id="refreshAudit" class="secondary">Auditansicht aktualisieren</button></p><p id="auditStatus" role="status"></p><label for="auditSearch">Thema, Person oder Auftrags-ID</label><input id="auditSearch" type="search" placeholder="Suchen"><label for="auditState">Status</label><select id="auditState"><option value="open">Offene Fälle</option><option value="all">Alle</option><option value="waiting">Ausstehend</option><option value="complete">Abgeschlossen</option></select><div id="auditRows"></div></section>
+<section><h2>Feedback zum ausgewählten Auftrag</h2><p class="muted">Nur für das Demo-Eigentümerkonto. Rückmeldungen sind keine Schulungsbelege.</p><button type="button" class="secondary" id="refreshFeedback">Feedback abrufen</button><p id="feedbackStatus" role="status"></p><div id="feedbackRows"></div></section><details><summary>Demo-Katalog und Planungsdauer</summary><div class="scroll"><table><thead><tr><th>ID</th><th>Thema</th><th>Theorie</th><th>Praxis</th><th>Planungsdauer</th></tr></thead><tbody id="catalogueRows"></tbody></table></div></details></div><p id="error" role="alert"></p><footer class="app-footer">[DEMO] · Synthetische Testdaten · Zugriff für das Demo-Eigentümerkonto</footer></main>
+</template>
 <script>
+function createAppRpcClient(transport, snapshot, sessionFailed) {
+  function runner(success, failure, userObject) {
+    return new Proxy({}, {get:function(_, method) {
+      if (method === 'withSuccessHandler') return function(callback) { return runner(callback, failure, userObject); };
+      if (method === 'withFailureHandler') return function(callback) { return runner(success, callback, userObject); };
+      if (method === 'withUserObject') return function(value) { return runner(success, failure, value); };
+      if (typeof method !== 'string' || method === 'then') return undefined;
+      return function() {
+        var current = snapshot(), args = Array.from(arguments);
+        if (!current.token || !current.authorized) {
+          sessionFailed({message:'APP_SESSION_REQUIRED'});
+          return;
+        }
+        var token = current.token, epoch = current.epoch;
+        function active() { var latest = snapshot(); return latest.authorized && latest.token === token && latest.epoch === epoch; }
+        transport.withSuccessHandler(function(result) {
+          if (active() && typeof success === 'function') success(result, userObject);
+        }).withFailureHandler(function(error) {
+          if (!active()) return;
+          if (/APP_SESSION_REQUIRED|APP_ACCESS_DENIED|APP_AUTHORIZATION_REQUIRED/.test(String(error && error.message || error))) sessionFailed(error);
+          else if (typeof failure === 'function') failure(error, userObject);
+        }).dispatchAppRequest({token:token, method:method, args:args});
+      };
+    }});
+  }
+  return runner(null, null, undefined);
+}
+
+function validatedGoogleAuthorizationUrl(value) {
+  if (typeof value !== 'string' || value !== value.trim() || value.length > 8192) return '';
+  try {
+    var url = new URL(value);
+    if (url.protocol !== 'https:' || url.username || url.password || url.port ||
+        ['script.google.com','accounts.google.com'].indexOf(url.hostname) < 0) return '';
+    return value;
+  } catch (_) { return ''; }
+}
+
+(function initializeAccountShell() {
+  'use strict';
+  var SESSION_KEY = 'cosanum.training.session.v1';
+  var PENDING_KEY = 'cosanum.training.pending-logout.v1';
+  var BROWSER_KEY = 'cosanum.training.browser.v1';
+  var LOGOUT_KEY = 'cosanum.training.logout.v1';
+  var nativeRun = window.google && window.google.script && window.google.script.run;
+  var login = document.getElementById('loginView'), host = document.getElementById('trainingHost');
+  var loginButton = document.getElementById('loginButton'), loginStatus = document.getElementById('loginStatus');
+  var restoreRetry = document.getElementById('restoreRetry'), logoutRetry = document.getElementById('logoutRetry');
+  var authorizationLink = document.getElementById('authorizationLink');
+  var template = document.getElementById('trainingTemplate'), dialog = document.getElementById('profileDialog');
+  var token = '', browserId = '', epoch = 0, dispose = null, expiresTimer = null;
+  var restoring = false, signingIn = false, pendingLogout = null, logoutInFlight = false, loginStartedAt = 0, profile = null, menu = null, badge = null;
+  var defaults = {density:'comfortable', motion:'system'};
+
+  function call(method, input) {
+    return new Promise(function(resolve, reject) {
+      if (!nativeRun) { reject(new Error('Die Google-Verbindung ist nicht verfügbar. Bitte die App erneut öffnen.')); return; }
+      nativeRun.withSuccessHandler(resolve).withFailureHandler(reject)[method](input);
+    });
+  }
+  function applyPreferences(preferences) {
+    preferences = preferences || defaults;
+    document.documentElement.dataset.density = preferences.density === 'compact' ? 'compact' : 'comfortable';
+    document.documentElement.dataset.motion = preferences.motion === 'reduce' ? 'reduce' : 'system';
+    document.getElementById('profileDensity').value = document.documentElement.dataset.density;
+    document.getElementById('profileMotion').value = document.documentElement.dataset.motion;
+  }
+  function closeMenu(returnFocus) {
+    if (menu) menu.hidden = true;
+    if (badge) badge.setAttribute('aria-expanded','false');
+    if (returnFocus && badge && badge.isConnected) badge.focus();
+  }
+  function clearWorkspace() {
+    closeMenu(false);
+    if (dialog.open) dialog.close();
+    if (dispose) dispose();
+    dispose = null; menu = null; badge = null; profile = null;
+    host.replaceChildren(); host.hidden = true; host.inert = true;
+    ['profileName','profileEmail','profileRole'].forEach(function(id) { document.getElementById(id).textContent = ''; });
+    document.getElementById('profileStatus').textContent = '';
+    document.getElementById('saveProfile').disabled = false;
+    applyPreferences(defaults);
+  }
+  function clearAuthorizationLink() {
+    authorizationLink.hidden = true; authorizationLink.removeAttribute('href');
+    loginButton.textContent = 'Mit Google fortfahren';
+  }
+  function showLanding(message) {
+    clearAuthorizationLink();
+    login.hidden = false; loginStatus.textContent = message || '';
+    loginButton.disabled = restoring || signingIn || !!pendingLogout;
+    restoreRetry.hidden = true; logoutRetry.hidden = !pendingLogout;
+  }
+  function forgetSession(message) {
+    epoch += 1; token = ''; restoring = false; signingIn = false;
+    clearTimeout(expiresTimer); expiresTimer = null;
+    try { sessionStorage.removeItem(SESSION_KEY); } catch (_) {}
+    clearWorkspace(); showLanding(message);
+  }
+  function authFailure(error) {
+    var message = String(error && error.message || error);
+    if (/APP_AUTHORIZATION_REQUIRED/.test(message)) {
+      forgetSession('Der bestehende Google-Zugriff muss bestätigt werden. Wähle „Mit Google fortfahren“, um die Bestätigung zu öffnen.');
+    } else {
+      forgetSession(/APP_ACCESS_DENIED/.test(message) ? 'Dieses Google-Konto ist für die private Schulungsverwaltung nicht freigegeben.' : 'Deine Sitzung ist abgelaufen. Bitte erneut anmelden.');
+    }
+    loginButton.focus();
+  }
+  function authorizationRequired(result) {
+    if (!result || result.authorizationRequired !== true) return false;
+    var url = validatedGoogleAuthorizationUrl(result.authorizationUrl);
+    forgetSession(url ? 'Bitte bestätige den bestehenden Google-Zugriff. Melde dich danach hier erneut an.' : 'Der bestehende Google-Zugriff muss bestätigt werden. Der Bestätigungslink konnte nicht geprüft werden. Bitte erneut anmelden.');
+    if (url) {
+      authorizationLink.setAttribute('href',url); authorizationLink.hidden = false;
+      loginButton.textContent = 'Nach Bestätigung anmelden'; authorizationLink.focus();
+    }
+    return true;
+  }
+  function checkSession(result) {
+    if (!result || typeof result.token !== 'string' || !result.token || !result.profile ||
+        !result.profile.email || !result.profile.displayName || !result.profile.initials || !result.profile.role ||
+        !Number.isFinite(Date.parse(result.expiresAt)) || Date.parse(result.expiresAt) <= Date.now()) {
+      throw new Error('Die Sitzung konnte nicht bestätigt werden. Bitte erneut anmelden.');
+    }
+    return result;
+  }
+  function configureAccountMenu() {
+    badge = document.getElementById('accountBadge'); menu = document.getElementById('accountMenu');
+    badge.textContent = profile.initials;
+    badge.setAttribute('aria-label','Kontomenü für '+profile.displayName+' öffnen');
+    document.getElementById('accountName').textContent = profile.displayName;
+    document.getElementById('accountEmail').textContent = profile.email;
+    document.getElementById('accountRole').textContent = profile.role;
+    function openMenu(last) {
+      menu.hidden = false; badge.setAttribute('aria-expanded','true');
+      var items = menu.querySelectorAll('[role="menuitem"]'); items[last ? items.length-1 : 0].focus();
+    }
+    badge.addEventListener('click',function() { if (menu.hidden) openMenu(false); else closeMenu(true); });
+    badge.addEventListener('keydown',function(event) {
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') { event.preventDefault(); openMenu(event.key === 'ArrowUp'); }
+    });
+    menu.addEventListener('keydown',function(event) {
+      var items = Array.from(menu.querySelectorAll('[role="menuitem"]')), index = items.indexOf(document.activeElement);
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault(); items[(index+(event.key === 'ArrowDown'?1:-1)+items.length)%items.length].focus();
+      } else if (event.key === 'Home' || event.key === 'End') {
+        event.preventDefault(); items[event.key === 'Home'?0:items.length-1].focus();
+      } else if (event.key === 'Tab') setTimeout(function() { closeMenu(false); },0);
+    });
+    document.getElementById('openProfile').addEventListener('click',function() {
+      closeMenu(false);
+      document.getElementById('profileName').textContent = profile.displayName;
+      document.getElementById('profileEmail').textContent = profile.email;
+      document.getElementById('profileRole').textContent = profile.role;
+      document.getElementById('profileStatus').textContent = '';
+      dialog.showModal(); document.getElementById('closeProfile').focus();
+    });
+    document.getElementById('logoutButton').addEventListener('click',function() { logout(true); });
+  }
+  function acceptSession(result, mount) {
+    clearAuthorizationLink();
+    checkSession(result);
+    token = result.token; profile = result.profile;
+    sessionStorage.setItem(SESSION_KEY, token);
+    applyPreferences(result.preferences);
+    clearTimeout(expiresTimer);
+    expiresTimer = setTimeout(function() { authFailure({message:'APP_SESSION_REQUIRED'}); },Math.max(0,Date.parse(result.expiresAt)-Date.now()));
+    restoring = false; signingIn = false; login.hidden = true; loginButton.disabled = false;
+    if (mount || !dispose) {
+      if (dispose) dispose();
+      host.replaceChildren(template.content.cloneNode(true));
+      var rpc = createAppRpcClient(nativeRun,function() { return {token:token, epoch:epoch, authorized:!!dispose}; },authFailure);
+      dispose = function() {};
+      dispose = mountTrainingApp(rpc);
+      configureAccountMenu();
+    } else configureProfileText();
+    host.hidden = false; host.inert = false;
+  }
+  function configureProfileText() {
+    if (!badge) return;
+    badge.textContent = profile.initials; badge.setAttribute('aria-label','Kontomenü für '+profile.displayName+' öffnen');
+    document.getElementById('accountName').textContent = profile.displayName;
+    document.getElementById('accountEmail').textContent = profile.email;
+    document.getElementById('accountRole').textContent = profile.role;
+  }
+  function restoreSession() {
+    if (!token || restoring || pendingLogout || signingIn) return;
+    restoring = true; var requestEpoch = epoch, expectedToken = token;
+    host.hidden = true; host.inert = true; closeMenu(false);
+    if (dialog.open) dialog.close();
+    showLanding('Sitzung wird geprüft …');
+    call('restoreAppSession',{token:expectedToken}).then(function(result) {
+      if (requestEpoch !== epoch || token !== expectedToken) return;
+      if (authorizationRequired(result)) return;
+      acceptSession(result,false);
+    }).catch(function(error) {
+      if (requestEpoch !== epoch || token !== expectedToken) return;
+      restoring = false;
+      if (/APP_SESSION_REQUIRED|APP_ACCESS_DENIED|APP_AUTHORIZATION_REQUIRED/.test(String(error && error.message || error))) { authFailure(error); return; }
+      showLanding('Die Sitzung konnte gerade nicht geprüft werden. Bitte erneut versuchen.');
+      loginButton.disabled = true; restoreRetry.hidden = false; restoreRetry.focus();
+    });
+  }
+  function logoutIntent(value) {
+    var uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!value || !uuid.test(value.browserId || '') || !uuid.test(value.logoutId || '') ||
+        typeof value.token !== 'string' || value.token.length > 1024) throw new Error('Ungültige gespeicherte Abmeldung.');
+    return {token:value.token, browserId:value.browserId, logoutId:value.logoutId, timestamp:Number(value.timestamp) || Date.now()};
+  }
+  function rememberLogout(intent) {
+    pendingLogout = intent;
+    try { sessionStorage.setItem(PENDING_KEY,JSON.stringify(intent)); } catch (_) {}
+  }
+  function announceLogout(intent) {
+    try { localStorage.setItem(LOGOUT_KEY,JSON.stringify({browserId:intent.browserId, logoutId:intent.logoutId, timestamp:intent.timestamp})); } catch (_) {}
+  }
+  function finishLogout() {
+    if (!pendingLogout || logoutInFlight) return;
+    var intent = pendingLogout;
+    logoutInFlight = true; logoutRetry.disabled = true;
+    call('endAppSession',{token:intent.token, browserId:intent.browserId, logoutId:intent.logoutId}).then(function(result) {
+      if (!pendingLogout || pendingLogout.logoutId !== intent.logoutId || pendingLogout.browserId !== intent.browserId) return;
+      if (!result || result.signedOut !== true) throw new Error('Die Abmeldung wurde nicht bestätigt.');
+      try { sessionStorage.removeItem(PENDING_KEY); } catch (_) {}
+      pendingLogout = null; logoutInFlight = false; logoutRetry.disabled = false;
+      showLanding('Du bist von der Schulungsverwaltung abgemeldet. Dein Google-Konto bleibt angemeldet.');
+      loginButton.focus();
+    }).catch(function() {
+      if (!pendingLogout || pendingLogout.logoutId !== intent.logoutId || pendingLogout.browserId !== intent.browserId) return;
+      logoutInFlight = false; logoutRetry.disabled = false;
+      showLanding('Die Abmeldung konnte noch nicht abgeschlossen werden. Bitte erneut versuchen.');
+      logoutRetry.focus();
+    });
+  }
+  function logout(announce, incoming) {
+    if (pendingLogout) { if (!logoutInFlight) finishLogout(); return; }
+    var intent = logoutIntent({token:token || '', browserId:incoming ? incoming.browserId : browserId,
+      logoutId:incoming ? incoming.logoutId : crypto.randomUUID(), timestamp:incoming ? incoming.timestamp : Date.now()});
+    rememberLogout(intent);
+    forgetSession('Abmeldung wird abgeschlossen …');
+    if (announce) announceLogout(intent);
+    finishLogout();
+  }
+
+  loginButton.addEventListener('click',function() {
+    if (signingIn || restoring || pendingLogout) return;
+    signingIn = true; loginStartedAt = Date.now(); var requestEpoch = ++epoch;
+    showLanding('Anmeldung wird geprüft …');
+    call('beginAppSession',{browserId:browserId}).then(function(result) {
+      if (requestEpoch !== epoch) return;
+      if (authorizationRequired(result)) return;
+      acceptSession(result,true); document.getElementById('workspace').focus();
+    }).catch(function(error) {
+      if (requestEpoch !== epoch) return;
+      signingIn = false;
+      if (/APP_AUTHORIZATION_REQUIRED/.test(String(error && error.message || error))) authFailure(error);
+      else if (/APP_ACCESS_DENIED/.test(String(error && error.message || error))) showLanding('Dieses Google-Konto ist für die private Schulungsverwaltung nicht freigegeben.');
+      else showLanding('Die Anmeldung konnte nicht abgeschlossen werden. Bitte erneut versuchen.');
+      loginButton.focus();
+    });
+  });
+  restoreRetry.addEventListener('click',restoreSession);
+  logoutRetry.addEventListener('click',function() { if (pendingLogout) finishLogout(); });
+  document.getElementById('closeProfile').addEventListener('click',function() { dialog.close(); });
+  dialog.addEventListener('close',function() { if (badge && !host.hidden) badge.focus(); });
+  document.getElementById('profileForm').addEventListener('submit',function(event) {
+    event.preventDefault(); if (!token || !profile) return;
+    var button = document.getElementById('saveProfile'), status = document.getElementById('profileStatus');
+    var requestEpoch = epoch, expectedToken = token;
+    button.disabled = true; status.textContent = 'Einstellungen werden gespeichert …';
+    call('saveAppPreferences',{token:expectedToken, preferences:{density:document.getElementById('profileDensity').value, motion:document.getElementById('profileMotion').value}}).then(function(result) {
+      if (requestEpoch !== epoch || token !== expectedToken) return;
+      if (!result || !result.preferences) throw new Error('Einstellungen wurden nicht bestätigt.');
+      applyPreferences(result.preferences); button.disabled = false; status.textContent = 'Einstellungen gespeichert.';
+    }).catch(function(error) {
+      if (requestEpoch !== epoch || token !== expectedToken) return;
+      button.disabled = false;
+      if (/APP_SESSION_REQUIRED|APP_ACCESS_DENIED|APP_AUTHORIZATION_REQUIRED/.test(String(error && error.message || error))) authFailure(error);
+      else status.textContent = 'Einstellungen konnten nicht gespeichert werden. Bitte erneut versuchen.';
+    });
+  });
+  document.addEventListener('pointerdown',function(event) { if (menu && !menu.hidden && !menu.contains(event.target) && !badge.contains(event.target)) closeMenu(false); });
+  document.addEventListener('keydown',function(event) { if (event.key === 'Escape' && menu && !menu.hidden) { event.preventDefault(); closeMenu(true); } });
+  window.addEventListener('storage',function(event) {
+    if (event.key !== LOGOUT_KEY || !event.newValue) return;
+    try {
+      var notice = JSON.parse(event.newValue);
+      if (notice.browserId === browserId && (!loginStartedAt || Number(notice.timestamp) >= loginStartedAt)) {
+        logoutIntent({token:'', browserId:notice.browserId, logoutId:notice.logoutId, timestamp:notice.timestamp});
+        logout(false,notice);
+      }
+    } catch (_) {}
+  });
+  window.addEventListener('pageshow',function(event) { if (event.persisted && token) restoreSession(); });
+  document.addEventListener('visibilitychange',function() { if (document.visibilityState === 'visible' && token) restoreSession(); });
+
+  try {
+    var probe = 'cosanum.training.storage-check';
+    sessionStorage.setItem(probe,'1'); sessionStorage.removeItem(probe);
+    localStorage.setItem(probe,'1'); localStorage.removeItem(probe);
+    browserId = localStorage.getItem(BROWSER_KEY) || crypto.randomUUID();
+    localStorage.setItem(BROWSER_KEY,browserId);
+    token = sessionStorage.getItem(SESSION_KEY) || '';
+    var savedLogout = sessionStorage.getItem(PENDING_KEY);
+    if (savedLogout) {
+      var intent;
+      try { intent = logoutIntent(JSON.parse(savedLogout)); }
+      catch (_) { intent = logoutIntent({token:token, browserId:browserId, logoutId:crypto.randomUUID(), timestamp:Date.now()}); }
+      rememberLogout(intent);
+      forgetSession('Abmeldung wird abgeschlossen …');
+      finishLogout();
+    } else if (token) restoreSession();
+    else showLanding('Melde dich mit dem freigegebenen Google-Konto an.');
+  } catch (_) {
+    clearWorkspace(); showLanding('Dein Browser blockiert den Sitzungsspeicher. Bitte erlaube Website-Daten und lade die App erneut.');
+    loginButton.disabled = true;
+  }
+})();
+
+function mountTrainingApp(rpcClient) {
+var google={script:{run:rpcClient}},observers=[];
+
 var intake,preview,actionId,selectionSignature='';var topic=document.getElementById('topic'),target=document.getElementById('target'),review=document.getElementById('review'),save=document.getElementById('save');
-function keys(){return Array.from(document.querySelectorAll('#people input:checked')).map(function(x){return x.value})}function signature(){return [topic.value,target.value,keys().slice().sort().join('|')].join('/')}
+function keys(){return Array.from(document.querySelectorAll('#people input:checked')).map(function(x){return x.value})}function signature(){return [topic.value,target.value,keys().slice().sort().join('|'),document.getElementById('initialDeadlineDate').value,document.getElementById('initialDeadlineReference').value].join('/')}
 function clearReview(){preview=null;save.disabled=true;document.getElementById('reviewPanel').hidden=true;document.getElementById('resultPanel').hidden=true;document.getElementById('planPanel').hidden=true;document.getElementById('schedulePanel').hidden=true;currentRequestId=null;selectedRequestId='';bookedSessions={};document.getElementById('error').textContent='';if(hubInitialized){renderHub();renderStepper()}}
-function changed(){clearReview();if(signature()!==selectionSignature){actionId=null;selectionSignature=signature()}review.disabled=!topic.value||!target.value||!keys().length}
+function changed(){clearReview();if(signature()!==selectionSignature){actionId=null;selectionSignature=signature()}review.disabled=!topic.value||!target.value||!keys().length||!document.getElementById('initialDeadlineDate').value||!document.getElementById('initialDeadlineReference').value.trim()}
 topic.addEventListener('change',function(){var t=intake.topics.filter(function(x){return x.id===topic.value})[0];target.replaceChildren();if(!t){target.disabled=true;target.add(new Option('Zuerst Thema wählen',''));document.getElementById('targetHint').textContent=''}else if(t.progression){target.disabled=false;target.add(new Option('Bitte wählen',''));[1,2,3].forEach(function(n){target.add(new Option('Stufe '+n,n))});document.getElementById('targetHint').textContent='Nur die jeweils nächste Stufe ist zulässig.'}else{target.disabled=false;target.add(new Option('Stufe '+t.configuredTarget,t.configuredTarget));document.getElementById('targetHint').textContent='Fest konfiguriertes Ziel für dieses Thema.'}changed()});target.addEventListener('change',changed);document.getElementById('people').addEventListener('change',changed);
-function input(){return{topicId:topic.value,targetLevel:Number(target.value),personKeys:keys()}}
+function input(){return{topicId:topic.value,targetLevel:Number(target.value),personKeys:keys(),initialDeadline:{date:document.getElementById('initialDeadlineDate').value,reference:document.getElementById('initialDeadlineReference').value}}}
+['initialDeadlineDate','initialDeadlineReference'].forEach(function(id){document.getElementById(id).addEventListener('input',changed)});
 function personLabel(key){if(!intake)return key;var p=intake.people.filter(function(x){return x.key===key})[0];return p?p.alias+' ('+p.key+')':key}
 function showPreview(data){preview=data;var body=document.getElementById('reviewRows');body.replaceChildren();data.rows.forEach(function(r){var tr=document.createElement('tr');[r.personAlias+' ('+r.personKey+')',r.currentLevel||'leer','Stufe '+r.targetLevel].forEach(function(v){var td=document.createElement('td');td.textContent=v;tr.appendChild(td)});var reason=document.createElement('td');reason.textContent=r.reason;reason.className=r.allowed?'allowed':'blocked';tr.appendChild(reason);var td=document.createElement('td'),a=document.createElement('a');a.href=r.sheetUrl;a.target='_blank';a.rel='noopener';a.textContent='Matrixeintrag öffnen';td.appendChild(a);tr.appendChild(td);body.appendChild(tr)});document.getElementById('reviewPanel').hidden=false;document.getElementById('reviewStatus').textContent=data.allAllowed?'Alle ausgewählten Personen sind zulässig.':'Mindestens eine Person ist gesperrt. Korrigieren Sie den synthetischen Eintrag im Demo-Sheet und lesen Sie die Matrix erneut.';save.disabled=!data.allAllowed;review.disabled=false;document.getElementById('refresh').disabled=false}
 function readPreview(){clearReview();review.disabled=true;document.getElementById('reviewPanel').hidden=false;document.getElementById('reviewStatus').textContent='Demo-Sheet wird neu gelesen …';google.script.run.withSuccessHandler(showPreview).withFailureHandler(function(e){review.disabled=false;document.getElementById('error').textContent=e.message}).getIntakePreview(input())}
@@ -63,7 +673,14 @@ document.getElementById('planSave').addEventListener('click',function(){var trai
 function showScheduleActions(plan){var panel=document.getElementById('schedulePanel'),rows=document.getElementById('scheduleRows');rows.replaceChildren();plan.phases.forEach(function(p){var box=document.createElement('div');box.className='note';box.style.margin='14px 0';var title=document.createElement('h3');title.textContent=(p.phase==='theory'?'Theorie':'Praxis')+' · '+p.durationMinutes+' Min. · '+p.sessionId;box.appendChild(title);if(p.eventId){bookedSessions[p.sessionId]={endUtc:p.endUtc,eventId:p.eventId};var existing=document.createElement('p');existing.textContent='Termin bereits gebucht · '+p.eventId+' ';if(p.eventUrl){var link=document.createElement('a');link.href=p.eventUrl;link.target='_blank';link.rel='noopener';link.textContent='Kalender öffnen';existing.appendChild(link)}box.appendChild(existing);rows.appendChild(box);return}var button=document.createElement('button');button.className='secondary';button.textContent='Freie Termine vorschlagen';var output=document.createElement('div');output.setAttribute('role','status');button.addEventListener('click',function(){button.disabled=true;output.textContent='Kalender der zugewiesenen Personen und der schulenden Person werden gelesen …';google.script.run.withSuccessHandler(function(data){button.disabled=false;renderSlotResult(output,data,p,button)}).withFailureHandler(function(e){button.disabled=false;output.textContent='Kalenderprüfung fehlgeschlagen: '+e.message}).getSlotProposals(p.sessionId)});box.appendChild(button);box.appendChild(output);rows.appendChild(box)});panel.hidden=false}
 function renderCalendarList(parent,calendars){var list=document.createElement('ul');calendars.forEach(function(c){var li=document.createElement('li');li.className=c.ok?'allowed':'blocked';li.textContent=c.alias+' ('+c.key+'): '+(c.ok?'Frei/Belegt lesbar':'Kalenderfehler: '+c.error);list.appendChild(li)});parent.appendChild(list)}
 function renderSlotResult(parent,data,phase,proposalButton){parent.replaceChildren();renderCalendarList(parent,data.calendars);if(data.reason){var note=document.createElement('p');note.className=data.calendars.some(function(c){return !c.ok})?'blocked':'muted';note.textContent=data.reason;parent.appendChild(note)}if(phase.theorySessionId&&!bookedSessions[phase.theorySessionId]){var orderNote=document.createElement('p');orderNote.className='muted';orderNote.textContent='Zuerst den verknüpften Theorietermin buchen. Danach Praxisvorschläge erneut laden.';parent.appendChild(orderNote)}if(data.proposals.length){var list=document.createElement('ol');data.proposals.forEach(function(slot){var li=document.createElement('li');var label=document.createElement('span');label.textContent=slot.startLocal.replace('T',' ')+ ' bis '+slot.endLocal.slice(11,16)+' · '+slot.period+' · Europe/Zurich ';li.appendChild(label);var book=document.createElement('button');book.textContent='Diesen Termin buchen und einladen';book.disabled=!!phase.theorySessionId&&(!bookedSessions[phase.theorySessionId]||Date.parse(slot.startUtc)<Date.parse(bookedSessions[phase.theorySessionId].endUtc));book.addEventListener('click',function(){Array.from(list.querySelectorAll('button')).forEach(function(b){b.disabled=true});parent.querySelectorAll('.booking-error').forEach(function(node){node.remove()});var status=document.createElement('span');status.textContent=' Buchung läuft …';li.appendChild(status);google.script.run.withSuccessHandler(function(result){status.remove();bookedSessions[phase.sessionId]=result;proposalButton.disabled=true;setTask('rsvp');loadAudit();list.replaceChildren();var saved=document.createElement('li');saved.textContent='Gebucht: '+result.startLocal.replace('T',' ')+' bis '+result.endLocal.slice(11,16)+' Europe/Zurich · Ereignis '+result.eventId+(result.reused?' (vorhanden)':'');if(result.eventUrl){var a=document.createElement('a');a.href=result.eventUrl;a.target='_blank';a.rel='noopener';a.textContent=' · Kalender öffnen';saved.appendChild(a)}list.appendChild(saved);loadRsvps()}).withFailureHandler(function(e){status.remove();var message=document.createElement('p');message.className='blocked booking-error';message.textContent='Buchung fehlgeschlagen: '+e.message+' Bitte freie Termine erneut prüfen.';parent.appendChild(message);Array.from(list.querySelectorAll('button')).forEach(function(b){b.disabled=false})}).bookSelectedSlot({sessionId:phase.sessionId,startUtc:slot.startUtc,endUtc:slot.endUtc})});li.appendChild(book);list.appendChild(li)});parent.appendChild(list)}}
-function renderRsvps(data){data=Object.assign({},data,{rows:filterTaskRows(data.rows)});var body=document.getElementById('rsvpRows');body.replaceChildren();data.rows.forEach(function(row){var tr=document.createElement('tr');var who=document.createElement('td');who.textContent=row.personAlias+' ('+row.personKey+') · '+row.caseId;tr.appendChild(who);var session=document.createElement('td');var localTime=new Intl.DateTimeFormat('de-CH',{timeZone:'Europe/Zurich',dateStyle:'short',timeStyle:'short'}).format(new Date(row.startUtc));session.textContent=(row.phase==='theory'?'Theorie':'Praxis')+' · '+row.sessionId+' · '+localTime+' Europe/Zurich';tr.appendChild(session);var response=document.createElement('td');response.textContent=({needsAction:'Offen',accepted:'Zugesagt',tentative:'Vielleicht',declined:'Abgesagt'})[row.responseStatus]||row.responseStatus;tr.appendChild(response);var action=document.createElement('td');action.textContent=row.flag==='declined'?'Ersatztermin für diese Person planen; Gruppentermin bleibt.':row.flag==='unanswered'?(Date.parse(row.startUtc)>Date.now()?'Person vor dem Termin kontaktieren; Buchung bleibt bestehen.':'RSVP blieb offen; Traineranwesenheit gesondert prüfen.'):'Keine RSVP-Ausnahme.';action.className=row.flag?'blocked':'muted';tr.appendChild(action);body.appendChild(tr)});document.getElementById('rsvpStatus').textContent=data.rows.length+' Personenfall-Antworten geprüft · '+data.checkedAt+' UTC · '+data.rows.filter(function(row){return !!row.flag}).length+' offene RSVP-Ausnahmen.';var errors=document.getElementById('rsvpErrors');errors.replaceChildren();data.errors.forEach(function(error){var p=document.createElement('p');p.className='blocked';p.textContent=error.sessionId+': Kalenderantwort nicht prüfbar: '+error.reason;errors.appendChild(p)})}
+function renderRsvps(data){data=Object.assign({},data,{rows:filterTaskRows(data.rows)});var body=document.getElementById('rsvpRows');body.replaceChildren();data.rows.forEach(function(row){var tr=document.createElement('tr');var who=document.createElement('td');who.textContent=row.personAlias+' ('+row.personKey+') · '+row.caseId;tr.appendChild(who);var session=document.createElement('td');var localTime=new Intl.DateTimeFormat('de-CH',{timeZone:'Europe/Zurich',dateStyle:'short',timeStyle:'short'}).format(new Date(row.startUtc));session.textContent=(row.phase==='theory'?'Theorie':'Praxis')+' · '+row.sessionId+' · '+localTime+' Europe/Zurich';tr.appendChild(session);var response=document.createElement('td');response.textContent=({needsAction:'Offen',accepted:'Zugesagt',tentative:'Vielleicht',declined:'Abgesagt'})[row.responseStatus]||row.responseStatus;tr.appendChild(response);var action=document.createElement('td');action.textContent=row.flag==='declined'?'Ersatztermin für diese Person planen; Gruppentermin bleibt.':row.flag==='unanswered'?(Date.parse(row.startUtc)>Date.now()?'Person vor dem Termin kontaktieren; Buchung bleibt bestehen.':'RSVP blieb offen; Traineranwesenheit gesondert prüfen.'):'Keine RSVP-Ausnahme.';action.className=row.flag?'blocked':'muted';tr.appendChild(action);body.appendChild(tr)});document.getElementById('rsvpStatus').textContent=data.rows.length+(data.persisted===false?' Kalenderantworten nur gelesen · ':' Kalenderantworten im Register abgeglichen · ')+data.checkedAt+' UTC · '+data.rows.filter(function(row){return !!row.flag}).length+' offene RSVP-Ausnahmen.';var errors=document.getElementById('rsvpErrors');errors.replaceChildren();data.errors.forEach(function(error){var p=document.createElement('p');p.className='blocked';p.textContent=error.sessionId+': Kalenderantwort nicht prüfbar: '+error.reason;errors.appendChild(p)})}
+function readRsvps(){
+  document.getElementById('rsvpRows').replaceChildren();
+  document.getElementById('rsvpStatus').textContent='Kalenderantworten werden gelesen …';
+  google.script.run.withSuccessHandler(renderRsvps).withFailureHandler(function(error){
+    document.getElementById('rsvpStatus').textContent='Kalenderantworten konnten nicht gelesen werden: '+error.message;
+  }).getRsvpStatus();
+}
 function loadRsvps(){var button=document.getElementById('refreshRsvps');button.disabled=true;document.getElementById('rsvpStatus').textContent='Kalenderantworten werden gelesen …';google.script.run.withSuccessHandler(function(data){button.disabled=false;renderRsvps(data)}).withFailureHandler(function(e){button.disabled=false;document.getElementById('rsvpStatus').textContent='RSVP-Prüfung fehlgeschlagen: '+e.message}).refreshRsvpStatus()}
 document.getElementById('refreshRsvps').addEventListener('click',loadRsvps);
 function trainerStateLabel(row){if(row.status==='identity_blocked')return 'Formularprüfung ungültig · Fall bleibt offen';if(row.status==='awaiting_acknowledgement')return 'Anwesend und bestanden · persönliche Bestätigung ausstehend';if(row.status==='open')return (row.attendance==='absent'?'Abwesend':row.assessment==='needs_follow_up'?'Nachschulung nötig':'Nicht beurteilt')+' · Fall bleibt offen';return 'Trainerbericht ausstehend'}
@@ -127,7 +744,18 @@ document.getElementById('refreshParticipant').addEventListener('click',function(
 function renderProofQueue(rows){rows=filterTaskRows(rows);var body=document.getElementById('proofRows');body.replaceChildren();rows.forEach(function(row){var tr=document.createElement('tr'),who=document.createElement('td');who.textContent=row.personAlias+' ('+row.personKey+') · Auftrag '+requestCode(row.requestId);var id=document.createElement('div');id.className='id muted';id.textContent=row.caseId;who.appendChild(id);tr.appendChild(who);var status=document.createElement('td');status.textContent=row.state==='completed'?'Nachweis archiviert · Skillstufe übernommen':row.state==='archived'?'Beide Archive geprüft · Skillübernahme ausstehend':row.state==='archive_error'?'Archivfehler · lokalen Helfer prüfen und erneut ausführen':row.state==='created'?'Google-Nachweis erstellt · lokales Archiv ausstehend':row.state==='ready'?'Quellen vollständig · Nachweis kann erstellt werden':'Gesperrt: '+row.reason;status.className=row.state==='blocked'||row.state==='archive_error'?'blocked':row.state==='ready'||row.state==='archived'||row.state==='completed'?'allowed':'muted';tr.appendChild(status);var action=document.createElement('td');if(row.docUrl&&row.pdfUrl){[['Google Doc',row.docUrl],['PDF',row.pdfUrl]].forEach(function(entry){var a=document.createElement('a');a.href=entry[1];a.target='_blank';a.rel='noopener';a.textContent=entry[0];action.appendChild(a);action.appendChild(document.createTextNode(' '))});var proofId=document.createElement('div');proofId.className='id muted';proofId.textContent=row.proofId+' · '+row.archiveStatus;action.appendChild(proofId)}else if(row.state==='ready'){var button=document.createElement('button');button.textContent='Nachweis erstellen';button.addEventListener('click',function(){button.disabled=true;google.script.run.withSuccessHandler(function(){loadProofQueue()}).withFailureHandler(function(e){button.disabled=false;document.getElementById('proofStatus').textContent='Nachweis fehlgeschlagen: '+e.message}).createIndividualProof({caseId:row.caseId})});action.appendChild(button)}else action.textContent=row.archiveStatus==='pending_creation'?'Erstellung unterbrochen; Quellen prüfen und erneut versuchen.':'Noch kein Nachweis.';tr.appendChild(action);body.appendChild(tr)});document.getElementById('proofStatus').textContent=rows.length+' Personenfälle · '+rows.filter(function(row){return row.state==='created'}).length+' lokale Archive ausstehend · '+rows.filter(function(row){return row.state==='archived'}).length+' geprüft · '+rows.filter(function(row){return row.state==='ready'}).length+' bereit.'}
 function loadProofQueue(){google.script.run.withSuccessHandler(renderProofQueue).withFailureHandler(function(e){document.getElementById('proofStatus').textContent='Nachweisregister fehlgeschlagen: '+e.message}).getIndividualProofQueue()}
 document.getElementById('refreshProof').addEventListener('click',loadProofQueue);
-function renderSkillQueue(rows){rows=filterTaskRows(rows);var body=document.getElementById('skillRows');body.replaceChildren();rows.forEach(function(row){var tr=document.createElement('tr');[row.personKey+' · '+row.caseId,row.previousLevel+' → '+row.targetLevel].forEach(function(value){var td=document.createElement('td');td.textContent=value;tr.appendChild(td)});var status=document.createElement('td');status.textContent=row.state==='applied'?'Übernommen · '+row.appliedAt+' UTC':row.state==='ready'?'Alle Nachweise und beide Archive geprüft':row.state==='pending'?'Übernahme unterbrochen · erneut ausführen':row.state==='conflict'?'Konflikt: '+row.reason:'Ausstehend: '+row.reason;status.className=row.state==='applied'||row.state==='ready'?'allowed':row.state==='conflict'?'blocked':'muted';tr.appendChild(status);var action=document.createElement('td');if(row.state==='ready'||row.state==='pending'){var button=document.createElement('button');button.textContent=row.state==='pending'?'Übernahme fortsetzen':'Skillstufe übernehmen';button.addEventListener('click',function(){button.disabled=true;google.script.run.withSuccessHandler(function(){loadSkillQueue();loadProofQueue()}).withFailureHandler(function(e){button.disabled=false;document.getElementById('skillStatus').textContent='Skillübernahme fehlgeschlagen: '+e.message;loadSkillQueue()}).applyVerifiedSkillUpdate({caseId:row.caseId})});action.appendChild(button)}else action.textContent=row.state==='applied'?'Im Skillregister protokolliert.':row.state==='conflict'?'Demo-Sheet und Quellen prüfen.':'Archivierung und Beurteilung abschliessen.';tr.appendChild(action);body.appendChild(tr)});document.getElementById('skillStatus').textContent=rows.length+' Personenfälle · '+rows.filter(function(row){return row.state==='applied'}).length+' übernommen · '+rows.filter(function(row){return row.state==='ready'}).length+' bereit · '+rows.filter(function(row){return row.state==='conflict'}).length+' Konflikte.'}
+function renderSkillQueue(rows){rows=filterTaskRows(rows);var body=document.getElementById('skillRows');body.replaceChildren();rows.forEach(function(row){var tr=document.createElement('tr');[row.personKey+' · '+row.caseId,row.previousLevel+' → '+row.targetLevel].forEach(function(value){var td=document.createElement('td');td.textContent=value;tr.appendChild(td)});var status=document.createElement('td');status.textContent=row.state==='applied'?'Übernommen · '+row.appliedAt+' UTC':row.state==='ready'?'Alle Nachweise und beide Archive geprüft':row.state==='pending'?'Übernahme unterbrochen · erneut ausführen':row.state==='conflict'?'Konflikt: '+row.reason:'Ausstehend: '+row.reason;status.className=row.state==='applied'||row.state==='ready'?'allowed':row.state==='conflict'?'blocked':'muted';tr.appendChild(status);var action=document.createElement('td');if(row.state==='ready'||row.state==='pending'){var button=document.createElement('button');button.textContent=row.state==='pending'?'Übernahme fortsetzen':'Skillstufe übernehmen';button.addEventListener('click',function(){button.disabled=true;google.script.run.withSuccessHandler(function(){readSkillQueue();loadProofQueue()}).withFailureHandler(function(e){button.disabled=false;readSkillQueue('Fall '+row.caseId+': Skillübernahme fehlgeschlagen: '+e.message)}).applyVerifiedSkillUpdate({caseId:row.caseId})});action.appendChild(button)}else action.textContent=row.state==='applied'?'Im Skillregister protokolliert.':row.state==='conflict'?'Demo-Sheet und Quellen prüfen.':'Archivierung und Beurteilung abschliessen.';tr.appendChild(action);body.appendChild(tr)});document.getElementById('skillStatus').textContent=rows.length+' Personenfälle · '+rows.filter(function(row){return row.state==='applied'}).length+' übernommen · '+rows.filter(function(row){return row.state==='ready'}).length+' bereit · '+rows.filter(function(row){return row.state==='conflict'}).length+' Konflikte.'}
+function readSkillQueue(errorMessage){
+  document.getElementById('skillRows').replaceChildren();
+  var status=document.getElementById('skillStatus');
+  status.textContent=errorMessage||'Skillregister wird gelesen …';
+  google.script.run.withSuccessHandler(function(rows){
+    renderSkillQueue(rows);
+    if(errorMessage)status.textContent=errorMessage+' · '+status.textContent;
+  }).withFailureHandler(function(error){
+    status.textContent=(errorMessage?errorMessage+' · ':'')+'Skillregister konnte nicht gelesen werden: '+error.message;
+  }).getSkillUpdateQueue();
+}
 function loadSkillQueue(){google.script.run.withSuccessHandler(function(result){renderSkillQueue(result.rows);loadProofQueue();if(result.errors.length)document.getElementById('skillStatus').textContent+=' · '+result.errors.length+' Übernahmefehler; betroffene Fälle prüfen.'}).withFailureHandler(function(e){document.getElementById('skillStatus').textContent='Skillregister fehlgeschlagen: '+e.message}).processVerifiedSkillUpdates()}
 document.getElementById('refreshSkills').addEventListener('click',loadSkillQueue);
 
@@ -163,6 +791,89 @@ function hubProgress(request){
     skill:cases.length>0&&cases.every(function(row){return row.skillStatus==='applied'})};
 }
 // UX1_PURE_END
+// HUB_OVERVIEW_PURE_START: read-only summaries from the persisted audit projection.
+function overviewModel(requests){
+  var counts={owner:0,open:0,waiting:0,complete:0};
+  var queue=[];
+  (requests||[]).forEach(function(request){
+    if(request.state==='complete'){counts.complete++;return}
+    if(request.state==='open')counts.open++;else counts.waiting++;
+    if((request.cases||[]).some(function(row){return row.currentTask&&row.currentTask.actorKey==='MATT'&&row.currentTask.state!=='complete'}))counts.owner++;
+    queue.push(request);
+  });
+  queue.sort(function(a,b){
+    var priority=function(row){return row.state==='open'?0:(row.cases||[]).some(function(item){return item.currentTask&&item.currentTask.actorKey==='MATT'})?1:2};
+    return priority(a)-priority(b)||String(b.createdAt||'').localeCompare(String(a.createdAt||''));
+  });
+  return {counts:counts,queue:queue};
+}
+function bookedSessionModel(requests){
+  var sessions=new Map();
+  (requests||[]).forEach(function(request){(request.cases||[]).forEach(function(person){(person.phases||[]).forEach(function(phase){
+    if(!phase.sessionId||!phase.startUtc)return;
+    var key=String(phase.sessionId),item=sessions.get(key);
+    if(!item){item={sessionId:key,requestId:request.requestId,topicName:request.topicName,phase:phase.phase,startUtc:phase.startUtc,eventUrl:phase.eventUrl||'',people:[]};sessions.set(key,item)}
+    if(item.people.indexOf(person.personAlias)<0)item.people.push(person.personAlias);
+  })})});
+  return Array.from(sessions.values()).sort(function(a,b){return String(b.startUtc).localeCompare(String(a.startUtc))});
+}
+// HUB_OVERVIEW_PURE_END
+
+// DEADLINE_UI_START
+var deadlineEditorKey='',deadlinePending=null;
+function deadlineDateLabel(date){var p=String(date||'').split('-');return p.length===3?p[2]+'.'+p[1]+'.'+p[0]:''}
+function deadlineLabel(due){
+  if(!due||due.state==='unset')return 'Frist nicht erfasst';
+  var date=deadlineDateLabel(due.date),labels={due_today:'Heute fällig',upcoming:'Noch '+due.daysRemaining+' Kalendertage',overdue:due.daysOverdue+' Kalendertage überfällig',completed_on_time:'Fristgerecht abgeschlossen',completed_late:due.daysLate+' Kalendertage nach Frist abgeschlossen',completed_time_unknown:'Abgeschlossen · Abschlusszeit nicht belegt',completed_no_deadline:'Abgeschlossen · ohne erfasste Frist',cancelled:'Storniert',exception_approved:'Genehmigte Ausnahme'};
+  return (labels[due.state]||'Frist prüfen')+(date?' · bis '+date:'');
+}
+function deadlineQueueModel(requests){
+  var rows=[];(requests||[]).forEach(function(request){(request.cases||[]).forEach(function(row){if(row.deadline&&row.deadline.state==='overdue')rows.push({request:request,personCase:row})})});
+  return rows.sort(function(a,b){return b.personCase.deadline.daysOverdue-a.personCase.deadline.daysOverdue||String(a.personCase.caseId).localeCompare(String(b.personCase.caseId))});
+}
+function openDeadlineCase(requestId,caseId){
+  selectRequest(requestId);document.getElementById('auditSearch').value=caseId;document.getElementById('auditState').value='all';switchView('register',false);renderAudit();
+  Array.from(document.querySelectorAll('#auditRows details')).forEach(function(node){if(node.dataset.caseId===caseId){node.open=true;node.scrollIntoView({block:'start'})}});
+}
+function renderDeadlineQueue(){
+  var host=document.getElementById('deadlineQueue'),rows=deadlineQueueModel(auditRequests);host.replaceChildren();
+  if(!rows.length){var empty=document.createElement('p');empty.textContent='Keine überfälligen Personenfälle mit erfasster Frist.';host.appendChild(empty);return}
+  rows.forEach(function(item){var card=document.createElement('article'),body=document.createElement('div'),title=document.createElement('h4'),description=document.createElement('p'),button=document.createElement('button');
+    card.className='queue-card';title.textContent=item.personCase.personAlias+' · Auftrag '+requestCode(item.request.requestId);description.textContent=deadlineLabel(item.personCase.deadline)+' · '+(currentTaskLabel(item.personCase.currentTask)||item.personCase.reason||'Fall prüfen');
+    button.type='button';button.className='secondary';button.textContent='Personenfall öffnen';button.addEventListener('click',function(){openDeadlineCase(item.request.requestId,item.personCase.caseId)});body.appendChild(title);body.appendChild(description);card.appendChild(body);card.appendChild(button);host.appendChild(card)});
+}
+function renderDeadlineEditor(){
+  var request=hubRequest(),scope=document.getElementById('deadlineScope'),previous=scope.value;
+  scope.replaceChildren();scope.add(new Option('Gesamter Auftrag',''));
+  if(request)request.cases.forEach(function(row){scope.add(new Option(row.personAlias+' · freigegebene Vorgabe',row.caseId))});
+  scope.value=request&&request.cases.some(function(row){return row.caseId===previous})?previous:'';
+  var person=request&&request.cases.filter(function(row){return row.caseId===scope.value})[0];
+  var source=person&&person.deadline?person.deadline.policy:request&&request.deadline?request.deadline.request:null;
+  var key=(request?request.requestId:'')+'|'+scope.value+'|'+(source?source.revision:0);
+  if(key!==deadlineEditorKey){if(key.split('|').slice(0,2).join('|')!==deadlineEditorKey.split('|').slice(0,2).join('|'))document.getElementById('deadlineStatus').textContent='';deadlineEditorKey=key;document.getElementById('deadlineDate').value=source?source.date:'';document.getElementById('deadlineReference').value=source?source.reference:person?'':'Bedarfsanfrage';document.getElementById('deadlineReason').value='';document.getElementById('deadlinePolicyApproved').checked=false}
+  var editable=!!request&&(person?person.deadline&&person.deadline.editable:request.cases.some(function(row){return row.deadline&&row.deadline.editable}));
+  Array.from(document.getElementById('deadlineForm').elements).forEach(function(control){control.disabled=control.id==='deadlineScope'?!request:!editable});
+  document.getElementById('deadlineApprovalRow').hidden=!scope.value;document.getElementById('deadlinePolicyApproved').required=!!scope.value;
+  document.getElementById('deadlineSummary').textContent=!request?'Zuerst einen Auftrag wählen.':person?deadlineLabel(person.deadline):'Anfragefrist: '+(source?deadlineDateLabel(source.date):'nicht erfasst')+' · Fristverantwortung: Process & Quality · Änderungen gelten für offene Fälle';
+  var history=document.getElementById('deadlineHistory');history.replaceChildren();
+  var sources=person&&person.deadline?[person.deadline.request,person.deadline.policy]:[source];
+  sources.filter(Boolean).forEach(function(item){var heading=document.createElement('p');heading.textContent=(item.source==='policy'?'Freigegebene Vorgabe':'Bedarfsanfrage')+' · ursprünglich '+deadlineDateLabel(item.originalDate)+' · aktuell '+deadlineDateLabel(item.date)+' · Quelle '+item.reference+' · Verantwortung Process & Quality';history.appendChild(heading);
+    (item.history||[]).slice().reverse().forEach(function(change){var line=document.createElement('p');line.className='muted';line.textContent='Version '+change.revision+' · '+deadlineDateLabel(change.date)+' · '+change.reference+' · '+change.reason+' · '+change.recordedAt+' · '+change.actorEmail+(change.legacyGlobal?' · historischer globaler Geltungsbereich':Array.isArray(change.caseIds)?' · Personenfälle: '+change.caseIds.map(function(id){var member=request.cases.filter(function(row){return row.caseId===id})[0];return member?member.personAlias:id}).join(', '):'');history.appendChild(line)})});
+  if(!sources.filter(Boolean).length){var empty=document.createElement('p');empty.textContent='Noch keine Fristquelle oder Änderung erfasst.';history.appendChild(empty)}
+}
+document.getElementById('deadlineScope').addEventListener('change',renderDeadlineEditor);
+document.getElementById('deadlineForm').addEventListener('submit',function(event){
+  event.preventDefault();var request=hubRequest();if(!request||!this.reportValidity())return;
+  var caseId=document.getElementById('deadlineScope').value,person=request.cases.filter(function(row){return row.caseId===caseId})[0];
+  var source=person&&person.deadline?person.deadline.policy:request.deadline&&request.deadline.request;
+  var command={requestId:request.requestId,caseId:caseId,date:document.getElementById('deadlineDate').value,reference:document.getElementById('deadlineReference').value,reason:document.getElementById('deadlineReason').value,policyApproved:document.getElementById('deadlinePolicyApproved').checked,expectedRevision:source?source.revision:0};
+  var signature=JSON.stringify(command);if(!deadlinePending||deadlinePending.signature!==signature)deadlinePending={signature:signature,command:Object.assign(command,{actionId:crypto.randomUUID()})};
+  var submitted=deadlinePending;function isCurrentEditor(){return selectedRequestId===submitted.command.requestId&&document.getElementById('deadlineScope').value===submitted.command.caseId}
+  document.getElementById('deadlineSave').disabled=true;document.getElementById('deadlineStatus').textContent='Frist wird gespeichert und erneut gelesen …';
+  google.script.run.withSuccessHandler(function(receipt){if(deadlinePending===submitted)deadlinePending=null;if(isCurrentEditor())document.getElementById('deadlineStatus').textContent='Frist '+deadlineDateLabel(receipt.date)+' · Version '+receipt.revision+' bestätigt.';loadAudit()}).withFailureHandler(function(error){if(!isCurrentEditor())return;document.getElementById('deadlineSave').disabled=false;document.getElementById('deadlineStatus').textContent='Frist nicht bestätigt: '+error.message+' Unveränderte Eingaben erneut versuchen; bei Versionskonflikt zuerst das Register neu lesen.'}).saveRequestDeadline(submitted.command);
+});
+// DEADLINE_UI_END
+
 var hubScenarios=[
   {id:'group',title:'Gruppenschulung',description:'Ein Termin; Nachweis und Status bleiben je Person getrennt.'},
   {id:'individual',title:'Individueller Fortschritt',description:'Qualifizierte schulende Person und nächste Skillstufe.'},
@@ -184,7 +895,7 @@ function requestCode(id){var raw=String(id||''),row=auditRequests.filter(functio
 function hubRequest(){return auditRequests.filter(function(row){return row.requestId===selectedRequestId})[0]||null}
 function filterTaskRows(rows){var request=hubRequest();if(!request)return [];var ids=new Set(request.cases.map(function(row){return row.caseId}));return rows.filter(function(row){return ids.has(row.caseId)})}
 function hubStatusLabel(row){return row.state==='complete'?'Abgeschlossen':row.state==='open'?'Offen':'Ausstehend'}
-function currentTaskLabel(task){if(!task)return '';var labels={plan:'Phasenplan',booking:'Termin buchen',reschedule:'Ersatztermin planen',trainer_review:'Trainerbericht prüfen',archive_review:'Archiv prüfen',skill_review:'Skillkonflikt prüfen',followup:'Bestätigung nachverfolgen',rsvp_review:'Kalenderantwort prüfen',trainer_assessment:'Trainerbericht abgeben',participant_acknowledgement:'Teilnahme bestätigen',create_proof:'Nachweis erstellen',skill_update:'Skillstufe übernehmen',audit_review:'Fall prüfen',complete:'Abgeschlossen'};return (labels[task.action]||task.action)+(task.actorKey?' · zuständig: '+task.actorKey:' · Zuständigkeit prüfen')+(task.reason?' · '+task.reason:'')}
+function currentTaskLabel(task){if(!task)return '';var labels={plan:'Phasenplan',booking:'Termin buchen',reschedule:'Ersatztermin planen',trainer_review:'Trainerbericht prüfen',archive_review:'Archiv prüfen',skill_review:'Skillkonflikt prüfen',followup:'Bestätigung nachverfolgen',rsvp_review:'Kalenderantwort prüfen',trainer_assessment:'Trainerbericht abgeben',participant_acknowledgement:'Teilnahme bestätigen',create_proof:'Nachweis erstellen',skill_update:'Skillstufe übernehmen',audit_review:'Fall prüfen',complete:'Abgeschlossen'};return (labels[task.action]||task.action)+(task.actorKey?' · zuständig: '+(task.actorKey==='MATT'?'Process & Quality':personLabel(task.actorKey)):' · Zuständigkeit prüfen')+(task.reason?' · '+task.reason:'')}
 function selectRequest(id){if(selectedRequestId!==(id||'')){document.getElementById('tourLink').hidden=true;document.getElementById('tourStatus').textContent='';document.getElementById('feedbackRows').replaceChildren();document.getElementById('feedbackStatus').textContent=''}selectedRequestId=id||'';var request=hubRequest();currentRequestId=request?request.requestId:null;bookedSessions={};
   if(!request){clearReview();selectedRequestId='';renderHub();renderStepper();return}
   if(request.plannedSessions){google.script.run.withSuccessHandler(function(plan){if(selectedRequestId!==id)return;document.getElementById('planPanel').hidden=false;document.getElementById('mode').value=request.mode||'group';document.getElementById('mode').disabled=true;document.getElementById('planSave').disabled=true;document.getElementById('planRows').replaceChildren();if(plan){plan.phases.forEach(function(phase){var tr=document.createElement('tr');[(phase.phase==='theory'?'Theorie':'Praxis')+' · '+(phase.mode==='group'?'Gruppe':'einzeln'),phase.personKeys.map(personLabel).join(', ')+' · '+phase.sessionId,phase.durationMinutes+' Min.',phase.trainerKey,phase.theorySessionId?'Nach Theorie':'Erste Phase'].forEach(function(value){var td=document.createElement('td');td.textContent=value;tr.appendChild(td)});document.getElementById('planRows').appendChild(tr)});document.getElementById('planStatus').textContent='Gespeicherter Phasenplan · '+plan.phases.length+' Session(s).';showScheduleActions(plan)}}).withFailureHandler(function(error){document.getElementById('planStatus').textContent='Gespeicherter Plan konnte nicht gelesen werden: '+error.message}).getSavedPhasePlan(id)}
@@ -197,56 +908,142 @@ function setTask(id){activeTask=id;if(id==='register'){switchView('register');re
   Object.keys(groups).forEach(function(key){groups[key].forEach(function(panelId){if(!panelId)return;var node=document.getElementById(panelId);node.dataset.task=key;node.classList.toggle('selected-task',key===id)})});
   var def=taskDefinitions.filter(function(row){return row.id===id})[0];document.getElementById('taskInstruction').textContent=def?(id==='intake'&&hubRequest()?'Dieser Auftrag ist gespeichert. Für einen neuen Bedarf oben „Neuer Auftrag“ wählen. ':def.instruction):'';
   renderStepper();
+  if(id==='rsvp')readRsvps();
+  if(id==='skill')readSkillQueue();
   if(id==='trainer')loadTrainerQueue();
   if(id==='participant')loadParticipantQueue();
   if(id==='proof')loadProofQueue();
   if(id==='followup')loadFollowUps();
 }
-function switchView(view,refresh){['hub','workflow','register'].forEach(function(name){document.getElementById(name+'View').hidden=name!==view});
-  document.querySelectorAll('.hub-nav button').forEach(function(button){button.classList.toggle('active',button.dataset.view===view)});
+function switchView(view,refresh){['hub','workflow','resources','register'].forEach(function(name){document.getElementById(name+'View').hidden=name!==view});
+  document.querySelectorAll('.hub-nav button').forEach(function(button){button.classList.toggle('active',button.dataset.view===view);if(button.dataset.view===view)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current')});
+  document.getElementById('workspace').dataset.view=view;
+  var headings={hub:'Schulungen koordinieren.',workflow:'Bedarf & Planung',resources:'Themen & Matrix',register:'Ergebnisse & Register'};
+  document.getElementById('pageTitle').textContent=headings[view];
+  document.getElementById('newRequest').hidden=view!=='hub';
   if(refresh!==false&&(view==='hub'||view==='register'))loadAudit();
+  if(view==='resources'&&refresh!==false)loadResources();
 }
 function renderStepper(){var host=document.getElementById('taskStepper'),progress=hubProgress(hubRequest());host.replaceChildren();
   taskDefinitions.forEach(function(def,index){var li=document.createElement('li'),button=document.createElement('button'),small=document.createElement('small');
-    button.type='button';var open=def.id==='followup'&&progress.followup;button.className=(activeTask===def.id?'current ':'')+(progress[def.id]&&!open?'done':'');button.textContent=(index+1)+'. '+def.label;
+    button.type='button';if(activeTask===def.id)button.setAttribute('aria-current','step');var open=def.id==='followup'&&progress.followup;button.className=(activeTask===def.id?'current ':'')+(progress[def.id]&&!open?'done':'');button.textContent=(index+1)+'. '+def.label;
     small.textContent=open?'Offene Fälle':progress[def.id]?'Aus Register belegt':activeTask===def.id?'Aktuelle Ansicht':'Ansehen';button.appendChild(small);
     button.addEventListener('click',function(){setTask(def.id)});li.appendChild(button);host.appendChild(li)});
+  var current=host.querySelector('[aria-current=step]');if(current)host.scrollLeft=current.offsetLeft-host.offsetLeft;
   var request=hubRequest();document.getElementById('workflowContext').textContent=request?'Auftrag '+requestCode(request.requestId)+' · '+request.topicName+' · '+hubStatusLabel(request):'Neuer Schulungsbedarf · synthetische Testdaten';
 }
-function renderHub(){var request=hubRequest();if(!hubInitialized&&auditRequests.length){selectedRequestId=auditRequests.slice().sort(function(a,b){return String(b.createdAt).localeCompare(String(a.createdAt))})[0].requestId;request=hubRequest();hubInitialized=true;selectRequest(selectedRequestId);return}
+function renderHubOverview(){
+  var model=overviewModel(auditRequests),metrics=document.getElementById('overviewMetrics'),queue=document.getElementById('hubQueue');
+  metrics.replaceChildren();queue.replaceChildren();
+  [['owner','Bei Process & Quality'],['open','Klärung erforderlich'],['waiting','Ausstehende Aufträge'],['complete','Abgeschlossen']].forEach(function(def){
+    var box=document.createElement('div'),number=document.createElement('strong'),label=document.createElement('span');
+    box.className='metric';number.textContent=String(model.counts[def[0]]);label.textContent=def[1];box.appendChild(number);box.appendChild(label);metrics.appendChild(box);
+  });
+  if(!model.queue.length){var empty=document.createElement('div'),heading=document.createElement('h4'),description=document.createElement('p');empty.className='empty-state';heading.textContent=auditRequests.length?'Alle Aufträge sind abgeschlossen.':'Hier beginnt der nächste Auftrag.';description.textContent=auditRequests.length?'Die Nachweise finden Sie unter „Ergebnisse & Register“.':'Mit „Neuen Bedarf erfassen“ wählen Sie ein Thema und die Personen für Ihre erste Schulung.';empty.appendChild(heading);empty.appendChild(description);queue.appendChild(empty);return}
+  model.queue.slice(0,6).forEach(function(request){
+    var card=document.createElement('article'),content=document.createElement('div'),title=document.createElement('h4'),badge=document.createElement('span'),meta=document.createElement('p'),next=document.createElement('p'),button=document.createElement('button');
+    card.className='queue-card'+(selectedRequestId===request.requestId?' selected':'');
+    title.textContent='Auftrag '+requestCode(request.requestId)+' · '+request.topicName;
+    badge.className='status-badge '+request.state;badge.textContent=hubStatusLabel(request);title.appendChild(badge);
+    meta.textContent=request.cases.length+' Personenfall'+(request.cases.length===1?'':'e')+' · '+request.bookedSessions+'/'+request.plannedSessions+' Termine gebucht';
+    var focus=request.cases.slice().sort(function(a,b){return (a.state==='open'?0:a.state==='waiting'?1:2)-(b.state==='open'?0:b.state==='waiting'?1:2)}).filter(function(row){return row.state!=='complete'})[0];
+    next.className='queue-next';next.textContent=focus?focus.personAlias+' · '+(currentTaskLabel(focus.currentTask)||focus.reason||focus.nextAction||'Status prüfen'):'Status im Register prüfen';
+    button.type='button';button.textContent='Auftrag ansehen';button.className='secondary';
+    button.addEventListener('click',function(){selectRequest(request.requestId);document.getElementById('hubRequest').focus()});
+    content.appendChild(title);content.appendChild(meta);content.appendChild(next);card.appendChild(content);card.appendChild(button);queue.appendChild(card);
+  });
+  if(model.queue.length>6){var more=document.createElement('button');more.type='button';more.className='secondary';more.textContent='Alle ' + model.queue.length + ' offenen Aufträge im Register ansehen';more.addEventListener('click',function(){document.getElementById('auditState').value='all';switchView('register')});queue.appendChild(more)}
+}
+function renderBookedCalendar(){
+  var host=document.getElementById('calendarRows'),sessions=bookedSessionModel(auditRequests);host.replaceChildren();
+  if(!sessions.length){var empty=document.createElement('li');empty.textContent='Noch keine gebuchten Termine im Demo-Register.';host.appendChild(empty);return}
+  sessions.slice(0,8).forEach(function(row){var item=document.createElement('li'),title=document.createElement('strong'),detail=document.createElement('span');
+    var date=new Intl.DateTimeFormat('de-CH',{timeZone:'Europe/Zurich',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}).format(new Date(row.startUtc));
+    title.textContent=date+' · '+row.topicName+' · '+(row.phase==='theory'?'Theorie':'Praxis')+' · '+requestCode(row.requestId);
+    detail.textContent=row.people.join(', ');item.appendChild(title);item.appendChild(detail);
+    if(/^https:\/\/[^\s]+$/.test(row.eventUrl)){var link=document.createElement('a');link.href=row.eventUrl;link.target='_blank';link.rel='noopener noreferrer';link.textContent=' · Kalendereintrag öffnen';item.appendChild(link)}host.appendChild(item)
+  });
+  if(sessions.length>8){var more=document.createElement('li');more.textContent='Weitere '+(sessions.length-8)+' Termine stehen in den Aufträgen.';host.appendChild(more)}
+}
+function renderResources(data){
+  var topics=document.getElementById('resourceTopics'),head=document.getElementById('resourceMatrixHead'),body=document.getElementById('resourceMatrixRows'),link=document.getElementById('resourceSheetLink');
+  topics.replaceChildren();head.replaceChildren();body.replaceChildren();
+  data.topics.forEach(function(row){var card=document.createElement('article'),title=document.createElement('h3'),duration=document.createElement('p'),source=document.createElement('p'),rule=document.createElement('p');
+    card.className='resource-card';title.textContent=row.name+' · '+row.id;
+    duration.textContent=[row.theory?'Theorie '+row.theoryMinutes+' Min.':'',row.practice?'Praxis '+row.practiceMinutes+' Min.':''].filter(Boolean).join(' · ');
+    rule.textContent=row.progression?'Skillfolge 0 → 1 → 2 → 3':'Konfiguriertes Ziel: Stufe '+row.configuredTarget;
+    source.textContent='Quelle im Demo-Sheet: '+row.sourceMaterial;
+    card.appendChild(title);card.appendChild(duration);card.appendChild(rule);card.appendChild(source);topics.appendChild(card)
+  });
+  var header=document.createElement('tr'),personHeading=document.createElement('th');personHeading.textContent='Person';header.appendChild(personHeading);
+  data.topics.forEach(function(topic){var cell=document.createElement('th');cell.textContent=topic.name;header.appendChild(cell)});head.appendChild(header);
+  data.matrix.forEach(function(person){var tr=document.createElement('tr'),name=document.createElement('td');name.textContent=person.personAlias+' · '+person.role;tr.appendChild(name);
+    person.levels.forEach(function(item){var cell=document.createElement('td');cell.textContent=item.level===''?'Leer':item.level==='–'||item.level==='-'?'Nicht vorgesehen':'Stufe '+item.level;tr.appendChild(cell)});body.appendChild(tr)
+  });
+  link.hidden=!/^https:\/\/docs\.google\.com\/spreadsheets\//.test(data.sheetUrl||'');if(!link.hidden)link.href=data.sheetUrl;
+  document.getElementById('resourceStatus').textContent=data.topics.length+' Themen · '+data.matrix.length+' Testpersonen · Stand aus dem Demo-Sheet.';
+}
+function loadResources(){var status=document.getElementById('resourceStatus');status.textContent='Katalog und Matrix werden gelesen …';
+  google.script.run.withSuccessHandler(function(data){renderResources(data)}).withFailureHandler(function(e){status.textContent='Katalog und Matrix konnten nicht geladen werden: '+e.message}).getOwnerResourceOverview()
+}
+function renderHub(){renderHubOverview();renderDeadlineQueue();renderDeadlineEditor();var request=hubRequest();if(!hubInitialized&&auditRequests.length){selectedRequestId=auditRequests.slice().sort(function(a,b){return String(b.createdAt).localeCompare(String(a.createdAt))})[0].requestId;request=hubRequest();hubInitialized=true;selectRequest(selectedRequestId);return}
   document.getElementById('prepareTour').disabled=!request;
   ['hubRequest','workflowRequest'].forEach(function(id){var picker=document.getElementById(id),old=picker.value;picker.replaceChildren();picker.add(new Option('Neuen Auftrag beginnen',''));auditRequests.slice().sort(function(a,b){return String(b.createdAt).localeCompare(String(a.createdAt))}).forEach(function(row){picker.add(new Option(row.topicName+' · '+requestCode(row.requestId)+' · '+hubStatusLabel(row),row.requestId))});picker.value=selectedRequestId||''});
-  var cards=document.getElementById('scenarioCards');cards.replaceChildren();hubScenarios.forEach(function(scenario){var button=document.createElement('button');button.type='button';button.className='scenario-card'+(selectedScenario===scenario.id?' selected':'');var title=document.createElement('strong');title.textContent=scenario.title;var desc=document.createElement('span');desc.textContent=scenario.description;button.appendChild(title);button.appendChild(desc);button.addEventListener('click',function(){selectedScenario=scenario.id;var matches=auditRequests.filter(function(row){return scenario.id==='group'?row.mode==='group':scenario.id==='individual'?row.mode==='individual':row.state==='open'}).sort(function(a,b){return scenario.id==='group'?(b.state==='complete')-(a.state==='complete')||String(b.createdAt).localeCompare(String(a.createdAt)):String(b.createdAt).localeCompare(String(a.createdAt))});selectRequest(matches.length?matches[0].requestId:'');if(!matches.length&&scenario.id==='individual')document.getElementById('mode').value='individual';switchView('hub',false)});cards.appendChild(button)});
+  var cards=document.getElementById('scenarioCards');cards.replaceChildren();hubScenarios.forEach(function(scenario){var button=document.createElement('button');button.type='button';button.className='scenario-card'+(selectedScenario===scenario.id?' selected':'');button.setAttribute('aria-pressed',String(selectedScenario===scenario.id));var title=document.createElement('strong');title.textContent=scenario.title;var desc=document.createElement('span');desc.textContent=scenario.description;button.appendChild(title);button.appendChild(desc);button.addEventListener('click',function(){selectedScenario=scenario.id;var matches=auditRequests.filter(function(row){return scenario.id==='group'?row.mode==='group':scenario.id==='individual'?row.mode==='individual':row.state==='open'}).sort(function(a,b){return scenario.id==='group'?(b.state==='complete')-(a.state==='complete')||String(b.createdAt).localeCompare(String(a.createdAt)):String(b.createdAt).localeCompare(String(a.createdAt))});selectRequest(matches.length?matches[0].requestId:'');if(!matches.length&&scenario.id==='individual')document.getElementById('mode').value='individual';switchView('hub',false)});cards.appendChild(button)});
   var summary=document.getElementById('hubSummary'),next=document.getElementById('hubNext'),cases=document.getElementById('hubCases');cases.replaceChildren();
   var technical=document.getElementById('requestTechnical');technical.hidden=!request;document.getElementById('requestTechnicalValue').textContent=request?request.requestId:'';
   if(!request){summary.textContent='Für diesen Testfall gibt es noch keinen passenden Auftrag.';next.textContent='Nächster Schritt: neuen Schulungsbedarf erfassen.';document.getElementById('hubOpen').textContent='Neuen Bedarf erfassen';var empty=document.createElement('li');empty.textContent='Noch keine Personenfälle ausgewählt.';cases.appendChild(empty);return}
-  summary.textContent=request.topicName+' · '+(request.mode||'Modus noch offen')+' · '+hubStatusLabel(request)+' · Auftrag '+requestCode(request.requestId);
-  var nextId=hubNextTask(request),definition=taskDefinitions.filter(function(row){return row.id===nextId})[0];next.textContent='Nächster Schritt: '+(definition?definition.label+' — '+definition.instruction:'Ergebnisse und Belege prüfen.');
+  summary.textContent=request.topicName+' · '+(request.mode||'Modus noch offen')+' · '+hubStatusLabel(request)+' · Auftrag '+requestCode(request.requestId)+(request.deadline&&request.deadline.date?' · frühester Abschluss '+deadlineDateLabel(request.deadline.date):' · Frist nicht erfasst');
+  var nextId=hubNextTask(request),definition=taskDefinitions.filter(function(row){return row.id===nextId})[0];
+  var focus=request.cases.filter(function(row){return row.state==='open'&&row.currentTask&&row.currentTask.actorKey==='MATT'})[0]||request.cases.filter(function(row){return row.state!=='complete'&&row.currentTask&&row.currentTask.actorKey==='MATT'})[0]||request.cases.filter(function(row){return row.state!=='complete'})[0];
+  var specific=focus&&currentTaskLabel(focus.currentTask);next.textContent=specific?'Nächste Aufgabe im Auftrag: '+focus.personAlias+' · '+specific:'Nächster Schritt: '+(definition?definition.label+' — '+definition.instruction:'Ergebnisse und Belege prüfen.');
   document.getElementById('hubOpen').textContent=nextId==='register'?'Ergebnisse öffnen':'Nächste Aufgabe öffnen';
-  request.cases.forEach(function(row){var item=document.createElement('li'),name=document.createElement('strong'),badge=document.createElement('span'),detail=document.createElement('small');name.textContent=row.personAlias;badge.className='status-badge '+row.state;badge.textContent=hubStatusLabel(row);detail.textContent=currentTaskLabel(row.currentTask)||row.reason||row.nextAction||'';item.appendChild(name);item.appendChild(badge);item.appendChild(detail);cases.appendChild(item)});
+  request.cases.forEach(function(row){var item=document.createElement('li'),name=document.createElement('strong'),badge=document.createElement('span'),detail=document.createElement('small');name.textContent=row.personAlias;badge.className='status-badge '+row.state;badge.textContent=hubStatusLabel(row);detail.textContent=(currentTaskLabel(row.currentTask)||row.reason||row.nextAction||'')+' · '+deadlineLabel(row.deadline);item.appendChild(name);item.appendChild(badge);item.appendChild(detail);cases.appendChild(item)});
 }
 document.querySelectorAll('.hub-nav button').forEach(function(button){button.addEventListener('click',function(){switchView(button.dataset.view)})});
 document.getElementById('hubRequest').addEventListener('change',function(){selectRequest(this.value)});
 document.getElementById('workflowRequest').addEventListener('change',function(){selectRequest(this.value);setTask(this.value?hubNextTask(hubRequest()):'intake')});
+document.getElementById('newRequest').addEventListener('click',function(){
+  selectRequest('');actionId=null;topic.value='';
+  document.querySelectorAll('#people input').forEach(function(box){box.checked=false});
+  topic.dispatchEvent(new Event('change'));setTask('intake');topic.focus();
+});
 document.getElementById('hubOpen').addEventListener('click',function(){setTask(hubNextTask(hubRequest()))});
 document.getElementById('hubRegister').addEventListener('click',function(){switchView('register')});
+document.getElementById('refreshOverview').addEventListener('click',loadAudit);
+document.getElementById('refreshResources').addEventListener('click',loadResources);
 document.getElementById('prepareTour').addEventListener('click',function(){var request=hubRequest(),button=this;if(!request)return;button.disabled=true;document.getElementById('tourStatus').textContent='Startlink wird vorbereitet …';google.script.run.withSuccessHandler(function(result){button.disabled=false;if(selectedRequestId!==result.requestId)return;var link=document.getElementById('tourLink');link.href=result.url;link.hidden=false;document.getElementById('tourStatus').textContent='Startlink für Auftrag '+requestCode(result.requestId)+' bereit. Vor dem Teilen muss die statische Seite veröffentlicht sein.'}).withFailureHandler(function(e){button.disabled=false;document.getElementById('tourStatus').textContent='Startlink fehlgeschlagen: '+e.message}).prepareDemoTourLink({requestId:request.requestId})});
 function loadDemoFeedback(){var request=hubRequest(),host=document.getElementById('feedbackRows'),status=document.getElementById('feedbackStatus');host.replaceChildren();if(!request){status.textContent='Zuerst einen Auftrag wählen.';return}status.textContent='Feedback wird gelesen …';google.script.run.withSuccessHandler(function(result){if(selectedRequestId!==result.requestId)return;result.rows.forEach(function(row){var entry=document.createElement('article'),heading=document.createElement('strong'),body=document.createElement('p');heading.textContent=row.role+' · '+row.step+' · '+row.submittedAt+' UTC';body.textContent=row.comment;entry.appendChild(heading);entry.appendChild(body);host.appendChild(entry)});status.textContent=result.rows.length+' Rückmeldung(en) für Auftrag '+requestCode(result.requestId)+'.'}).withFailureHandler(function(e){status.textContent='Feedback konnte nicht gelesen werden: '+e.message}).getDemoFeedbackForRequest({requestId:request.requestId})}
 document.getElementById('refreshFeedback').addEventListener('click',loadDemoFeedback);
 setTask('intake');switchView('hub',false);
 function auditLink(parent,url,label){if(!/^https:\/\/[^\s]+$/.test(url||''))return;var a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener';a.textContent=label;parent.appendChild(a);parent.appendChild(document.createTextNode(' · '))}
-function renderAudit(){var host=document.getElementById('auditRows');host.replaceChildren();var query=document.getElementById('auditSearch').value.trim().toLowerCase(),filter=document.getElementById('auditState').value,shown=0;auditRequests.forEach(function(request){var rows=request.cases.filter(function(row){var matches=!query||[request.topicId,request.topicName,request.requestId,row.personAlias,row.personKey,row.caseId].some(function(value){return String(value).toLowerCase().includes(query)});return matches&&(filter==='all'||row.state===filter)});if(!rows.length)return;shown+=rows.length;var heading=document.createElement('h3');heading.textContent='Auftrag '+requestCode(request.requestId)+' · '+request.topicName+' · '+(request.state==='complete'?'Abgeschlossen':request.state==='open'?'Klärung erforderlich':'Ausstehend');host.appendChild(heading);var meta=document.createElement('p');meta.className='muted';meta.textContent='Modus: '+request.mode+' · Abschlussmeldung: '+(request.completionNoticeState||'noch nicht versendet')+' · ';auditLink(meta,request.sheetUrl,'Demo-Sheet');host.appendChild(meta);rows.forEach(function(row){var detail=document.createElement('details');var summary=document.createElement('summary');summary.textContent=row.personAlias+' · '+row.caseId+' · '+(row.state==='complete'?'vollständig geprüft':row.state==='open'?'offen: '+row.reason:'ausstehend: '+row.reason);detail.appendChild(summary);var body=document.createElement('div');var status=document.createElement('p');status.textContent='Skill '+row.previousLevel+' → '+row.targetLevel+' · nächster Schritt: '+(row.nextAction||'keiner');body.appendChild(status);row.phases.forEach(function(phase){var p=document.createElement('p');p.textContent=(phase.phase==='theory'?'Theorie':'Praxis')+' · '+phase.sessionId+' · RSVP '+(phase.rsvp||'unbekannt')+' · Trainer '+(phase.attendance||'offen')+'/'+(phase.result||'offen')+' · Bericht '+(phase.trainerResponseId||'offen')+' '+(phase.trainerSubmittedAt||'')+' · Bestätigung '+(phase.acknowledgementResponseId||'offen')+' '+(phase.acknowledgementSubmittedAt||'')+' · ';auditLink(p,phase.eventUrl,'Kalendereintrag');auditLink(p,phase.trainerResponseUrl,'Trainerantworten');auditLink(p,phase.acknowledgementUrl,'Teilnahmeantworten');body.appendChild(p)});var proof=document.createElement('p');proof.textContent='Nachweis '+(row.proofId||'offen')+' · Archiv '+(row.archiveStatus||'offen')+' · Skill '+(row.skillStatus||'offen')+' '+(row.skillKey||'')+' · ';auditLink(proof,row.docUrl,'Google Doc');auditLink(proof,row.pdfUrl,'Drive PDF');auditLink(proof,row.archiveReceiptUrl,'Archivbeleg');auditLink(proof,row.skillUrl,'Skilländerung');body.appendChild(proof);if(row.localPdfPath){var archive=document.createElement('p');archive.className='id';archive.textContent='Lokales PDF: '+row.localPdfPath+' · DOCX: '+row.localDocxPath+' · Drive SHA-256: '+row.drivePdfSha256+' · lokal SHA-256: '+row.localPdfSha256+' · geprüft: '+row.archiveVerifiedAt;body.appendChild(archive)}detail.appendChild(body);host.appendChild(detail)})});document.getElementById('auditStatus').textContent=shown+' Personenfälle sichtbar · '+auditRequests.length+' Aufträge geladen.'}
-function loadAudit(){document.getElementById('auditStatus').textContent='Belege werden geprüft …';google.script.run.withSuccessHandler(function(rows){auditRequests=rows;renderAudit();renderHub();renderStepper()}).withFailureHandler(function(e){document.getElementById('auditStatus').textContent='Auditansicht konnte nicht geladen werden: '+e.message}).getAuditDashboard()}
+function renderAudit(){var host=document.getElementById('auditRows');host.replaceChildren();var query=document.getElementById('auditSearch').value.trim().toLowerCase(),filter=document.getElementById('auditState').value,shown=0;auditRequests.forEach(function(request){var rows=request.cases.filter(function(row){var matches=!query||[request.topicId,request.topicName,request.requestId,row.personAlias,row.personKey,row.caseId].some(function(value){return String(value).toLowerCase().includes(query)});return matches&&(filter==='all'||row.state===filter)});if(!rows.length)return;shown+=rows.length;var heading=document.createElement('h3');heading.textContent='Auftrag '+requestCode(request.requestId)+' · '+request.topicName+' · '+(request.state==='complete'?'Abgeschlossen':request.state==='open'?'Klärung erforderlich':'Ausstehend');host.appendChild(heading);var meta=document.createElement('p');meta.className='muted';meta.textContent='Modus: '+request.mode+' · Abschlussmeldung: '+(request.completionNoticeState||'noch nicht versendet')+' · ';auditLink(meta,request.sheetUrl,'Demo-Sheet');host.appendChild(meta);rows.forEach(function(row){var detail=document.createElement('details');detail.dataset.caseId=row.caseId;var summary=document.createElement('summary');summary.textContent=row.personAlias+' · '+row.caseId+' · '+(row.state==='complete'?'vollständig geprüft':row.state==='open'?'offen: '+row.reason:'ausstehend: '+row.reason);detail.appendChild(summary);var body=document.createElement('div');var status=document.createElement('p');status.textContent='Skill '+row.previousLevel+' → '+row.targetLevel+' · nächster Schritt: '+(row.nextAction||'keiner');body.appendChild(status);var due=document.createElement('p');due.textContent=deadlineLabel(row.deadline);body.appendChild(due);row.phases.forEach(function(phase){var p=document.createElement('p');p.textContent=(phase.phase==='theory'?'Theorie':'Praxis')+' · '+phase.sessionId+' · RSVP '+(phase.rsvp||'unbekannt')+' · Trainer '+(phase.attendance||'offen')+'/'+(phase.result||'offen')+' · Bericht '+(phase.trainerResponseId||'offen')+' '+(phase.trainerSubmittedAt||'')+' · Bestätigung '+(phase.acknowledgementResponseId||'offen')+' '+(phase.acknowledgementSubmittedAt||'')+' · ';auditLink(p,phase.eventUrl,'Kalendereintrag');auditLink(p,phase.trainerResponseUrl,'Trainerantworten');auditLink(p,phase.acknowledgementUrl,'Teilnahmeantworten');body.appendChild(p)});var proof=document.createElement('p');proof.textContent='Nachweis '+(row.proofId||'offen')+' · Archiv '+(row.archiveStatus||'offen')+' · Skill '+(row.skillStatus||'offen')+' '+(row.skillKey||'')+' · ';auditLink(proof,row.docUrl,'Google Doc');auditLink(proof,row.pdfUrl,'Drive PDF');auditLink(proof,row.archiveReceiptUrl,'Archivbeleg');auditLink(proof,row.skillUrl,'Skilländerung');body.appendChild(proof);if(row.localPdfPath){var archive=document.createElement('p');archive.className='id';archive.textContent='Lokales PDF: '+row.localPdfPath+' · DOCX: '+row.localDocxPath+' · Drive SHA-256: '+row.drivePdfSha256+' · lokal SHA-256: '+row.localPdfSha256+' · geprüft: '+row.archiveVerifiedAt;body.appendChild(archive)}detail.appendChild(body);host.appendChild(detail)})});if(!shown){var empty=document.createElement('div'),emptyTitle=document.createElement('h3'),emptyText=document.createElement('p');empty.className='empty-state';emptyTitle.textContent='Keine passenden Fälle.';emptyText.textContent='Ändern Sie den Suchbegriff oder wählen Sie einen anderen Status.';empty.appendChild(emptyTitle);empty.appendChild(emptyText);host.appendChild(empty)}document.getElementById('auditStatus').textContent=shown+' Personenfälle sichtbar · '+auditRequests.length+' Aufträge geladen.'}
+function loadAudit(){
+  var panel=document.getElementById('overviewPanel'),status=document.getElementById('overviewStatus'),button=document.getElementById('refreshOverview');
+  panel.setAttribute('aria-busy','true');status.className='muted';button.disabled=true;
+  document.getElementById('auditStatus').textContent='Belege werden geprüft …';status.textContent='Register wird gelesen …';
+  google.script.run.withSuccessHandler(function(rows){
+    auditRequests=rows;renderAudit();renderHub();renderStepper();renderBookedCalendar();
+    panel.setAttribute('aria-busy','false');button.disabled=false;status.textContent='';
+  }).withFailureHandler(function(e){
+    panel.setAttribute('aria-busy','false');button.disabled=false;status.className='status-error';
+    document.getElementById('auditStatus').textContent='Auditansicht konnte nicht geladen werden: '+e.message;
+    status.textContent='Register konnte nicht gelesen werden: '+e.message+' Bitte „Register neu lesen“ wählen.';
+    panel.querySelectorAll('.skeleton').forEach(function(node){node.remove()});
+  }).getAuditDashboard();
+}
 document.getElementById('refreshAudit').addEventListener('click',loadAudit);document.getElementById('auditSearch').addEventListener('input',renderAudit);document.getElementById('auditState').addEventListener('change',renderAudit);
 // Keep the same data and actions in compact table cards; labels come from visible column headings.
 document.querySelectorAll('.scroll table').forEach(function(table){
-  var headings=Array.from(table.querySelectorAll('thead th')).map(function(th){return th.textContent.trim()});
   var body=table.tBodies[0];
-  function labelRows(){Array.from(body.rows).forEach(function(row){Array.from(row.cells).forEach(function(cell,index){cell.dataset.label=headings[index]||''})})}
-  new MutationObserver(labelRows).observe(body,{childList:true});
+  function labelRows(){var headings=Array.from(table.querySelectorAll('thead th')).map(function(th){return th.textContent.trim()});Array.from(body.rows).forEach(function(row){Array.from(row.cells).forEach(function(cell,index){cell.dataset.label=headings[index]||''})})}
+  var observer=new MutationObserver(labelRows);observer.observe(body,{childList:true});observers.push(observer);
   labelRows();
 });
-google.script.run.withSuccessHandler(function(d){intake=d;d.topics.forEach(function(t){topic.add(new Option(t.id+' · '+t.name,t.id))});d.people.forEach(function(p){var label=document.createElement('label'),box=document.createElement('input');box.type='checkbox';box.value=p.key;label.appendChild(box);label.appendChild(document.createTextNode(p.alias+' ('+p.key+') · '+p.role));document.getElementById('people').appendChild(label)})}).withFailureHandler(function(e){document.getElementById('error').textContent='Demo-Daten konnten nicht geladen werden: '+e.message}).getIntakeData();
+google.script.run.withSuccessHandler(function(d){intake=d;d.topics.forEach(function(t){topic.add(new Option(t.id+' · '+t.name,t.id))});d.people.forEach(function(p){var label=document.createElement('label'),box=document.createElement('input');box.type='checkbox';box.value=p.key;label.appendChild(box);label.appendChild(document.createTextNode(p.alias+' ('+p.key+') · '+p.role));document.getElementById('people').appendChild(label)});if(auditRequests.length)renderHub()}).withFailureHandler(function(e){document.getElementById('error').textContent='Demo-Daten konnten nicht geladen werden: '+e.message}).getIntakeData();
 google.script.run.withSuccessHandler(function(d){d.topics.forEach(function(t){var tr=document.createElement('tr');[t.id,t.name,t.theory?'Ja':'Nein',t.practice?'Ja':'Nein',[t.theory?'Theorie '+t.theoryMinutes+' Min.':'',t.practice?'Praxis '+t.practiceMinutes+' Min.':''].filter(Boolean).join(' · ')].forEach(function(v){var td=document.createElement('td');td.textContent=v;tr.appendChild(td)});document.getElementById('catalogueRows').appendChild(tr)})}).getCatalogue();
 loadAudit();
+
+return function disposeTrainingApp(){observers.forEach(function(observer){observer.disconnect()});};
+}
 </script></body></html>

@@ -4,8 +4,11 @@ import { dirname, join } from 'node:path';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const output = join(root, 'dist');
-const assets = ['index.html', 'config.js', 'core.js', 'app.js', 'styles.css'];
+const assets = ['index.html', 'config.js', 'core.js', 'app.js', 'styles.css', 'member/index.html', 'member/core.js', 'member/app.js', 'member/styles.css'];
 await rm(output, { recursive: true, force: true });
 await mkdir(output, { recursive: true });
-for (const asset of assets) await copyFile(join(root, asset), join(output, asset));
+for (const asset of assets) {
+  await mkdir(dirname(join(output, asset)), { recursive: true });
+  await copyFile(join(root, asset), join(output, asset));
+}
 console.log(`Built ${assets.length} static participant assets into dist/`);

@@ -172,14 +172,16 @@ function auditView_(tables, now, spreadsheetUrl) {
   });
 }
 
-function getAuditDashboard() {
+function getAuditDashboard_() {
   var spreadsheet = findDemoSpreadsheet_();
-  return auditView_(readDemoTables_(), new Date(), spreadsheet.getUrl()).map(function (request) {
+  var tables = readDemoTables_(), now = new Date();
+  return auditView_(tables, now, spreadsheet.getUrl()).map(function (request) {
     request.cases.forEach(function (row) {
       row.skillUrl = row.skillRowNumber ? spreadsheet.getUrl() + '#gid=' + spreadsheet.getSheetByName('SkillUpdates').getSheetId() + '&range=A' + row.skillRowNumber : '';
       row.archiveReceiptUrl = row.receiptRowNumber ? spreadsheet.getUrl() + '#gid=' + spreadsheet.getSheetByName('ArchiveReceipts').getSheetId() + '&range=A' + row.receiptRowNumber : '';
     });
-    return request;
+    var stored = tables.Requests.filter(function (row) { return row.request_id === request.requestId; })[0];
+    return deadlineRequestView_(tables, stored, request, now);
   });
 }
 
@@ -291,12 +293,12 @@ function processAuditNoticesCore_(clock, gateway) {
   } finally { lock.releaseLock(); }
 }
 
-function processAuditNotices() { return processAuditNoticesCore_(); }
+function processAuditNotices_() { return processAuditNoticesCore_(); }
 
-function installAuditNoticeProcessor() {
-  var found = ScriptApp.getProjectTriggers().filter(function (trigger) { return trigger.getHandlerFunction() === 'processAuditNotices'; });
+function installAuditNoticeProcessor_() {
+  var found = ScriptApp.getProjectTriggers().filter(function (trigger) { return trigger.getHandlerFunction() === 'processAuditNotices_'; });
   if (found.length > 1) throw new Error('Mehrere tägliche Abschluss-Trigger gefunden.');
   if (found.length) return { installed: false, count: 1 };
-  ScriptApp.newTrigger('processAuditNotices').timeBased().atHour(9).everyDays(1).inTimezone(SLOT_TIME_ZONE).create();
+  ScriptApp.newTrigger('processAuditNotices_').timeBased().atHour(9).everyDays(1).inTimezone(SLOT_TIME_ZONE).create();
   return { installed: true, count: 1 };
 }

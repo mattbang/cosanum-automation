@@ -131,7 +131,7 @@ ctx.Session={getEffectiveUser:()=>({getEmail:()=> 'owner@example.com'})};
 ctx.LockService={getScriptLock:()=>({waitLock:()=>{},releaseLock:()=>{}})};
 ctx.FormApp={openById:()=>({collectsEmail:()=>true})};
 ctx.ScriptApp={...ctx.ScriptApp,getProjectTriggers:()=>[{
-  getHandlerFunction:()=> 'onParticipantFormSubmit',getTriggerSourceId:()=> 'FORM-ONE'
+  getHandlerFunction:()=> 'processVerifiedFormResponses_'
 }]};
 ctx.findDemoSpreadsheet_=()=>({getSheetByName:()=>({getDataRange:()=>({getValues:()=>savedRows}),
   getRange:(row,col,count,width)=>({setValues:values=>{
@@ -139,22 +139,22 @@ ctx.findDemoSpreadsheet_=()=>({getSheetByName:()=>({getDataRange:()=>({getValues
     savedRows[1][9]=values[0][0];savedRows[1][10]=values[0][1];
   }})})});
 participantRestFailure=true;
-const pendingPreparation=ctx.prepareParticipantForm({sessionId:'SES-THEORY',caseId:'CASE-ONE'});
+const pendingPreparation=ctx.prepareParticipantForm_({sessionId:'SES-THEORY',caseId:'CASE-ONE'});
 assert.equal(pendingPreparation.reused,true);
 assert.equal(pendingPreparation.formUrl,'','pending Form must not expose responder link');
 assert.equal(pendingPreparation.needsVerifiedReview,true);
-assert.throws(()=>ctx.confirmParticipantVerifiedEmail({sessionId:'SES-THEORY',caseId:'CASE-ONE'}),/prüfen und bestätigen/);
-assert.throws(()=>ctx.confirmParticipantVerifiedEmail({sessionId:'SES-THEORY',caseId:'CASE-ONE',confirmation:true}),/Forms API GET fehlgeschlagen/);
+assert.throws(()=>ctx.confirmParticipantVerifiedEmail_({sessionId:'SES-THEORY',caseId:'CASE-ONE'}),/prüfen und bestätigen/);
+assert.throws(()=>ctx.confirmParticipantVerifiedEmail_({sessionId:'SES-THEORY',caseId:'CASE-ONE',confirmation:true}),/Forms API GET fehlgeschlagen/);
 participantRestFailure=false;
-assert.equal(ctx.confirmParticipantVerifiedEmail({sessionId:'SES-THEORY',caseId:'CASE-ONE',confirmation:true}).verifiedBy,'forms-api:owner@example.com');
+assert.equal(ctx.confirmParticipantVerifiedEmail_({sessionId:'SES-THEORY',caseId:'CASE-ONE',confirmation:true}).verifiedBy,'forms-api:owner@example.com');
 assert.equal(savedRows[1][10],'forms-api:owner@example.com');
 tables.ParticipantForms=[formRow];
-const reviewedPreparation=ctx.prepareParticipantForm({sessionId:'SES-THEORY',caseId:'CASE-ONE'});
+const reviewedPreparation=ctx.prepareParticipantForm_({sessionId:'SES-THEORY',caseId:'CASE-ONE'});
 assert.equal(reviewedPreparation.reused,true);
 assert.equal(reviewedPreparation.formUrl,formRow.form_url);
 assert.equal(ctx.participantAcknowledgementDecision_(context,{...formRow,verified_at:'',verified_by:''},response('R-PENDING'),[],gate).disposition,'rejected');
 ctx.Session={getEffectiveUser:()=>({getEmail:()=> 'other@example.com'})};
-assert.throws(()=>ctx.confirmParticipantVerifiedEmail({sessionId:'SES-THEORY',caseId:'CASE-ONE',confirmation:true}),/Nur Process & Quality/);
+assert.throws(()=>ctx.confirmParticipantVerifiedEmail_({sessionId:'SES-THEORY',caseId:'CASE-ONE',confirmation:true}),/Nur Process & Quality/);
 
 const replay = vm.createContext({ Date, Object, Array, Number, String, RegExp, Error, Set });
 vm.runInContext(fs.readFileSync('apps-script/ParticipantAcknowledgement.gs', 'utf8'), replay);

@@ -122,7 +122,7 @@ function formDispatchPrepareOne_(sessionId, caseId, now) {
   var reports = tables.TrainerAssessments.filter(function (row) {
     return row.session_id === sessionId && row.case_id === caseId && row.demo_marker === '[DEMO]' && row.disposition === 'accepted';
   });
-  if (!reports.length) prepareTrainerForm({ sessionId: sessionId, caseId: caseId });
+  if (!reports.length) prepareTrainerForm_({ sessionId: sessionId, caseId: caseId });
   var trainerForm = trainerFormRow_(readDemoTables_(), sessionId, caseId);
   if (trainerForm) FormApp.openById(trainerForm.form_id).getResponses().forEach(function (response) {
     processTrainerResponse_(trainerForm.form_id, response);
@@ -130,7 +130,7 @@ function formDispatchPrepareOne_(sessionId, caseId, now) {
   tables = readDemoTables_();
   context = trainerCaseContext_(tables, sessionId, caseId);
   if (!participantAcknowledgementGate_(tables, context).allowed) return;
-  if (!followUpAccepted_(tables, sessionId, caseId)) prepareParticipantForm({ sessionId: sessionId, caseId: caseId });
+  if (!followUpAccepted_(tables, sessionId, caseId)) prepareParticipantForm_({ sessionId: sessionId, caseId: caseId });
   var participantForm = participantFormRow_(readDemoTables_(), sessionId, caseId);
   if (participantForm) FormApp.openById(participantForm.form_id).getResponses().forEach(function (response) {
     processParticipantResponse_(participantForm.form_id, response);
@@ -191,21 +191,21 @@ function processFormRequestsCore_(clock, gateway, options) {
 var FORM_DISPATCH_ACTIVATED_AT_KEY = 'COSANUM_FORM_DISPATCH_ACTIVATED_AT';
 
 /** The scheduled path excludes sessions that had already ended when it was installed. */
-function processFormRequests() {
+function processFormRequests_() {
   var activatedAt = PropertiesService.getScriptProperties().getProperty(FORM_DISPATCH_ACTIVATED_AT_KEY);
   if (!activatedAt) throw new Error('Formularversand ist noch nicht aktiviert.');
   return processFormRequestsCore_(undefined, undefined, { notBeforeUtc: activatedAt });
 }
 
 /** Explicit single-case replay; inspect preview before calling this on historical demo cases. */
-function processFormRequestFor(input) {
+function processFormRequestFor_(input) {
   if (!input || typeof input.sessionId !== 'string' || typeof input.caseId !== 'string' ||
       !input.sessionId.trim() || !input.caseId.trim()) throw new Error('Session und Personenfall fehlen.');
   return processFormRequestsCore_(undefined, undefined, { target: { sessionId: input.sessionId, caseId: input.caseId } });
 }
 
 /** Read-only list of ended sessions that a manually initiated run could touch. */
-function previewFormRequestBacklog() {
+function previewFormRequestBacklog_() {
   var now = new Date(), tables = readDemoTables_();
   var activatedAt = PropertiesService.getScriptProperties().getProperty(FORM_DISPATCH_ACTIVATED_AT_KEY);
   return tables.Sessions.filter(function (session) {
@@ -228,8 +228,8 @@ function previewFormRequestBacklog() {
   });
 }
 
-function installFormRequestProcessor() {
-  var found = ScriptApp.getProjectTriggers().filter(function (trigger) { return trigger.getHandlerFunction() === 'processFormRequests'; });
+function installFormRequestProcessor_() {
+  var found = ScriptApp.getProjectTriggers().filter(function (trigger) { return trigger.getHandlerFunction() === 'processFormRequests_'; });
   if (found.length > 1) throw new Error('Mehrere Formularversand-Trigger gefunden.');
   var properties = PropertiesService.getScriptProperties();
   if (found.length) {
@@ -239,6 +239,6 @@ function installFormRequestProcessor() {
   // A removed or failed trigger leaves no active daily processor. A fresh
   // installation starts a fresh cutoff, so the gap cannot turn into backlog mail.
   properties.setProperty(FORM_DISPATCH_ACTIVATED_AT_KEY, new Date().toISOString());
-  ScriptApp.newTrigger('processFormRequests').timeBased().atHour(9).everyDays(1).inTimezone(SLOT_TIME_ZONE).create();
+  ScriptApp.newTrigger('processFormRequests_').timeBased().atHour(9).everyDays(1).inTimezone(SLOT_TIME_ZONE).create();
   return { installed: true, count: 1 };
 }

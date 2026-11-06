@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="de-CH">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#452347">
+    <meta name="description" content="Ihre persönlichen Schulungen, Termine und freigegebenen Aufgaben.">
+    <meta name="robots" content="noindex,nofollow">
+    <meta name="referrer" content="no-referrer">
+    <title>Cosanum · Meine Schulungen</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='8' fill='%23452347'/%3E%3Ctext x='20' y='29' text-anchor='middle' fill='white' font-family='sans-serif' font-size='28'%3EC%3C/text%3E%3C/svg%3E">
+    <link rel="stylesheet" href="./styles.css">
+    <script type="module" src="./app.js"></script>
+  </head>
+  <body>
+    <a class="skip-link button-sm" href="#main">Zum Inhalt</a>
+    <div class="app-shell">
+      <header class="app-bar">
+        <a class="brand" href="./" aria-label="Cosanum, meine Schulungen">
+          <span class="brand-mark" aria-hidden="true">C</span>
+          <span class="title-3">Cosanum<small class="caption-4">Schulungen</small></span>
+        </a>
+        <div id="account-control" class="account-control" hidden>
+          <button id="account-button" class="account-badge title-3" type="button" aria-label="Kontomenü öffnen" aria-haspopup="menu" aria-expanded="false" aria-controls="account-menu"></button>
+          <div id="account-menu" class="account-menu" role="menu" aria-label="Mein Konto" hidden>
+            <div class="account-identity" role="presentation">
+              <strong id="account-name" class="title-3"></strong>
+              <span id="account-email" class="body-6"></span>
+            </div>
+            <button id="profile-button" class="button-sm" type="button" role="menuitem">Mein Profil</button>
+            <button id="switch-account" class="button-sm" type="button" role="menuitem">Konto wechseln</button>
+            <button id="logout-button" class="logout-action button-sm" type="button" role="menuitem">Abmelden</button>
+          </div>
+        </div>
+        <span id="private-label" class="marker caption-4">Persönlicher Zugang</span>
+      </header>
+
+      <main id="main" tabindex="-1" aria-busy="true">
+        <div id="notice" class="notice body-6" role="status" aria-live="polite" hidden></div>
+        <div id="error" class="notice notice-error body-6" role="alert" hidden></div>
+
+        <section id="loading-view" class="loading-panel" aria-labelledby="loading-heading">
+          <p class="eyebrow caption-4">Meine Schulungen</p>
+          <h1 id="loading-heading" class="heading-4">Ihr Zugang wird geprüft</h1>
+          <p class="body-3 muted">Einen Moment bitte. Wir laden Ihren aktuellen Stand.</p>
+          <div class="skeleton-list" aria-hidden="true">
+            <div class="skeleton skeleton-title"></div><div class="skeleton skeleton-line"></div>
+            <div class="skeleton skeleton-line short"></div>
+          </div>
+        </section>
+
+        <section id="login-view" class="login-layout" aria-labelledby="login-heading" hidden>
+          <div class="login-intro">
+            <span class="section-label caption-4">Ihr persönlicher Arbeitsbereich</span>
+            <h1 id="login-heading" class="heading-3">Ihre Schulungen<br>im Blick</h1>
+            <p class="body-3 muted">Hier finden Sie Ihre zugeordneten Termine und sehen, welcher Schritt als Nächstes ansteht.</p>
+            <div class="login-preview" aria-hidden="true">
+              <span class="preview-accent"></span>
+              <div><span class="caption-4">Meine Aufgaben</span><strong class="heading-6">Der nächste Schritt zählt.</strong></div>
+              <div class="preview-lines"><span></span><span></span><span></span></div>
+            </div>
+          </div>
+          <div class="login-card">
+            <h2 id="access-heading" class="heading-5">Willkommen</h2>
+            <p id="identity-instruction" class="body-3 muted">Melden Sie sich mit dem Google-Konto an, das für Ihre Schulungen hinterlegt ist.</p>
+            <p id="identity-status" class="body-6" role="status" aria-live="polite"></p>
+            <button id="sign-in" class="button button-primary button-md" type="button" disabled>Mit Google anmelden</button>
+            <div id="google-button" class="google-button" aria-label="Google-Anmeldung" hidden></div>
+            <button id="cancel-login" class="button button-quiet button-sm" type="button" hidden>Anmeldung abbrechen</button>
+            <button id="retry-logout" class="button button-primary button-md" type="button" hidden>Abmeldung erneut versuchen</button>
+            <button id="retry-config" class="button button-primary button-md" type="button" hidden>Zugang erneut prüfen</button>
+            <p class="login-help body-6 muted">Sie sehen die Aufgaben Ihrer zugewiesenen Rolle. Bei Zugriffsfragen hilft Ihnen Process &amp; Quality.</p>
+          </div>
+        </section>
+
+        <section id="member-view" aria-labelledby="member-heading" hidden>
+          <div class="member-heading">
+            <div><p id="greeting" class="eyebrow caption-4"></p><h1 id="member-heading" class="heading-3">Meine Schulungen</h1><p id="role-intro" class="body-3 muted"></p></div>
+            <button id="refresh-tasks" class="button button-secondary button-sm" type="button">Stand aktualisieren</button>
+          </div>
+          <div id="role-tabs" class="role-tabs" role="tablist" aria-label="Meine Rollen" hidden></div>
+          <div class="work-layout">
+            <div class="tasks-panel">
+              <div class="task-filters" role="tablist" aria-label="Aufgabenstatus">
+                <button id="current-tab" class="filter-button button-sm" role="tab" type="button" aria-selected="true" aria-controls="task-content" tabindex="0">Aktuell <span id="current-count" class="caption-4">0</span></button>
+                <button id="complete-tab" class="filter-button button-sm" role="tab" type="button" aria-selected="false" aria-controls="task-content" tabindex="-1">Abgeschlossen <span id="complete-count" class="caption-4">0</span></button>
+              </div>
+              <div id="task-content" role="tabpanel" aria-labelledby="current-tab" tabindex="0">
+                <div id="task-loading" class="task-loading" hidden><p class="body-6 muted">Ihr aktueller Stand wird geladen …</p><div class="skeleton-list" aria-hidden="true"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-line"></div><div class="skeleton skeleton-line short"></div></div></div>
+                <div id="tasks-error" class="empty-state" hidden><h2 class="heading-6">Stand nicht verfügbar</h2><p class="body-6 muted">Ihre Aufgaben konnten nicht geprüft werden. Bitte aktualisieren Sie den Stand.</p></div>
+                <div id="empty-state" class="empty-state" hidden><span class="empty-mark" aria-hidden="true">✓</span><h2 id="empty-heading" class="heading-6"></h2><p id="empty-copy" class="body-6 muted"></p></div>
+                <ul id="task-list" class="task-list" aria-label="Meine Schulungsaufgaben"></ul>
+              </div>
+            </div>
+            <aside class="context-panel" aria-labelledby="context-heading">
+              <span class="section-label caption-4">Gut zu wissen</span>
+              <h2 id="context-heading" class="heading-6">Ihr nächster Schritt</h2>
+              <p id="role-guidance" class="body-6 muted"></p>
+              <p class="body-6 muted">Eine Aufgabe gilt erst dann als erledigt, wenn der aktualisierte Schulungsstand dies bestätigt.</p>
+              <div class="checked-at"><span class="caption-4 muted">Zuletzt geprüft</span><strong id="checked-at" class="body-6">Noch nicht geladen</strong></div>
+            </aside>
+          </div>
+        </section>
+      </main>
+
+      <footer class="app-footer caption-4">Cosanum · Persönliche Schulungen</footer>
+    </div>
+
+    <dialog id="profile-dialog" aria-labelledby="profile-heading">
+      <div class="dialog-heading"><h2 id="profile-heading" class="heading-5">Mein Profil</h2><button id="close-profile" class="button button-quiet button-sm" type="button" aria-label="Profil schliessen">Schliessen</button></div>
+      <p class="body-6 muted">Diese Angaben werden für Ihren Schulungszugang verwendet.</p>
+      <dl id="profile-details" class="profile-details body-6"></dl>
+      <p class="profile-help body-6 muted">Änderungen können Sie bei Process &amp; Quality melden.</p>
+    </dialog>
+    <noscript><p class="noscript body-3">Bitte aktivieren Sie JavaScript, um sich anzumelden und Ihre Schulungen zu sehen.</p></noscript>
+  </body>
+</html>

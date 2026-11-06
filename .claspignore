@@ -5,6 +5,7 @@
 !Catalogue.gs
 !SheetGateway.gs
 !Intake.gs
+!Deadlines.gs
 !PhasePlan.gs
 !Availability.gs
 !CalendarGateway.gs
@@ -23,5 +24,6 @@
 !FormDispatch.gs
 !Setup.gs
 !Code.gs
+!Session.gs
 !PrivateFixture.gs
 !Index.html

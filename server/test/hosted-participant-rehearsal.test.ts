@@ -95,21 +95,26 @@ async function withHeadlessChrome<T>(origin: string, operation: (page: DevToolsP
   const profile = await mkdtemp(join(tmpdir(), 'cosanum-participant-chrome-'));
   let chrome: ChildProcess | undefined;
   let page: DevToolsPage | undefined;
+  let stderrTail = '';
+  let launchError = '';
   try {
     chrome = spawn(CHROME_PATH, [
       '--headless=new', '--remote-debugging-port=0', `--user-data-dir=${profile}`, '--remote-allow-origins=*',
       '--disable-background-networking', '--disable-component-update', '--disable-default-apps', '--disable-extensions',
       '--disable-sync', '--metrics-recording-only', '--no-first-run', '--no-default-browser-check', 'about:blank',
-    ], { stdio: 'ignore' });
+    ], { stdio: ['ignore', 'ignore', 'pipe'] });
+    chrome.stderr?.on('data', chunk => { stderrTail = (stderrTail + String(chunk)).slice(-2000); });
+    chrome.on('error', error => { launchError = error.message; });
+    const startupDiagnostic = () => `exit=${chrome?.exitCode ?? 'pending'}, signal=${chrome?.signalCode ?? 'none'}, spawn=${launchError || 'none'}, stderr=${stderrTail.trim() || 'empty'}`;
     const activePortPath = join(profile, 'DevToolsActivePort');
     let port = '';
-    for (let attempt = 0; attempt < 100; attempt++) {
+    for (let attempt = 0; attempt < 400; attempt++) {
       try { port = (await readFile(activePortPath, 'utf8')).split('\n')[0] ?? ''; if (port) break; }
       catch { /* Chrome is still starting. */ }
-      if (chrome.exitCode !== null) throw new Error(`Headless Chrome exited during startup (${chrome.exitCode})`);
+      if (launchError || chrome.exitCode !== null || chrome.signalCode !== null) throw new Error(`Headless Chrome exited during startup (${startupDiagnostic()})`);
       await new Promise(resolveWait => setTimeout(resolveWait, 50));
     }
-    if (!port) throw new Error('Headless Chrome did not publish its DevTools port');
+    if (!port) throw new Error(`Headless Chrome did not publish its DevTools port (${startupDiagnostic()})`);
     const target = await fetch(`http://127.0.0.1:${port}/json/new?about:blank`, { method: 'PUT' });
     assert.equal(target.status, 200, 'Chrome creates a temporary blank tab');
     const targetInfo = await target.json() as { webSocketDebuggerUrl: string };
@@ -152,7 +157,7 @@ async function withHeadlessChrome<T>(origin: string, operation: (page: DevToolsP
     return result;
   } finally {
     page?.close();
-    if (chrome && chrome.exitCode === null) {
+    if (chrome && chrome.exitCode === null && chrome.signalCode === null) {
       const exited = new Promise<void>(resolveExit => chrome!.once('exit', () => resolveExit()));
       chrome.kill('SIGTERM');
       await Promise.race([exited, new Promise(resolveWait => setTimeout(resolveWait, 1500))]);

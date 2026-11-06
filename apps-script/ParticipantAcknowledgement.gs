@@ -70,11 +70,7 @@ function assertParticipantFormAssignment_(formRow, context) {
 }
 
 function ensureParticipantFormTrigger_(formId) {
-  var matches = ScriptApp.getProjectTriggers().filter(function (trigger) {
-    return trigger.getHandlerFunction() === 'onParticipantFormSubmit' && trigger.getTriggerSourceId() === formId;
-  });
-  if (matches.length > 1) throw new Error('Mehrere Abgabe-Trigger für dasselbe Teilnahmeformular.');
-  if (!matches.length) ScriptApp.newTrigger('onParticipantFormSubmit').forForm(formId).onFormSubmit().create();
+  ensureFormResponseProcessor_();
 }
 
 function buildParticipantForm_(context, createForm, folder) {
@@ -99,7 +95,7 @@ function buildParticipantForm_(context, createForm, folder) {
   return { formId: form.getId(), formUrl: form.getPublishedUrl() };
 }
 
-function prepareParticipantForm(input) {
+function prepareParticipantForm_(input) {
   if (!input || typeof input.sessionId !== 'string' || typeof input.caseId !== 'string') throw new Error('Session und Personenfall fehlen.');
   var lock = LockService.getScriptLock();
   lock.waitLock(30000);
@@ -114,11 +110,7 @@ function prepareParticipantForm(input) {
       if (typeof input.requireExistingFormId !== 'string' || !saved || saved.form_id !== input.requireExistingFormId) {
         throw new Error('Erwartetes bestehendes Teilnahmeformular fehlt; keine Neuanlage.');
       }
-      var expectedTriggers = ScriptApp.getProjectTriggers().filter(function (trigger) {
-        return trigger.getHandlerFunction() === 'onParticipantFormSubmit' &&
-          trigger.getTriggerSourceId() === saved.form_id;
-      });
-      if (expectedTriggers.length !== 1 || !saved.verified_at || !saved.verified_by) {
+      if (!formsResponseTriggerReady_(saved.form_id, 'onParticipantFormSubmit') || !saved.verified_at || !saved.verified_by) {
         throw new Error('Bestehendes Teilnahmeformular ist für eine schreibfreie Wiederholung nicht bereit.');
       }
     }
@@ -152,7 +144,7 @@ function prepareParticipantForm(input) {
 }
 
 /** Manual fallback when Forms REST could not verify the setting. */
-function confirmParticipantVerifiedEmail(input) {
+function confirmParticipantVerifiedEmail_(input) {
   if (!input || input.confirmation !== true || typeof input.sessionId !== 'string' || typeof input.caseId !== 'string') {
     throw new Error('Bitte die Einstellung „Verifiziert“ im Google-Formular prüfen und bestätigen.');
   }
@@ -287,11 +279,13 @@ function reconcileParticipantResponsesLocked_(tables, formRow) {
 }
 
 function onParticipantFormSubmit(event) {
-  if (!event || !event.source || !event.response) throw new Error('Formularereignis fehlt.');
+  if (!event || !event.source || typeof event.source.getId !== 'function' || !event.response ||
+      typeof event.response.getId !== 'function' || typeof event.response.getTimestamp !== 'function' ||
+      typeof event.response.getRespondentEmail !== 'function') throw new Error('Gültiges Google-Formularereignis fehlt.');
   return processParticipantResponse_(event.source.getId(), event.response);
 }
 
-function refreshParticipantAcknowledgements() {
+function refreshParticipantAcknowledgements_() {
   var tables = readDemoTables_();
   var results = [];
   tables.ParticipantForms.filter(function (row) { return row.demo_marker === '[DEMO]'; }).forEach(function (row) {
@@ -343,4 +337,4 @@ function participantAcknowledgementQueue_() {
   }, []);
 }
 
-function getParticipantAcknowledgementQueue() { return participantAcknowledgementQueue_(); }
+function getParticipantAcknowledgementQueue_() { return participantAcknowledgementQueue_(); }

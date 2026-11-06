@@ -9,9 +9,10 @@ import { dirname, resolve } from 'node:path';
 test('adapter supplies synthetic read views and rejects writes and unknown calls', async () => {
   const code = await readFile(resolve(dirname(fileURLToPath(import.meta.url)), 'local_preview_adapter.js'), 'utf8');
   const alert = { textContent: '', hidden: true };
+  let handleClick;
   const context = {
     window: {},
-    document: { getElementById: () => alert, addEventListener: () => {} },
+    document: { getElementById: () => alert, addEventListener: (type, handler) => { if (type === 'click') handleClick = handler; } },
     queueMicrotask
   };
   runInNewContext(code, context);
@@ -51,6 +52,12 @@ test('adapter supplies synthetic read views and rejects writes and unknown calls
   assert.equal(exceptionRows.filter(row => row.flag === 'declined').length, 1);
   assert.equal(exceptionRows.find(row => row.flag === 'declined').responseStatus, 'declined');
   assert.equal(rsvp.errors.length, 0);
+  const readRsvp=(await call('getRsvpStatus')).value;
+  assert.equal(readRsvp.persisted,false);
+  assert.equal(readRsvp.rows.length,rsvp.rows.length);
+  const skillRows=(await call('getSkillUpdateQueue')).value;
+  assert.equal(skillRows.length,dashboard.value.reduce((count,request)=>count+request.cases.length,0));
+  assert.equal(skillRows.filter(row=>row.state==='applied').length,2);
   assert.equal(rsvp.rows.filter(row => row.caseId.startsWith('SAMPLE-INDIVIDUAL-')).length, 0);
   assert.equal(rsvp.rows.filter(row => row.caseId.startsWith('SAMPLE-GROUP-')).length, 4);
   const groupPlan = (await call('getSavedPhasePlan', 'SAMPLE-GROUP')).value;
@@ -59,11 +66,23 @@ test('adapter supplies synthetic read views and rejects writes and unknown calls
     assert.equal(row.startUtc, groupPlan.phases.find(phase => phase.sessionId === row.sessionId).startUtc);
   }
   assert.match((await call('saveDraftRequest')).error, /blocked saveDraftRequest/);
+  assert.match((await call('saveRequestDeadline')).error, /blocked saveRequestDeadline/);
   assert.match((await call('processVerifiedSkillUpdates')).error, /blocked processVerifiedSkillUpdates/);
   assert.match((await call('refreshRsvpStatus')).error, /blocked refreshRsvpStatus/);
   assert.match((await call('unknownRpc')).error, /blocked unknownRpc/);
   assert.match(alert.textContent, /blocked unknownRpc/);
   assert.equal(alert.hidden, false);
+  for (const [href, target, expectedBlocked] of [
+    ['#workspace', '_self', false],
+    ['#workspace', '_top', true],
+    ['https://example.test/#workspace', '_self', true],
+    ['https://example.test/', '_blank', true]
+  ]) {
+    let blocked = false;
+    handleClick({ target: { closest: () => ({ getAttribute: name => name === 'href' ? href : target }) },
+      preventDefault: () => { blocked = true; } });
+    assert.equal(blocked, expectedBlocked, `preview navigation boundary: ${href} ${target}`);
+  }
 });
 
 test('serves the real client with an offline adapter and no repository file routes', async () => {

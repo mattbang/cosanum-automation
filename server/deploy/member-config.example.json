@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "approved": false,
+  "origin": "https://members.example.invalid",
+  "googleClientId": "000000000000-REPLACE_WITH_APPROVED_WEB_CLIENT.apps.googleusercontent.com",
+  "spreadsheetId": "REPLACE_WITH_APPROVED_PRIVATE_WORKBOOK_ID",
+  "members": [
+    { "personKey": "TRAINER_EXAMPLE", "roles": ["assigned_trainer"], "active": false },
+    { "personKey": "PARTICIPANT_EXAMPLE", "roles": ["assigned_participant"], "active": false }
+  ]
+}

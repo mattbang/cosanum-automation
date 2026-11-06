@@ -85,3 +85,80 @@ function formsReadyForLink_(formRow, ownerEmail) {
   try { return formsIdentityGate_(formRow, ownerEmail).allowed; }
   catch (error) { return false; }
 }
+
+/** One response poller covers every retained Form, instead of one trigger per Form. */
+function formsResponseTriggerReady_(formId, handler) {
+  var triggers = ScriptApp.getProjectTriggers();
+  var shared = triggers.filter(function (trigger) { return trigger.getHandlerFunction() === 'processVerifiedFormResponses_'; });
+  var legacy = triggers.filter(function (trigger) {
+    return trigger.getHandlerFunction() === handler && trigger.getTriggerSourceId() === formId;
+  });
+  if (shared.length > 1 || legacy.length > 1) throw new Error('Mehrere Antwort-Trigger vorhanden.');
+  return shared.length === 1 || legacy.length === 1;
+}
+
+/** Caller holds the script lock. Only registered demo Form handlers are retired. */
+function ensureFormResponseProcessor_() {
+  var tables = readDemoTables_();
+  var triggers = ScriptApp.getProjectTriggers();
+  var shared = triggers.filter(function (trigger) { return trigger.getHandlerFunction() === 'processVerifiedFormResponses_'; });
+  if (shared.length > 1) throw new Error('Mehrere Formular-Antwortprozessoren vorhanden.');
+  var legacy = triggers.filter(function (trigger) {
+    var handler = trigger.getHandlerFunction();
+    var rows = handler === 'onTrainerFormSubmit' ? tables.TrainerForms :
+      handler === 'onParticipantFormSubmit' ? tables.ParticipantForms : [];
+    return (rows || []).some(function (row) {
+      return row.demo_marker === '[DEMO]' && row.form_id === trigger.getTriggerSourceId();
+    });
+  });
+  if (!shared.length) {
+    if (triggers.length >= 20) {
+      throw new Error('Trigger-Kapazität erreicht. Bitte im Apps-Script-Editor einen freien Triggerplatz bereitstellen und erneut versuchen. Bestehende Trigger bleiben unverändert.');
+    }
+    ScriptApp.newTrigger('processVerifiedFormResponses_').timeBased().everyMinutes(5).create();
+  }
+  legacy.forEach(function (trigger) { ScriptApp.deleteTrigger(trigger); });
+}
+
+function installVerifiedFormResponseProcessor_() {
+  var lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try { ensureFormResponseProcessor_(); return { count: 1 }; }
+  finally { lock.releaseLock(); }
+}
+
+function processVerifiedFormResponses_() {
+  var result = { processed: 0, saved: 0, skipped: 0, errors: [] };
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(1)) { result.busy = true; return result; }
+  try {
+    ['TrainerForms', 'ParticipantForms'].forEach(function (name) {
+      var forms, recorded;
+      try {
+        var tables = readDemoTables_();
+        var ledger = name === 'TrainerForms' ? 'TrainerAssessments' : 'ParticipantAcknowledgements';
+        recorded = new Set(tables[ledger].map(function (row) { return JSON.stringify([row.form_id, row.response_id]); }));
+        forms = tables[name].filter(function (row) { return row.demo_marker === '[DEMO]'; });
+      } catch (_) { result.errors.push({}); return; }
+      forms.forEach(function (row) {
+        try {
+          FormApp.openById(row.form_id).getResponses().forEach(function (response) {
+            try {
+              var key = JSON.stringify([row.form_id, String(response.getId() || '')]);
+              if (recorded.has(key)) { result.skipped++; return; }
+              var attempt = name === 'TrainerForms' ? processTrainerResponseLocked_(row.form_id, response) :
+                processParticipantResponseLocked_(row.form_id, response);
+              recorded.add(key);
+              result.processed++;
+              if (attempt.saved) result.saved++;
+            } catch (_) { result.errors.push({}); }
+          });
+        } catch (_) { result.errors.push({}); }
+      });
+    });
+    if (result.errors.length) {
+      throw new Error('Formular-Antwortabgleich fehlgeschlagen: ' + result.errors.length + ' Fehler; ' + result.saved + ' Antworten gespeichert.');
+    }
+    return result;
+  } finally { lock.releaseLock(); }
+}

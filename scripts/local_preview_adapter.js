@@ -8,14 +8,15 @@
     { key: 'P04', alias: 'Kim (synthetisch)', role: 'Teilnehmende Person' }
   ];
   const topics = [
-    { id: 'TC_R030', name: 'Beispielprozess A (synthetisch)', progression: true, configuredTarget: null, theory: true, practice: true, theoryMinutes: 60, practiceMinutes: 180 },
-    { id: 'TC_R027', name: 'Beispielprozess B (synthetisch)', progression: true, configuredTarget: null, theory: true, practice: false, theoryMinutes: 60, practiceMinutes: 0 },
-    { id: 'TC_R033', name: 'Beispielprozess C (synthetisch)', progression: false, configuredTarget: 2, theory: true, practice: true, theoryMinutes: 60, practiceMinutes: 180 },
-    { id: 'TC_R052', name: 'Beispielprozess D (synthetisch)', progression: true, configuredTarget: null, theory: true, practice: true, theoryMinutes: 60, practiceMinutes: 180 },
-    { id: 'TC_R077', name: 'Beispielprozess E (synthetisch)', progression: false, configuredTarget: 1, theory: true, practice: false, theoryMinutes: 60, practiceMinutes: 0 }
+    { id: 'TC_R030', name: 'Beispielprozess A (synthetisch)', progression: true, configuredTarget: null, theory: true, practice: true, theoryMinutes: 60, practiceMinutes: 180, sourceMaterial: 'Synthetische Quelle A' },
+    { id: 'TC_R027', name: 'Beispielprozess B (synthetisch)', progression: true, configuredTarget: null, theory: true, practice: false, theoryMinutes: 60, practiceMinutes: 0, sourceMaterial: 'Synthetische Quelle B' },
+    { id: 'TC_R033', name: 'Beispielprozess C (synthetisch)', progression: false, configuredTarget: 2, theory: true, practice: true, theoryMinutes: 60, practiceMinutes: 180, sourceMaterial: 'Synthetische Quelle C' },
+    { id: 'TC_R052', name: 'Beispielprozess D (synthetisch)', progression: true, configuredTarget: null, theory: true, practice: true, theoryMinutes: 60, practiceMinutes: 180, sourceMaterial: 'Synthetische Quelle D' },
+    { id: 'TC_R077', name: 'Beispielprozess E (synthetisch)', progression: false, configuredTarget: 1, theory: true, practice: false, theoryMinutes: 60, practiceMinutes: 0, sourceMaterial: 'Synthetische Quelle E' }
   ];
   function phase(requestId, phaseName, booked, completed, declined) {
     return { phase: phaseName, sessionId: `${requestId}-${phaseName === 'theory' ? 'T' : 'P'}`,
+      startUtc: booked ? sampleStartUtc(requestId, phaseName) : '',
       rsvp: booked ? declined ? 'declined' : 'accepted' : '',
       attendance: completed ? 'attended' : '', result: completed ? 'passed' : '',
       trainerResponseId: completed ? 'SAMPLE-TRAINER' : '', acknowledgementResponseId: completed ? 'SAMPLE-ACK' : '',
@@ -26,6 +27,8 @@
     return { caseId: `${requestId}-${person.key}`, personKey: person.key, personAlias: person.alias,
       state, reasonCode: reasonCode || '', reason: state === 'open' ? 'Synthetische Absage prüfen.' : state === 'waiting' ? booked ? 'Bestätigung und Nachweis stehen aus.' : 'Termin noch nicht gebucht.' : '',
       nextAction: state === 'open' ? 'Ersatztermin für diese Person prüfen.' : state === 'waiting' ? booked ? 'Belege prüfen.' : 'Freien Termin prüfen.' : 'Keiner',
+      currentTask: { action: completed ? 'complete' : reasonCode === 'declined' ? 'reschedule' : booked ? 'trainer_assessment' : 'booking',
+        actorKey: completed ? person.key : reasonCode === 'declined' || !booked ? 'MATT' : 'P03', state: completed ? 'complete' : 'suggested' },
       previousLevel: 1, targetLevel: 2, phases: phaseNames.map(name => phase(requestId, name, booked, completed, reasonCode === 'declined')),
       proofId: completed ? 'SAMPLE-PROOF' : '', archiveStatus: completed ? 'archived_verified' : '', archiveVerifiedAt: completed ? 'SAMPLE-TIME' : '',
       skillStatus: completed ? 'applied' : '', skillKey: '', docUrl: '', pdfUrl: '', archiveReceiptUrl: '', skillUrl: '' };
@@ -40,6 +43,22 @@
     if (requestId === 'SAMPLE-EXCEPTION') return '2027-01-12T09:00:00Z';
     return '';
   }
+  const fixtureToday = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Zurich', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+  function fixtureDate(offset) { return new Date(Date.parse(fixtureToday + 'T12:00:00Z') + offset * 86400000).toISOString().slice(0, 10); }
+  function deadlineSource(source, date, reference) { return { source, date, originalDate: date, revision: 1, reference, ownerKey: 'MATT',
+    history: [{ date, revision: 1, reference, reason: 'Synthetisches Fristbeispiel', recordedAt: fixtureToday + 'T08:00:00Z', actorEmail: 'offline@example.test' }] }; }
+  requests.forEach(request => {
+    const requestDate = deadlineSource('request', fixtureDate(request.requestId === 'SAMPLE-INDIVIDUAL' ? 0 : 2), 'Synthetische Bedarfsanfrage');
+    request.cases.forEach((row, index) => {
+      const overdue = request.requestId === 'SAMPLE-EXCEPTION' && index === 0;
+      const policy = overdue ? deadlineSource('policy', fixtureDate(-3), 'DEMO-ONBOARDING@1') : null;
+      row.deadline = { date: policy ? policy.date : requestDate.date, today: fixtureToday, request: requestDate, policy,
+        state: row.state === 'complete' ? 'completed_time_unknown' : overdue ? 'overdue' : request.requestId === 'SAMPLE-INDIVIDUAL' ? 'due_today' : 'upcoming',
+        daysRemaining: overdue ? -3 : request.requestId === 'SAMPLE-INDIVIDUAL' ? 0 : 2, daysOverdue: overdue ? 3 : 0,
+        daysLate: null, workflowState: row.state, editable: row.state !== 'complete' };
+    });
+    request.deadline = { request: requestDate, date: requestDate.date, overdueCount: request.cases.filter(row => row.deadline.state === 'overdue').length, dueTodayCount: request.cases.filter(row => row.deadline.state === 'due_today').length, unsetCount: 0 };
+  });
   const plans = Object.fromEntries(requests.map(request => {
     const topic = topics.find(row => row.id === request.topicId);
     const phases = ['theory', ...(topic.practice ? ['practice'] : [])].map((name, index) => {
@@ -62,7 +81,18 @@
   const reads = Object.freeze({
     getIntakeData: () => ({ marker: '[SYNTHETIC OFFLINE]', topics, people }),
     getCatalogue: () => ({ marker: '[SYNTHETIC OFFLINE]', topics, people }),
+    getOwnerResourceOverview: () => ({ marker: '[SYNTHETIC OFFLINE]', topics, matrix: people.map((person, index) => ({
+      personKey: person.key, personAlias: person.alias, role: person.role,
+      levels: topics.map((topic, topicIndex) => ({ topicId: topic.id, level: index === 2 ? '4' : topicIndex === 4 ? '–' : String((index + topicIndex) % 3) }))
+    })), sheetUrl: '' }),
     getAuditDashboard: () => requests,
+    getRsvpStatus: () => ({ ...reads.getOfflineRsvpPreview(), persisted: false }),
+    getSkillUpdateQueue: () => requests.flatMap(request => request.cases.map(row => ({
+      caseId: row.caseId, requestId: request.requestId, personKey: row.personKey,
+      previousLevel: row.previousLevel, targetLevel: row.targetLevel,
+      state: row.skillStatus === 'applied' ? 'applied' : 'waiting',
+      reason: row.reason, appliedAt: row.skillStatus === 'applied' ? 'SAMPLE-TIME' : ''
+    }))),
     getSavedPhasePlan: id => plans[id] || null,
     getPhasePlanPreview: () => { throw new Error('Offline preview has no planning simulation for new requests.'); },
     getDemoFeedbackForRequest: input => ({ requestId: input.requestId, rows: [] }),
@@ -82,6 +112,44 @@
     getIntakePreview: input => ({ topicId: input.topicId, topicName: (topics.find(t => t.id === input.topicId) || {}).name || '', targetLevel: input.targetLevel,
       rows: input.personKeys.map(key => ({ personKey: key, personAlias: (people.find(p => p.key === key) || {}).alias || key, currentLevel: '1', targetLevel: input.targetLevel, allowed: false, reason: 'Offline sample only; eligibility must be checked against the real demo matrix.', sheetUrl: '' })), allAllowed: false })
   });
+  let offlinePreferences = { density: 'comfortable', motion: 'system' };
+  let offlineSequence = 0;
+  const offlineSessions = new Map();
+  function offlineSession(token) {
+    const session = offlineSessions.get(token);
+    if (!session || Date.parse(session.expiresAt) <= Date.now()) throw new Error('APP_SESSION_REQUIRED: Bitte erneut anmelden.');
+    return session;
+  }
+  function sessionResult(token) {
+    const session = offlineSession(token);
+    return { token, expiresAt: session.expiresAt,
+      profile: { displayName: 'Alex Offline', email: 'offline@example.test', initials: 'AO', role: 'Process & Quality · Offline' },
+      preferences: offlinePreferences };
+  }
+  const account = {
+    beginAppSession: input => {
+      const token = 'synthetic-offline-session-' + (++offlineSequence);
+      offlineSessions.set(token, { browserId: input.browserId, expiresAt: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString() });
+      return sessionResult(token);
+    },
+    restoreAppSession: input => sessionResult(input.token),
+    endAppSession: input => {
+      const session = offlineSessions.get(input.token);
+      if (session) for (const [token, item] of offlineSessions) if (item.browserId === session.browserId) offlineSessions.delete(token);
+      return { signedOut: true };
+    },
+    saveAppPreferences: input => {
+      offlineSession(input.token);
+      if (!input.preferences || !['comfortable', 'compact'].includes(input.preferences.density) || !['system', 'reduce'].includes(input.preferences.motion)) throw new Error('Ungültige Offline-Einstellungen.');
+      offlinePreferences = { density: input.preferences.density, motion: input.preferences.motion };
+      return { preferences: offlinePreferences };
+    },
+    dispatchAppRequest: input => {
+      offlineSession(input.token);
+      if (!Object.hasOwn(reads, input.method)) throw new Error(`Offline read-only preview blocked ${String(input.method)}. No changes were made.`);
+      return reads[input.method](...input.args);
+    }
+  };
   const run = new Proxy({}, {
     get(_target, name) {
       if (name === 'withSuccessHandler') return callback => chain(callback, null);
@@ -95,11 +163,12 @@
       if (name === 'withFailureHandler') return callback => chain(success, callback);
       return (...args) => queueMicrotask(() => {
         try {
-          if (!Object.hasOwn(reads, name)) throw new Error(`Offline read-only preview blocked ${String(name)}. No changes were made.`);
-          const result = clone(reads[name](...args));
+          const methods = Object.hasOwn(account, name) ? account : reads;
+          if (!Object.hasOwn(methods, name)) throw new Error(`Offline read-only preview blocked ${String(name)}. No changes were made.`);
+          const result = clone(methods[name](...args));
           if (success) success(result);
         } catch (error) {
-          notice(error.message);
+          if (!/^APP_SESSION_REQUIRED|^APP_ACCESS_DENIED/.test(error.message)) notice(error.message);
           if (failure) failure(error);
         }
       });
@@ -108,6 +177,7 @@
   Object.defineProperty(window, 'google', { value: Object.freeze({ script: Object.freeze({ run }) }), writable: false, configurable: false });
   document.addEventListener('click', event => {
     const link = event.target.closest('a');
+    if (link && link.getAttribute('href') === '#workspace' && link.getAttribute('target') === '_self') return;
     if (link) { event.preventDefault(); notice('Offline preview blocked link navigation. No external pages or files are opened.'); }
   }, true);
 })();

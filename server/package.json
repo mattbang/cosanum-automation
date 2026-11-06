@@ -5,9 +5,12 @@
   "scripts": {
     "dev": "tsx src/http.ts",
     "migrate": "tsx src/migrate.ts",
+    "migrate:members": "tsx src/members/migrate.ts",
+    "test:member-browser": "node --import tsx scripts/member-browser-rehearsal.mjs",
+    "test:native-member-sessions": "node --import tsx scripts/native-member-sessions.mjs",
     "test:native-postgres": "node --import tsx scripts/native-postgres-integration.mjs",
     "check": "tsc --noEmit",
-    "test": "node --import tsx --test test/*.test.ts test/*.test.mjs"
+    "test": "node --import tsx --test --test-concurrency=1 test/*.test.ts test/*.test.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.13",
@@ -16,6 +19,7 @@
     "typescript": "~5.9.2"
   },
   "dependencies": {
+    "google-auth-library": "11.3.3",
     "pg": "^8.23.1",
     "tsx": "^4.20.0"
   }
