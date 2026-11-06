@@ -29,6 +29,7 @@ const suites = [
   'test_phase_plan.mjs',
   'test_proof_metadata.mjs',
   'test_public_simulator.mjs',
+  'test_reader_navigation.mjs',
   'test_rsvp.mjs',
   'test_skill_update.mjs',
   'test_team_test_target.mjs',
