@@ -61,15 +61,15 @@ section > .muted, .hub-lead { max-width: 65ch; }
 a { color: var(--plum); text-decoration-thickness: 1px; text-underline-offset: 4px; overflow-wrap: anywhere; }
 a:hover { text-decoration-thickness: 2px; }
 button, input, select, textarea { font: inherit; }
-button, select, input[type=search], input[type=text] { min-height: 48px; max-width: 100%; }
+button, select, input[type=search], input[type=text], input[type=date], textarea { min-height: 48px; max-width: 100%; }
 button { padding: var(--space-3) var(--space-4); border: 1px solid transparent; border-radius: var(--radius-md); background: var(--rose); color: var(--surface); font: var(--button-md); cursor: pointer; transition: opacity 300ms var(--motion), transform 300ms var(--motion); }
 button:hover:not(:disabled) { opacity: .86; }
 button:active:not(:disabled) { transform: translateY(1px); }
 button:disabled { opacity: .45; cursor: not-allowed; }
 .secondary { background: var(--lilac); color: var(--plum); }
-button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible, summary:focus-visible { outline: 3px solid var(--plum); outline-offset: 4px; }
+button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visible, summary:focus-visible { outline: 3px solid var(--plum); outline-offset: 4px; }
 label { display: block; font: var(--title-3); margin: var(--space-6) 0 var(--space-2); }
-select, input[type=search], input[type=text] { width: min(100%, 36rem); min-width: 0; padding: var(--space-3); border: 1px solid #d9c8dc; border-radius: var(--radius-md); background: var(--surface); color: var(--ink); }
+select, input[type=search], input[type=text], input[type=date], textarea { width: min(100%, 36rem); min-width: 0; padding: var(--space-3); border: 1px solid #d9c8dc; border-radius: var(--radius-md); background: var(--surface); color: var(--ink); }
 select:disabled { background: var(--surface-muted); color: var(--muted); cursor: not-allowed; }
 .request-picker { width: 100%; }
 .phase-select { width: 100%; min-width: 12rem; }
@@ -202,7 +202,7 @@ details > summary { padding: var(--space-3) 0; min-height: 48px; color: var(--pl
   .task-head h2 { display: none; }
   .task-stepper { margin-bottom: var(--space-4); }
   .people { grid-template-columns: 1fr; }
-  select, input[type=search], input[type=text], .request-picker, .phase-select { width: 100%; min-width: 0; }
+  select, input[type=search], input[type=text], input[type=date], textarea, .request-picker, .phase-select { width: 100%; min-width: 0; }
   .scroll { overflow: visible; }
   .scroll table, .scroll tbody, .scroll tr, .scroll td { display: block; width: 100%; }
   .scroll thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
