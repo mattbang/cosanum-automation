@@ -1,35 +1,241 @@
 <!doctype html>
-<html lang="de"><head><base target="_top"><meta name="viewport" content="width=device-width,initial-scale=1"><style>
-body{margin:0;background:#f3f6f8;color:#17324d;font:16px/1.5 system-ui,sans-serif}main{max-width:960px;margin:auto;padding:30px 20px}section{background:white;border:1px solid #dce5eb;border-radius:9px;padding:22px;margin:20px 0}h1{margin:12px 0 4px}.muted{color:#52687a}.marker{background:#ffe0a3;color:#543600;font-weight:800;padding:4px 9px;border-radius:5px}label{display:block;font-weight:650;margin:12px 0 5px}select,button{font:inherit;padding:9px;border-radius:5px}select{border:1px solid #a8bac8;background:white;min-width:300px}button{background:#1d3854;color:white;border:0;cursor:pointer}button:disabled{opacity:.45;cursor:default}.secondary{background:#e4edf3;color:#17324d}.people{display:flex;flex-wrap:wrap;gap:9px}.people label{border:1px solid #dce5eb;padding:8px;border-radius:5px;font-weight:500;margin:0}table{width:100%;border-collapse:collapse}th,td{padding:10px;text-align:left;border-bottom:1px solid #dce5eb}th{background:#1d3854;color:white}.blocked,#error{color:#a32f2f}.allowed{color:#126046}[hidden]{display:none!important}.scroll{overflow-x:auto}.phase-select{min-width:190px}.note{border-left:4px solid #c08727;background:#fff8e9;padding:10px 14px}.id{font:12px ui-monospace,monospace;overflow-wrap:anywhere}
-
-:root{--plum:#452347;--rose:#ca5864;--paper:#f7f4f8;--line:#e9e0ea}
-body{background:var(--paper);color:#352b38}main{max-width:1190px}section{border-color:var(--line);border-radius:16px;box-shadow:0 6px 24px rgba(71,40,74,.045)}
-h1,h2,h3{color:#412644}button{background:var(--rose);border-radius:9px}button:hover:not(:disabled){filter:brightness(.95)}.secondary{background:#f0e4f1;color:#5c3b61}
-input[type=search],input[type=text]{font:inherit;padding:9px;border:1px solid #a8bac8;border-radius:5px;max-width:100%}
-.hub-header{display:flex;justify-content:space-between;align-items:center;gap:16px}.hub-nav{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0}.hub-nav button{background:transparent;color:#5c3b61;border:1px solid #d9c8dc}.hub-nav button.active{background:var(--plum);color:white}
-.hub-lead{max-width:690px;color:#706273}.scenario-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.scenario-card{background:#fbf9fc;color:#443647;border:1.5px solid var(--line);padding:16px;text-align:left;min-height:132px}.scenario-card strong,.scenario-card span{display:block}.scenario-card span{font-size:.86rem;font-weight:400;margin-top:7px}.scenario-card.selected{border-color:#a769a5;background:#f6edf7}
-.hub-layout{display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:20px}.hub-layout section{margin:0 0 18px}.hub-status-list{list-style:none;margin:0;padding:0}.hub-status-list li{border-top:1px solid var(--line);padding:12px 0}.hub-status-list strong{display:block}.hub-status-list small{display:block;color:#706273}.status-badge{display:inline-block;padding:3px 8px;border-radius:99px;background:#eef1f4;color:#52687a;font-size:.78rem;font-weight:700}.status-badge.complete{background:#e4f3e9;color:#126046}.status-badge.open{background:#fbe6e6;color:#a32f2f}
-.task-stepper{display:flex;flex-wrap:wrap;gap:6px;list-style:none;padding:0}.task-stepper li{flex:1;min-width:105px}.task-stepper button{width:100%;height:100%;padding:10px;text-align:left;background:#f4edf4;color:#5c3b61;border:1px solid #e7dce8}.task-stepper button.current{background:var(--plum);color:white}.task-stepper button.done{border-color:#92bea1}.task-stepper button small{display:block;font-size:.72rem}
-#workflowView [data-task]:not(.selected-task){display:none!important}.task-head{margin:16px 0}.task-head h2{margin-bottom:0}.task-head p{margin-top:4px}.request-picker{min-width:240px}
-@media(max-width:820px){.hub-layout{grid-template-columns:1fr}.scenario-grid{grid-template-columns:1fr}main{padding:18px}.hub-header{align-items:flex-start;flex-direction:column}select{min-width:0;max-width:100%}}
-*{box-sizing:border-box}main,section,.hub-layout>*,.hub-layout section{min-width:0}p,li,td,summary,#hubSummary,#hubNext,#error{overflow-wrap:anywhere}
-button,select,input[type=search],input[type=text]{min-height:44px}button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var(--plum);outline-offset:2px}
-.people label{display:flex;align-items:center;gap:8px;min-height:44px}.people input{width:20px;height:20px;flex:none}
-.scroll{max-width:100%}a{overflow-wrap:anywhere}details>summary{cursor:pointer;min-height:44px;padding:10px 0}
-@media(max-width:600px){
-  main{padding:12px 12px 40px}section{padding:16px;margin:12px 0}.hub-nav{display:grid;grid-template-columns:1fr;margin:12px 0}.hub-nav button{width:100%;text-align:left}
-  .hub-layout{gap:0}.scenario-card{min-height:96px}.task-stepper{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.task-stepper li{min-width:0}
-  select,input[type=search],input[type=text],.request-picker,.phase-select{width:100%;min-width:0;max-width:100%}section button:not(.scenario-card),#hubOpen,#hubRegister{max-width:100%}
-  .scroll{overflow:visible}.scroll table,.scroll tbody,.scroll tr,.scroll td{display:block;width:100%}.scroll thead{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
-  .scroll tr{border:1px solid var(--line);border-radius:10px;margin:12px 0;padding:8px;background:#fff}.scroll td{border:0;padding:6px 4px;min-width:0}.scroll td+td{border-top:1px solid var(--line)}.scroll td::before{content:attr(data-label);display:block;font-size:.78rem;font-weight:700;color:#5c3b61;margin-bottom:2px}
-  .scroll td button,.scroll td select,.scroll td input[type=text]{width:100%;margin:4px 0}.scroll td a{display:inline-block;min-height:44px;padding:10px 0}
+<html lang="de"><head><meta charset="utf-8"><title>Cosanum · Schulungsdemo</title><meta name="description" content="Schulungsbedarf planen und Nachweise je Person prüfen."><meta name="robots" content="noindex,nofollow"><base target="_top"><meta name="viewport" content="width=device-width,initial-scale=1"><style>
+:root {
+  color-scheme: light;
+  --plum: #452347;
+  --rose: #b84a56;
+  --paper: #f7f4f8;
+  --surface: #fff;
+  --surface-muted: #fbf9fc;
+  --lilac: #f0e4f1;
+  --ink: #352b38;
+  --muted: #706273;
+  --line: #e9e0ea;
+  --success: #126046;
+  --success-surface: #e4f3e9;
+  --danger: #a32f2f;
+  --danger-surface: #fbe6e6;
+  --warning: #73531c;
+  --warning-surface: #fff8e9;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --motion: cubic-bezier(0.22, 1, 0.36, 1);
+  --heading-3: 600 36px/40px var(--font);
+  --heading-4: 600 30px/36px var(--font);
+  --heading-5: 600 24px/32px var(--font);
+  --heading-6: 600 20px/28px var(--font);
+  --title-3: 600 16px/24px var(--font);
+  --body-3: 400 16px/24px var(--font);
+  --body-6: 400 14px/20px var(--font);
+  --button-md: 600 16px/24px var(--font);
+  --button-sm: 600 14px/20px var(--font);
+  --caption-4: 500 12px/16px var(--font);
+  --font: "Manrope", ui-sans-serif, system-ui, sans-serif;
 }
-</style></head><body><main><header class="hub-header"><div><span class="marker">[DEMO]</span> <span class="muted" id="demoVersion">Version 0.5</span><h1>Cosanum · Schulungsdemo</h1><p class="hub-lead">Process &amp; Quality startet einen Schulungsbedarf, bucht einen Termin und prüft den Nachweis je Person. Der Status wird aus dem Demo-Register gelesen.</p></div><p class="muted">Nur für das Demo-Eigentümerkonto</p></header>
-<nav class="hub-nav" aria-label="Hauptnavigation"><button type="button" data-view="hub" class="active">Demo Hub</button><button type="button" data-view="workflow">Process &amp; Quality</button><button type="button" data-view="register">Ergebnisse &amp; Register</button></nav>
-<div id="hubView"><div class="hub-layout"><div><section><h2>Testfall wählen</h2><p class="muted">Die Karten öffnen passende vorhandene Aufträge. Fehlt ein passender Auftrag, beginnt ein neuer Bedarf.</p><div id="scenarioCards" class="scenario-grid"></div></section><section><h2>Aktueller Auftrag</h2><label for="hubRequest">Auftrag</label><select id="hubRequest" class="request-picker"><option value="">Neuen Auftrag beginnen</option></select><p id="hubSummary" role="status"></p><details id="requestTechnical" hidden><summary>Technische Auftrags-ID</summary><code id="requestTechnicalValue" class="id"></code></details><p id="hubNext"></p><button type="button" id="hubOpen">Nächste Aufgabe öffnen</button></section><section><h2>Startlink für die Gruppe</h2><p class="muted">Öffentlicher Rollenrundgang ohne Fallakten oder Admin-Zugriff. Die Schulungsaktionen erfolgen über persönliche Kalender- und Formularlinks. Erst nach Veröffentlichung der statischen Seite teilen.</p><button type="button" class="secondary" id="prepareTour" disabled>Startlink vorbereiten</button><p id="tourStatus" role="status"></p><p><a id="tourLink" target="_blank" rel="noopener noreferrer" hidden>Rundgang öffnen</a></p></section></div><aside><section><h2>Personen im ausgewählten Auftrag</h2><ul id="hubCases" class="hub-status-list"><li>Noch kein Auftrag gewählt.</li></ul></section><section><h2>Belege im Register</h2><p class="muted">Kalender, Formulare, Nachweis, beide Archive und Skilländerung bleiben je Personenfall nachvollziehbar.</p><button type="button" class="secondary" id="hubRegister">Ergebnisse öffnen</button></section></aside></div></div>
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: var(--space-6); }
+body { margin: 0; background: var(--paper); color: var(--ink); font: var(--body-3); -webkit-font-smoothing: antialiased; }
+[hidden] { display: none !important; }
+main { width: 100%; max-width: 1280px; margin: auto; padding: var(--space-8) var(--space-10) var(--space-12); }
+main:focus { outline: none; }
+main, section, .hub-layout > *, .overview-head > *, .queue-card > * { min-width: 0; }
+h1, h2, h3, h4 { color: var(--plum); text-wrap: balance; }
+h1 { font: var(--heading-3); letter-spacing: -.035em; margin: 0 0 var(--space-3); }
+h2 { font: var(--heading-5); letter-spacing: -.025em; margin: 0 0 var(--space-3); }
+h3 { font: var(--heading-6); letter-spacing: -.02em; margin: var(--space-6) 0 var(--space-3); }
+h4 { font: var(--title-3); margin: 0 0 var(--space-1); }
+p { margin: var(--space-3) 0; text-wrap: pretty; }
+p, li, td, summary, code { overflow-wrap: anywhere; }
+section > .muted, .hub-lead { max-width: 65ch; }
+.muted { color: var(--muted); }
+a { color: var(--plum); text-decoration-thickness: 1px; text-underline-offset: 4px; overflow-wrap: anywhere; }
+a:hover { text-decoration-thickness: 2px; }
+button, input, select, textarea { font: inherit; }
+button, select, input[type=search], input[type=text] { min-height: 48px; max-width: 100%; }
+button { padding: var(--space-3) var(--space-4); border: 1px solid transparent; border-radius: var(--radius-md); background: var(--rose); color: var(--surface); font: var(--button-md); cursor: pointer; transition: opacity 300ms var(--motion), transform 300ms var(--motion); }
+button:hover:not(:disabled) { opacity: .86; }
+button:active:not(:disabled) { transform: translateY(1px); }
+button:disabled { opacity: .45; cursor: not-allowed; }
+.secondary { background: var(--lilac); color: var(--plum); }
+button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible, summary:focus-visible { outline: 3px solid var(--plum); outline-offset: 4px; }
+label { display: block; font: var(--title-3); margin: var(--space-6) 0 var(--space-2); }
+select, input[type=search], input[type=text] { width: min(100%, 36rem); min-width: 0; padding: var(--space-3); border: 1px solid #d9c8dc; border-radius: var(--radius-md); background: var(--surface); color: var(--ink); }
+select:disabled { background: var(--surface-muted); color: var(--muted); cursor: not-allowed; }
+.request-picker { width: 100%; }
+.phase-select { width: 100%; min-width: 12rem; }
+.skip-link { position: absolute; top: var(--space-3); left: var(--space-3); z-index: 2; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--plum); color: var(--surface); transform: translateY(-200%); }
+.skip-link:focus { transform: translateY(0); }
+.app-bar { display: flex; justify-content: space-between; align-items: center; gap: var(--space-4); margin-bottom: var(--space-8); }
+.brand { display: flex; gap: var(--space-3); align-items: center; color: var(--plum); font: var(--title-3); letter-spacing: -.02em; }
+.brand-mark { display: grid; place-items: center; width: 40px; height: 40px; border-radius: var(--radius-lg); background: var(--plum); color: var(--surface); font: var(--heading-5); }
+.brand small { display: block; color: var(--muted); font: var(--caption-4); letter-spacing: 0; }
+.app-meta { display: flex; align-items: center; gap: var(--space-2); font: var(--caption-4); }
+.marker { padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); background: var(--lilac); color: var(--plum); font: var(--caption-4); }
+.hub-header { display: flex; justify-content: space-between; align-items: center; gap: var(--space-8); }
+.hub-lead { margin: 0; color: var(--muted); }
+.header-action { flex-shrink: 0; }
+.hub-nav { display: flex; gap: var(--space-1); width: fit-content; max-width: 100%; margin: var(--space-6) 0 var(--space-8); padding: var(--space-1); border: 1px solid var(--line); border-radius: var(--radius-lg); background: var(--surface); }
+.hub-nav button { min-height: 40px; padding: var(--space-2) var(--space-4); background: transparent; color: var(--muted); font: var(--button-sm); }
+.hub-nav button.active { background: var(--plum); color: var(--surface); }
+section { margin: 0 0 var(--space-6); padding: var(--space-8); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-xl); }
+.overview-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-6); }
+.overview-head h2 { margin: 0; }
+.overview-head p { margin-bottom: 0; font: var(--body-6); }
+.overview-head button { flex-shrink: 0; font: var(--button-sm); background: var(--surface-muted); }
+.overview-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-6); margin: var(--space-6) 0 var(--space-8); }
+.metric { padding: var(--space-4); border-radius: var(--radius-md); background: var(--surface-muted); font-variant-numeric: tabular-nums; }
+.metric:first-child { background: var(--lilac); }
+.metric strong { display: block; color: var(--plum); font: var(--heading-4); letter-spacing: -.035em; }
+.metric span { display: block; margin-top: var(--space-1); color: var(--muted); font: var(--body-6); }
+.skeleton-number, .skeleton-label { display: block; border-radius: var(--radius-sm); background: var(--line); }
+.metric .skeleton-number { width: 40px; height: 32px; margin: 0 0 var(--space-2); }
+.metric .skeleton-label { width: 80%; height: 16px; }
+.queue-list { display: grid; gap: var(--space-3); }
+.queue-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--space-6); padding: var(--space-4); border-radius: var(--radius-md); background: var(--surface-muted); }
+.queue-card.selected { background: #f6edf7; }
+.queue-card h4 { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); }
+.queue-card p { margin: var(--space-1) 0 0; color: var(--muted); font: var(--body-6); }
+.queue-card .queue-next { margin-top: var(--space-2); color: var(--plum); }
+.queue-card button { background: transparent; color: var(--plum); font: var(--button-sm); }
+.queue-card button:hover { text-decoration: underline; text-underline-offset: 4px; }
+.hub-layout { display: grid; grid-template-columns: minmax(0, 1fr) 20rem; align-items: start; gap: var(--space-6); }
+.hub-layout aside section { background: #f6eff7; }
+.hub-layout aside h2 { font: var(--heading-6); }
+.hub-status-list, .calendar-list { list-style: none; margin: 0; padding: 0; }
+.hub-status-list li, .calendar-list li { padding: var(--space-4) 0; }
+.hub-status-list li + li, .calendar-list li + li { border-top: 1px solid var(--line); }
+.hub-status-list strong, .calendar-list strong { display: block; font: var(--title-3); margin-bottom: var(--space-2); }
+.hub-status-list small, .calendar-list span { display: block; margin-top: var(--space-2); color: var(--muted); font: var(--body-6); }
+.status-badge { display: inline-block; padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); background: var(--lilac); color: var(--plum); font: var(--caption-4); }
+.status-badge.complete { background: var(--success-surface); color: var(--success); }
+.status-badge.open { background: var(--danger-surface); color: var(--danger); }
+.scenario-grid { display: grid; gap: var(--space-2); }
+.scenario-card { display: grid; grid-template-columns: minmax(8rem, 1fr) 2fr; align-items: center; gap: var(--space-4); width: 100%; min-height: 64px; padding: var(--space-4); text-align: left; color: var(--plum); background: var(--surface-muted); border: 1px solid var(--line); }
+.scenario-card strong { font: var(--title-3); }
+.scenario-card span { color: var(--muted); font: var(--body-6); }
+.scenario-card.selected { border-color: var(--plum); background: #f6edf7; }
+.task-head { margin: 0 0 var(--space-6); }
+.task-head p { color: var(--muted); }
+.task-stepper { display: flex; flex-wrap: nowrap; list-style: none; gap: var(--space-2); padding: 0; margin: 0 0 var(--space-6); }
+.task-stepper li { flex: 1 1 0; min-width: 0; }
+.task-stepper button { width: 100%; height: 100%; padding: var(--space-3); background: var(--surface); color: var(--plum); border: 1px solid var(--line); text-align: left; font: var(--button-sm); overflow-wrap: anywhere; }
+.task-stepper button.current { background: var(--plum); color: var(--surface); }
+.task-stepper button.done:not(.current) { background: var(--success-surface); color: var(--success); }
+.task-stepper small { display: block; margin-top: var(--space-1); font: var(--caption-4); }
+#workflowView [data-task]:not(.selected-task) { display: none !important; }
+.note { padding: var(--space-4); margin: var(--space-4) 0; border: 1px solid #e7dce8; border-radius: var(--radius-md); background: #f6eff7; color: var(--plum); font: var(--body-6); }
+.people { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); }
+.people label { display: flex; align-items: center; gap: var(--space-3); min-height: 64px; margin: 0; padding: var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-md); font: var(--body-6); cursor: pointer; }
+.people label:has(:checked) { border-color: var(--plum); background: #f6edf7; }
+.people input { width: 20px; height: 20px; flex: none; accent-color: var(--plum); }
+.scroll { max-width: 100%; overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font: var(--body-6); font-variant-numeric: tabular-nums; }
+th, td { padding: var(--space-4) var(--space-3); text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
+th { background: var(--surface-muted); color: var(--plum); font-weight: 600; }
+td button { font: var(--button-sm); }
+td .id { margin-top: var(--space-2); }
+.blocked, #error { color: var(--danger); }
+.allowed { color: var(--success); }
+.id { font: var(--caption-4); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+details { margin: var(--space-3) 0; }
+details > summary { padding: var(--space-3) 0; min-height: 48px; color: var(--plum); font: var(--button-sm); cursor: pointer; }
+#auditRows details { padding: 0 var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-md); }
+#auditRows details p { font: var(--body-6); }
+#auditRows > h3 { margin-top: var(--space-8); }
+.resource-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); }
+.resource-card { padding: var(--space-6); border-radius: var(--radius-md); background: var(--surface-muted); }
+.resource-card h3 { margin: 0 0 var(--space-3); font: var(--heading-6); }
+.resource-card p { font: var(--body-6); }
+.empty-state { padding: var(--space-8); background: var(--surface-muted); border-radius: var(--radius-md); }
+.empty-state h4 { font: var(--heading-6); }
+.empty-state p { max-width: 55ch; margin-bottom: 0; color: var(--muted); font: var(--body-6); }
+[role=status]:empty, #error:empty { display: none; }
+.status-error, #error:not(:empty) { padding: var(--space-4); background: var(--danger-surface); border-radius: var(--radius-md); color: var(--danger); font: var(--body-6); }
+.app-footer { color: var(--muted); font: var(--caption-4); margin-top: var(--space-8); }
+@media (max-width: 1000px) {
+  .task-stepper { overflow-x: auto; padding: var(--space-1); }
+  .task-stepper li { flex: 0 0 9rem; }
+  .hub-layout { grid-template-columns: minmax(0, 1fr) 17rem; }
+  .hub-layout section { padding: var(--space-6); }
+  .hub-header { align-items: flex-start; }
+}
+@media (max-width: 820px) {
+  main { padding: var(--space-6); }
+  .hub-layout { grid-template-columns: 1fr; }
+  .overview-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); }
+  .hub-header { flex-direction: column; gap: var(--space-4); }
+  .resource-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  main { padding: var(--space-4) var(--space-4) var(--space-10); }
+  .app-bar { margin-bottom: var(--space-6); align-items: flex-start; }
+  .app-meta { align-items: flex-end; flex-direction: column; gap: var(--space-1); }
+  .brand-mark { width: 32px; height: 32px; border-radius: var(--radius-md); font: var(--heading-6); }
+  .brand { gap: var(--space-2); }
+  h1 { font: var(--heading-4); }
+  h2 { font: var(--heading-6); }
+  .hub-lead { font: var(--body-6); }
+  .header-action { width: 100%; }
+  .hub-nav { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; margin-bottom: var(--space-6); }
+  .hub-nav button { padding: var(--space-2); min-height: 48px; }
+  section, .hub-layout section { padding: var(--space-6) var(--space-4); border-radius: var(--radius-lg); }
+  .overview-head { flex-direction: column; gap: var(--space-3); }
+  .overview-head button { min-height: 40px; padding: var(--space-2) var(--space-3); }
+  .overview-metrics { margin: var(--space-6) 0; }
+  .metric { padding: var(--space-3); }
+  .metric span { min-height: 40px; }
+  .queue-card { grid-template-columns: 1fr; gap: var(--space-2); padding: var(--space-4); }
+  .queue-card button { justify-self: start; padding: var(--space-2) 0; }
+  .scenario-card { grid-template-columns: 1fr; gap: var(--space-1); }
+  main:not([data-view="hub"]) .hub-header h1 { font: var(--heading-5); margin: 0; }
+  main:not([data-view="hub"]) .hub-lead { display: none; }
+  .task-head h2 { display: none; }
+  .task-stepper { margin-bottom: var(--space-4); }
+  .people { grid-template-columns: 1fr; }
+  select, input[type=search], input[type=text], .request-picker, .phase-select { width: 100%; min-width: 0; }
+  .scroll { overflow: visible; }
+  .scroll table, .scroll tbody, .scroll tr, .scroll td { display: block; width: 100%; }
+  .scroll thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .scroll tr { border: 1px solid var(--line); border-radius: var(--radius-md); margin: var(--space-3) 0; padding: var(--space-2); }
+  .scroll td { border: 0; padding: var(--space-3) var(--space-2); }
+  .scroll td + td { border-top: 1px solid var(--line); }
+  .scroll td::before { content: attr(data-label); display: block; margin-bottom: var(--space-1); color: var(--plum); font: var(--caption-4); }
+  .scroll td button, .scroll td select, .scroll td input[type=text] { width: 100%; margin: var(--space-1) 0; }
+  .scroll td a { display: inline-block; min-height: 48px; padding: var(--space-3) 0; }
+  .empty-state { padding: var(--space-6) var(--space-4); }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  button { transition: none; }
+  button:active:not(:disabled) { transform: none; }
+}
+</style></head><body>
+<a class="skip-link" href="#workspace" target="_self">Zum Inhalt springen</a>
+<main id="workspace" tabindex="-1" data-view="hub">
+  <div class="app-bar">
+    <div class="brand"><span class="brand-mark" aria-hidden="true">c</span><div>Cosanum<small>Schulungsverwaltung</small></div></div>
+    <div class="app-meta"><span class="marker">[DEMO]</span><span class="muted" id="demoVersion">Oberfläche 0.6</span></div>
+  </div>
+  <header class="hub-header">
+    <div><h1 id="pageTitle">Schulungen koordinieren.</h1><p class="hub-lead" id="pageLead">Bedarf planen, nächste Aufgaben bearbeiten und Nachweise je Person prüfen.</p></div>
+    <button type="button" id="newRequest" class="header-action">Neuen Bedarf erfassen</button>
+  </header>
+<nav class="hub-nav" aria-label="Hauptnavigation"><button type="button" data-view="hub" class="active" aria-current="page">Übersicht</button><button type="button" data-view="workflow">Process &amp; Quality</button><button type="button" data-view="resources">Themen &amp; Matrix</button><button type="button" data-view="register">Ergebnisse &amp; Register</button></nav>
+<div id="hubView"><section id="overviewPanel" aria-labelledby="overviewTitle" aria-busy="true"><div class="overview-head"><div><h2 id="overviewTitle">Aufträge im Blick</h2><p class="muted">Die nächste Aufgabe und Zuständigkeit kommen aus dem gespeicherten Register.</p></div><button type="button" class="secondary" id="refreshOverview">Register neu lesen</button></div><p id="overviewStatus" role="status">Aufträge werden gelesen …</p><div id="overviewMetrics" class="overview-metrics" role="group" aria-label="Auftragsübersicht"><div class="metric skeleton" aria-hidden="true"><span class="skeleton-number"></span><span class="skeleton-label"></span></div><div class="metric skeleton" aria-hidden="true"><span class="skeleton-number"></span><span class="skeleton-label"></span></div><div class="metric skeleton" aria-hidden="true"><span class="skeleton-number"></span><span class="skeleton-label"></span></div><div class="metric skeleton" aria-hidden="true"><span class="skeleton-number"></span><span class="skeleton-label"></span></div></div><h3>Offene Arbeit</h3><div id="hubQueue" class="queue-list"></div></section><div class="hub-layout"><div><section id="currentRequestSection"><h2>Aktueller Auftrag</h2><label for="hubRequest">Auftrag</label><select id="hubRequest" class="request-picker"><option value="">Neuen Auftrag beginnen</option></select><p id="hubSummary" role="status"></p><details id="requestTechnical" hidden><summary>Technische Auftrags-ID</summary><code id="requestTechnicalValue" class="id"></code></details><p id="hubNext"></p><button type="button" id="hubOpen" class="secondary">Nächste Aufgabe öffnen</button></section><section><h2>Testfall wählen</h2><p class="muted">Die Karten öffnen passende vorhandene Aufträge. Fehlt ein passender Auftrag, beginnt ein neuer Bedarf.</p><div id="scenarioCards" class="scenario-grid"></div></section><section><h2>Startlink für die Gruppe</h2><p class="muted">Öffentlicher Rollenrundgang ohne Fallakten oder Admin-Zugriff. Die Schulungsaktionen erfolgen über persönliche Kalender- und Formularlinks. Erst nach Veröffentlichung der statischen Seite teilen.</p><button type="button" class="secondary" id="prepareTour" disabled>Startlink vorbereiten</button><p id="tourStatus" role="status"></p><p><a id="tourLink" target="_blank" rel="noopener noreferrer" hidden>Rundgang öffnen</a></p></section></div><aside><section><h2>Personen im ausgewählten Auftrag</h2><ul id="hubCases" class="hub-status-list"><li>Noch kein Auftrag gewählt.</li></ul></section><section><h2>Belege im Register</h2><p class="muted">Kalender, Formulare, Nachweis, beide Archive und Skilländerung bleiben je Personenfall nachvollziehbar.</p><button type="button" class="secondary" id="hubRegister">Ergebnisse öffnen</button></section></aside></div></div>
+<div id="resourcesView" hidden><section><div class="overview-head"><div><h2>Themen und Quellen</h2><p class="muted">Katalog und Skillstufen werden aus dem privaten Demo-Sheet gelesen. Die Quellenbezeichnung ist noch kein freigegebener Materiallink.</p></div><button type="button" class="secondary" id="refreshResources">Matrix neu lesen</button></div><p id="resourceStatus" role="status">Noch nicht geladen.</p><div id="resourceTopics" class="resource-grid"></div></section><section><h2>Aktuelle Skillmatrix</h2><p class="muted">Stufe 4 kennzeichnet in der Demo eine mögliche schulende Person. Leere oder nicht vorgesehene Einträge bleiben sichtbar und werden nicht als Stufe 0 behandelt.</p><div class="scroll"><table><thead id="resourceMatrixHead"></thead><tbody id="resourceMatrixRows"></tbody></table></div><p><a id="resourceSheetLink" target="_blank" rel="noopener noreferrer" hidden>Demo-Sheet öffnen</a></p></section><section><h2>Gebuchte Termine</h2><p class="muted">Neueste Termine aus den Aufträgen, pro gemeinsamer Session einmal angezeigt. Freie Vorschläge und Kalenderzugriff werden im konkreten Auftrag geprüft.</p><ul id="calendarRows" class="calendar-list"><li>Register wird geladen …</li></ul></section></div>
 <div id="workflowView" hidden><div class="task-head"><h2>Process &amp; Quality</h2><p class="muted" id="workflowContext">Schulungsbedarf erfassen und den nächsten Schritt bearbeiten.</p><label for="workflowRequest">Auftrag wählen</label><select id="workflowRequest" class="request-picker"><option value="">Neuer Auftrag</option></select></div><ol id="taskStepper" class="task-stepper" aria-label="Arbeitsschritte"></ol><p id="taskInstruction" class="note"></p>
 
-<section><h2>1. Thema und Personen wählen</h2><label for="topic">Thema</label><select id="topic"><option value="">Bitte wählen</option></select><label for="target">Vorgesehene Skillstufe</label><select id="target" disabled><option value="">Zuerst Thema wählen</option></select><p id="targetHint" class="muted"></p><label>Testpersonen</label><p class="muted">Anzeigenamen aus den Personas im Bericht 05 · Demo-Aliasse</p><div id="people" class="people"></div><p><button id="review" class="secondary" disabled>Skillstufen prüfen</button></p></section>
+<section><h2>1. Thema und Personen wählen</h2><label for="topic">Thema</label><select id="topic"><option value="">Bitte wählen</option></select><label for="target">Vorgesehene Skillstufe</label><select id="target" disabled><option value="">Zuerst Thema wählen</option></select><p id="targetHint" class="muted"></p><label>Testpersonen</label><p class="muted">Anzeigenamen aus den Personas im Bericht 05 · Demo-Aliasse</p><div id="people" class="people"></div><p><button id="review" disabled>Skillstufen prüfen</button></p></section>
 <section id="reviewPanel" hidden><h2>2. Skillstufen prüfen</h2><p id="reviewStatus" role="status"></p><div class="scroll"><table><thead><tr><th>Person</th><th>Aktuell</th><th>Vorgesehen</th><th>Prüfung</th><th>Demo-Sheet</th></tr></thead><tbody id="reviewRows"></tbody></table></div><p><button id="refresh" class="secondary">Nach Korrektur neu lesen</button> <button id="save" disabled>Entwurf speichern</button></p></section>
 <section id="resultPanel" hidden><h2>Entwurf gespeichert</h2><p id="result"></p><ul id="caseList"></ul></section>
 <section id="planPanel" hidden><h2>3. Modus und Phasenplan</h2><p class="muted">Planung mit synthetischen Qualifikationen. Es werden noch keine Einladungen versendet.</p><label for="mode">Schulungsmodus</label><select id="mode"><option value="group">Gruppe</option><option value="individual">Einzeltraining</option></select><p id="planStatus" role="status"></p><div class="scroll"><table><thead><tr><th>Reihenfolge / Phase</th><th>Personen und Session</th><th>Dauer</th><th>Trainer</th><th>Voraussetzung</th></tr></thead><tbody id="planRows"></tbody></table></div><p class="note" id="planRule"></p><button id="planSave" disabled>Phasenplan speichern</button></section>
@@ -41,7 +247,7 @@ button,select,input[type=search],input[type=text]{min-height:44px}button:focus-v
 <section id="followUpPanel"><h2>9. Offene Teilnahmebestätigungen</h2><p class="muted">Zwei und fünf Kalendertage nach dem Termin prüft der tägliche Lauf die persönliche Bestätigung. Nach Tag 5 bleibt ein ungeklärter Fall hier offen; eine Notiz oder Nachverfolgung ersetzt keine Bestätigung.</p><p><button id="refreshFollowUps" class="secondary">Offene Fälle prüfen</button></p><p id="followUpStatus" role="status"></p><div class="scroll"><table><thead><tr><th>Personenfall</th><th>Erinnerungen</th><th>Process &amp; Quality</th></tr></thead><tbody id="followUpRows"></tbody></table></div></section>
 <section id="skillPanel"><h2>10. Skillstufe übernehmen</h2><p class="muted">Nur nach gültigem Trainerbericht, persönlicher Bestätigung und Prüfung beider Archive. Die Stufe wird beim Abgleich und im täglichen Prüflauf automatisch im synthetischen Demo-Sheet eingetragen.</p><p><button id="refreshSkills" class="secondary">Skillübernahmen abgleichen</button></p><p id="skillStatus" role="status"></p><div class="scroll"><table><thead><tr><th>Personenfall</th><th>Stufe</th><th>Prüfung</th><th>Aktion</th></tr></thead><tbody id="skillRows"></tbody></table></div></section>
 </div><div id="registerView" hidden><section id="auditPanel"><h2>11. Aufträge und Nachweise prüfen</h2><p class="muted">Nur für das Demo-Eigentümerkonto. Der Abschluss wird aus Trainerbericht, persönlicher Bestätigung, beiden Archiven und Skillregister abgeleitet. Offene Fälle bleiben im Auftrag; eine Notiz ersetzt keine Belege.</p><p><button id="refreshAudit" class="secondary">Auditansicht aktualisieren</button></p><p id="auditStatus" role="status"></p><label for="auditSearch">Thema, Person oder Auftrags-ID</label><input id="auditSearch" type="search" placeholder="Suchen"><label for="auditState">Status</label><select id="auditState"><option value="open">Offene Fälle</option><option value="all">Alle</option><option value="waiting">Ausstehend</option><option value="complete">Abgeschlossen</option></select><div id="auditRows"></div></section>
-<section><h2>Feedback zum ausgewählten Auftrag</h2><p class="muted">Nur für das Demo-Eigentümerkonto. Rückmeldungen sind keine Schulungsbelege.</p><button type="button" class="secondary" id="refreshFeedback">Feedback abrufen</button><p id="feedbackStatus" role="status"></p><div id="feedbackRows"></div></section><details><summary>Demo-Katalog und Planungsdauer</summary><div class="scroll"><table><thead><tr><th>ID</th><th>Thema</th><th>Theorie</th><th>Praxis</th><th>Planungsdauer</th></tr></thead><tbody id="catalogueRows"></tbody></table></div></details></div><p id="error" role="alert"></p></main>
+<section><h2>Feedback zum ausgewählten Auftrag</h2><p class="muted">Nur für das Demo-Eigentümerkonto. Rückmeldungen sind keine Schulungsbelege.</p><button type="button" class="secondary" id="refreshFeedback">Feedback abrufen</button><p id="feedbackStatus" role="status"></p><div id="feedbackRows"></div></section><details><summary>Demo-Katalog und Planungsdauer</summary><div class="scroll"><table><thead><tr><th>ID</th><th>Thema</th><th>Theorie</th><th>Praxis</th><th>Planungsdauer</th></tr></thead><tbody id="catalogueRows"></tbody></table></div></details></div><p id="error" role="alert"></p><footer class="app-footer">[DEMO] · Synthetische Testdaten · Zugriff für das Demo-Eigentümerkonto</footer></main>
 <script>
 var intake,preview,actionId,selectionSignature='';var topic=document.getElementById('topic'),target=document.getElementById('target'),review=document.getElementById('review'),save=document.getElementById('save');
 function keys(){return Array.from(document.querySelectorAll('#people input:checked')).map(function(x){return x.value})}function signature(){return [topic.value,target.value,keys().slice().sort().join('|')].join('/')}
@@ -163,6 +369,33 @@ function hubProgress(request){
     skill:cases.length>0&&cases.every(function(row){return row.skillStatus==='applied'})};
 }
 // UX1_PURE_END
+// HUB_OVERVIEW_PURE_START: read-only summaries from the persisted audit projection.
+function overviewModel(requests){
+  var counts={owner:0,open:0,waiting:0,complete:0};
+  var queue=[];
+  (requests||[]).forEach(function(request){
+    if(request.state==='complete'){counts.complete++;return}
+    if(request.state==='open')counts.open++;else counts.waiting++;
+    if((request.cases||[]).some(function(row){return row.currentTask&&row.currentTask.actorKey==='MATT'&&row.currentTask.state!=='complete'}))counts.owner++;
+    queue.push(request);
+  });
+  queue.sort(function(a,b){
+    var priority=function(row){return row.state==='open'?0:(row.cases||[]).some(function(item){return item.currentTask&&item.currentTask.actorKey==='MATT'})?1:2};
+    return priority(a)-priority(b)||String(b.createdAt||'').localeCompare(String(a.createdAt||''));
+  });
+  return {counts:counts,queue:queue};
+}
+function bookedSessionModel(requests){
+  var sessions=new Map();
+  (requests||[]).forEach(function(request){(request.cases||[]).forEach(function(person){(person.phases||[]).forEach(function(phase){
+    if(!phase.sessionId||!phase.startUtc)return;
+    var key=String(phase.sessionId),item=sessions.get(key);
+    if(!item){item={sessionId:key,requestId:request.requestId,topicName:request.topicName,phase:phase.phase,startUtc:phase.startUtc,eventUrl:phase.eventUrl||'',people:[]};sessions.set(key,item)}
+    if(item.people.indexOf(person.personAlias)<0)item.people.push(person.personAlias);
+  })})});
+  return Array.from(sessions.values()).sort(function(a,b){return String(b.startUtc).localeCompare(String(a.startUtc))});
+}
+// HUB_OVERVIEW_PURE_END
 var hubScenarios=[
   {id:'group',title:'Gruppenschulung',description:'Ein Termin; Nachweis und Status bleiben je Person getrennt.'},
   {id:'individual',title:'Individueller Fortschritt',description:'Qualifizierte schulende Person und nächste Skillstufe.'},
@@ -184,7 +417,7 @@ function requestCode(id){var raw=String(id||''),row=auditRequests.filter(functio
 function hubRequest(){return auditRequests.filter(function(row){return row.requestId===selectedRequestId})[0]||null}
 function filterTaskRows(rows){var request=hubRequest();if(!request)return [];var ids=new Set(request.cases.map(function(row){return row.caseId}));return rows.filter(function(row){return ids.has(row.caseId)})}
 function hubStatusLabel(row){return row.state==='complete'?'Abgeschlossen':row.state==='open'?'Offen':'Ausstehend'}
-function currentTaskLabel(task){if(!task)return '';var labels={plan:'Phasenplan',booking:'Termin buchen',reschedule:'Ersatztermin planen',trainer_review:'Trainerbericht prüfen',archive_review:'Archiv prüfen',skill_review:'Skillkonflikt prüfen',followup:'Bestätigung nachverfolgen',rsvp_review:'Kalenderantwort prüfen',trainer_assessment:'Trainerbericht abgeben',participant_acknowledgement:'Teilnahme bestätigen',create_proof:'Nachweis erstellen',skill_update:'Skillstufe übernehmen',audit_review:'Fall prüfen',complete:'Abgeschlossen'};return (labels[task.action]||task.action)+(task.actorKey?' · zuständig: '+task.actorKey:' · Zuständigkeit prüfen')+(task.reason?' · '+task.reason:'')}
+function currentTaskLabel(task){if(!task)return '';var labels={plan:'Phasenplan',booking:'Termin buchen',reschedule:'Ersatztermin planen',trainer_review:'Trainerbericht prüfen',archive_review:'Archiv prüfen',skill_review:'Skillkonflikt prüfen',followup:'Bestätigung nachverfolgen',rsvp_review:'Kalenderantwort prüfen',trainer_assessment:'Trainerbericht abgeben',participant_acknowledgement:'Teilnahme bestätigen',create_proof:'Nachweis erstellen',skill_update:'Skillstufe übernehmen',audit_review:'Fall prüfen',complete:'Abgeschlossen'};return (labels[task.action]||task.action)+(task.actorKey?' · zuständig: '+(task.actorKey==='MATT'?'Process & Quality':personLabel(task.actorKey)):' · Zuständigkeit prüfen')+(task.reason?' · '+task.reason:'')}
 function selectRequest(id){if(selectedRequestId!==(id||'')){document.getElementById('tourLink').hidden=true;document.getElementById('tourStatus').textContent='';document.getElementById('feedbackRows').replaceChildren();document.getElementById('feedbackStatus').textContent=''}selectedRequestId=id||'';var request=hubRequest();currentRequestId=request?request.requestId:null;bookedSessions={};
   if(!request){clearReview();selectedRequestId='';renderHub();renderStepper();return}
   if(request.plannedSessions){google.script.run.withSuccessHandler(function(plan){if(selectedRequestId!==id)return;document.getElementById('planPanel').hidden=false;document.getElementById('mode').value=request.mode||'group';document.getElementById('mode').disabled=true;document.getElementById('planSave').disabled=true;document.getElementById('planRows').replaceChildren();if(plan){plan.phases.forEach(function(phase){var tr=document.createElement('tr');[(phase.phase==='theory'?'Theorie':'Praxis')+' · '+(phase.mode==='group'?'Gruppe':'einzeln'),phase.personKeys.map(personLabel).join(', ')+' · '+phase.sessionId,phase.durationMinutes+' Min.',phase.trainerKey,phase.theorySessionId?'Nach Theorie':'Erste Phase'].forEach(function(value){var td=document.createElement('td');td.textContent=value;tr.appendChild(td)});document.getElementById('planRows').appendChild(tr)});document.getElementById('planStatus').textContent='Gespeicherter Phasenplan · '+plan.phases.length+' Session(s).';showScheduleActions(plan)}}).withFailureHandler(function(error){document.getElementById('planStatus').textContent='Gespeicherter Plan konnte nicht gelesen werden: '+error.message}).getSavedPhasePlan(id)}
@@ -202,51 +435,132 @@ function setTask(id){activeTask=id;if(id==='register'){switchView('register');re
   if(id==='proof')loadProofQueue();
   if(id==='followup')loadFollowUps();
 }
-function switchView(view,refresh){['hub','workflow','register'].forEach(function(name){document.getElementById(name+'View').hidden=name!==view});
-  document.querySelectorAll('.hub-nav button').forEach(function(button){button.classList.toggle('active',button.dataset.view===view)});
+function switchView(view,refresh){['hub','workflow','resources','register'].forEach(function(name){document.getElementById(name+'View').hidden=name!==view});
+  document.querySelectorAll('.hub-nav button').forEach(function(button){button.classList.toggle('active',button.dataset.view===view);if(button.dataset.view===view)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current')});
+  document.getElementById('workspace').dataset.view=view;
+  var headings={hub:'Schulungen koordinieren.',workflow:'Bedarf & Planung',resources:'Themen & Matrix',register:'Ergebnisse & Register'};
+  document.getElementById('pageTitle').textContent=headings[view];
+  document.getElementById('newRequest').hidden=view!=='hub';
   if(refresh!==false&&(view==='hub'||view==='register'))loadAudit();
+  if(view==='resources'&&refresh!==false)loadResources();
 }
 function renderStepper(){var host=document.getElementById('taskStepper'),progress=hubProgress(hubRequest());host.replaceChildren();
   taskDefinitions.forEach(function(def,index){var li=document.createElement('li'),button=document.createElement('button'),small=document.createElement('small');
-    button.type='button';var open=def.id==='followup'&&progress.followup;button.className=(activeTask===def.id?'current ':'')+(progress[def.id]&&!open?'done':'');button.textContent=(index+1)+'. '+def.label;
+    button.type='button';if(activeTask===def.id)button.setAttribute('aria-current','step');var open=def.id==='followup'&&progress.followup;button.className=(activeTask===def.id?'current ':'')+(progress[def.id]&&!open?'done':'');button.textContent=(index+1)+'. '+def.label;
     small.textContent=open?'Offene Fälle':progress[def.id]?'Aus Register belegt':activeTask===def.id?'Aktuelle Ansicht':'Ansehen';button.appendChild(small);
     button.addEventListener('click',function(){setTask(def.id)});li.appendChild(button);host.appendChild(li)});
+  var current=host.querySelector('[aria-current=step]');if(current)host.scrollLeft=current.offsetLeft-host.offsetLeft;
   var request=hubRequest();document.getElementById('workflowContext').textContent=request?'Auftrag '+requestCode(request.requestId)+' · '+request.topicName+' · '+hubStatusLabel(request):'Neuer Schulungsbedarf · synthetische Testdaten';
 }
-function renderHub(){var request=hubRequest();if(!hubInitialized&&auditRequests.length){selectedRequestId=auditRequests.slice().sort(function(a,b){return String(b.createdAt).localeCompare(String(a.createdAt))})[0].requestId;request=hubRequest();hubInitialized=true;selectRequest(selectedRequestId);return}
+function renderHubOverview(){
+  var model=overviewModel(auditRequests),metrics=document.getElementById('overviewMetrics'),queue=document.getElementById('hubQueue');
+  metrics.replaceChildren();queue.replaceChildren();
+  [['owner','Bei Process & Quality'],['open','Klärung erforderlich'],['waiting','Ausstehende Aufträge'],['complete','Abgeschlossen']].forEach(function(def){
+    var box=document.createElement('div'),number=document.createElement('strong'),label=document.createElement('span');
+    box.className='metric';number.textContent=String(model.counts[def[0]]);label.textContent=def[1];box.appendChild(number);box.appendChild(label);metrics.appendChild(box);
+  });
+  if(!model.queue.length){var empty=document.createElement('div'),heading=document.createElement('h4'),description=document.createElement('p');empty.className='empty-state';heading.textContent=auditRequests.length?'Alle Aufträge sind abgeschlossen.':'Hier beginnt der nächste Auftrag.';description.textContent=auditRequests.length?'Die Nachweise finden Sie unter „Ergebnisse & Register“.':'Mit „Neuen Bedarf erfassen“ wählen Sie ein Thema und die Personen für Ihre erste Schulung.';empty.appendChild(heading);empty.appendChild(description);queue.appendChild(empty);return}
+  model.queue.slice(0,6).forEach(function(request){
+    var card=document.createElement('article'),content=document.createElement('div'),title=document.createElement('h4'),badge=document.createElement('span'),meta=document.createElement('p'),next=document.createElement('p'),button=document.createElement('button');
+    card.className='queue-card'+(selectedRequestId===request.requestId?' selected':'');
+    title.textContent='Auftrag '+requestCode(request.requestId)+' · '+request.topicName;
+    badge.className='status-badge '+request.state;badge.textContent=hubStatusLabel(request);title.appendChild(badge);
+    meta.textContent=request.cases.length+' Personenfall'+(request.cases.length===1?'':'e')+' · '+request.bookedSessions+'/'+request.plannedSessions+' Termine gebucht';
+    var focus=request.cases.slice().sort(function(a,b){return (a.state==='open'?0:a.state==='waiting'?1:2)-(b.state==='open'?0:b.state==='waiting'?1:2)}).filter(function(row){return row.state!=='complete'})[0];
+    next.className='queue-next';next.textContent=focus?focus.personAlias+' · '+(currentTaskLabel(focus.currentTask)||focus.reason||focus.nextAction||'Status prüfen'):'Status im Register prüfen';
+    button.type='button';button.textContent='Auftrag ansehen';button.className='secondary';
+    button.addEventListener('click',function(){selectRequest(request.requestId);document.getElementById('hubRequest').focus()});
+    content.appendChild(title);content.appendChild(meta);content.appendChild(next);card.appendChild(content);card.appendChild(button);queue.appendChild(card);
+  });
+  if(model.queue.length>6){var more=document.createElement('button');more.type='button';more.className='secondary';more.textContent='Alle ' + model.queue.length + ' offenen Aufträge im Register ansehen';more.addEventListener('click',function(){document.getElementById('auditState').value='all';switchView('register')});queue.appendChild(more)}
+}
+function renderBookedCalendar(){
+  var host=document.getElementById('calendarRows'),sessions=bookedSessionModel(auditRequests);host.replaceChildren();
+  if(!sessions.length){var empty=document.createElement('li');empty.textContent='Noch keine gebuchten Termine im Demo-Register.';host.appendChild(empty);return}
+  sessions.slice(0,8).forEach(function(row){var item=document.createElement('li'),title=document.createElement('strong'),detail=document.createElement('span');
+    var date=new Intl.DateTimeFormat('de-CH',{timeZone:'Europe/Zurich',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}).format(new Date(row.startUtc));
+    title.textContent=date+' · '+row.topicName+' · '+(row.phase==='theory'?'Theorie':'Praxis')+' · '+requestCode(row.requestId);
+    detail.textContent=row.people.join(', ');item.appendChild(title);item.appendChild(detail);
+    if(/^https:\/\/[^\s]+$/.test(row.eventUrl)){var link=document.createElement('a');link.href=row.eventUrl;link.target='_blank';link.rel='noopener noreferrer';link.textContent=' · Kalendereintrag öffnen';item.appendChild(link)}host.appendChild(item)
+  });
+  if(sessions.length>8){var more=document.createElement('li');more.textContent='Weitere '+(sessions.length-8)+' Termine stehen in den Aufträgen.';host.appendChild(more)}
+}
+function renderResources(data){
+  var topics=document.getElementById('resourceTopics'),head=document.getElementById('resourceMatrixHead'),body=document.getElementById('resourceMatrixRows'),link=document.getElementById('resourceSheetLink');
+  topics.replaceChildren();head.replaceChildren();body.replaceChildren();
+  data.topics.forEach(function(row){var card=document.createElement('article'),title=document.createElement('h3'),duration=document.createElement('p'),source=document.createElement('p'),rule=document.createElement('p');
+    card.className='resource-card';title.textContent=row.name+' · '+row.id;
+    duration.textContent=[row.theory?'Theorie '+row.theoryMinutes+' Min.':'',row.practice?'Praxis '+row.practiceMinutes+' Min.':''].filter(Boolean).join(' · ');
+    rule.textContent=row.progression?'Skillfolge 0 → 1 → 2 → 3':'Konfiguriertes Ziel: Stufe '+row.configuredTarget;
+    source.textContent='Quelle im Demo-Sheet: '+row.sourceMaterial;
+    card.appendChild(title);card.appendChild(duration);card.appendChild(rule);card.appendChild(source);topics.appendChild(card)
+  });
+  var header=document.createElement('tr'),personHeading=document.createElement('th');personHeading.textContent='Person';header.appendChild(personHeading);
+  data.topics.forEach(function(topic){var cell=document.createElement('th');cell.textContent=topic.name;header.appendChild(cell)});head.appendChild(header);
+  data.matrix.forEach(function(person){var tr=document.createElement('tr'),name=document.createElement('td');name.textContent=person.personAlias+' · '+person.role;tr.appendChild(name);
+    person.levels.forEach(function(item){var cell=document.createElement('td');cell.textContent=item.level===''?'Leer':item.level==='–'||item.level==='-'?'Nicht vorgesehen':'Stufe '+item.level;tr.appendChild(cell)});body.appendChild(tr)
+  });
+  link.hidden=!/^https:\/\/docs\.google\.com\/spreadsheets\//.test(data.sheetUrl||'');if(!link.hidden)link.href=data.sheetUrl;
+  document.getElementById('resourceStatus').textContent=data.topics.length+' Themen · '+data.matrix.length+' Testpersonen · Stand aus dem Demo-Sheet.';
+}
+function loadResources(){var status=document.getElementById('resourceStatus');status.textContent='Katalog und Matrix werden gelesen …';
+  google.script.run.withSuccessHandler(function(data){renderResources(data)}).withFailureHandler(function(e){status.textContent='Katalog und Matrix konnten nicht geladen werden: '+e.message}).getOwnerResourceOverview()
+}
+function renderHub(){renderHubOverview();var request=hubRequest();if(!hubInitialized&&auditRequests.length){selectedRequestId=auditRequests.slice().sort(function(a,b){return String(b.createdAt).localeCompare(String(a.createdAt))})[0].requestId;request=hubRequest();hubInitialized=true;selectRequest(selectedRequestId);return}
   document.getElementById('prepareTour').disabled=!request;
   ['hubRequest','workflowRequest'].forEach(function(id){var picker=document.getElementById(id),old=picker.value;picker.replaceChildren();picker.add(new Option('Neuen Auftrag beginnen',''));auditRequests.slice().sort(function(a,b){return String(b.createdAt).localeCompare(String(a.createdAt))}).forEach(function(row){picker.add(new Option(row.topicName+' · '+requestCode(row.requestId)+' · '+hubStatusLabel(row),row.requestId))});picker.value=selectedRequestId||''});
-  var cards=document.getElementById('scenarioCards');cards.replaceChildren();hubScenarios.forEach(function(scenario){var button=document.createElement('button');button.type='button';button.className='scenario-card'+(selectedScenario===scenario.id?' selected':'');var title=document.createElement('strong');title.textContent=scenario.title;var desc=document.createElement('span');desc.textContent=scenario.description;button.appendChild(title);button.appendChild(desc);button.addEventListener('click',function(){selectedScenario=scenario.id;var matches=auditRequests.filter(function(row){return scenario.id==='group'?row.mode==='group':scenario.id==='individual'?row.mode==='individual':row.state==='open'}).sort(function(a,b){return scenario.id==='group'?(b.state==='complete')-(a.state==='complete')||String(b.createdAt).localeCompare(String(a.createdAt)):String(b.createdAt).localeCompare(String(a.createdAt))});selectRequest(matches.length?matches[0].requestId:'');if(!matches.length&&scenario.id==='individual')document.getElementById('mode').value='individual';switchView('hub',false)});cards.appendChild(button)});
+  var cards=document.getElementById('scenarioCards');cards.replaceChildren();hubScenarios.forEach(function(scenario){var button=document.createElement('button');button.type='button';button.className='scenario-card'+(selectedScenario===scenario.id?' selected':'');button.setAttribute('aria-pressed',String(selectedScenario===scenario.id));var title=document.createElement('strong');title.textContent=scenario.title;var desc=document.createElement('span');desc.textContent=scenario.description;button.appendChild(title);button.appendChild(desc);button.addEventListener('click',function(){selectedScenario=scenario.id;var matches=auditRequests.filter(function(row){return scenario.id==='group'?row.mode==='group':scenario.id==='individual'?row.mode==='individual':row.state==='open'}).sort(function(a,b){return scenario.id==='group'?(b.state==='complete')-(a.state==='complete')||String(b.createdAt).localeCompare(String(a.createdAt)):String(b.createdAt).localeCompare(String(a.createdAt))});selectRequest(matches.length?matches[0].requestId:'');if(!matches.length&&scenario.id==='individual')document.getElementById('mode').value='individual';switchView('hub',false)});cards.appendChild(button)});
   var summary=document.getElementById('hubSummary'),next=document.getElementById('hubNext'),cases=document.getElementById('hubCases');cases.replaceChildren();
   var technical=document.getElementById('requestTechnical');technical.hidden=!request;document.getElementById('requestTechnicalValue').textContent=request?request.requestId:'';
   if(!request){summary.textContent='Für diesen Testfall gibt es noch keinen passenden Auftrag.';next.textContent='Nächster Schritt: neuen Schulungsbedarf erfassen.';document.getElementById('hubOpen').textContent='Neuen Bedarf erfassen';var empty=document.createElement('li');empty.textContent='Noch keine Personenfälle ausgewählt.';cases.appendChild(empty);return}
   summary.textContent=request.topicName+' · '+(request.mode||'Modus noch offen')+' · '+hubStatusLabel(request)+' · Auftrag '+requestCode(request.requestId);
-  var nextId=hubNextTask(request),definition=taskDefinitions.filter(function(row){return row.id===nextId})[0];next.textContent='Nächster Schritt: '+(definition?definition.label+' — '+definition.instruction:'Ergebnisse und Belege prüfen.');
+  var nextId=hubNextTask(request),definition=taskDefinitions.filter(function(row){return row.id===nextId})[0];
+  var focus=request.cases.filter(function(row){return row.state==='open'&&row.currentTask&&row.currentTask.actorKey==='MATT'})[0]||request.cases.filter(function(row){return row.state!=='complete'&&row.currentTask&&row.currentTask.actorKey==='MATT'})[0]||request.cases.filter(function(row){return row.state!=='complete'})[0];
+  var specific=focus&&currentTaskLabel(focus.currentTask);next.textContent=specific?'Nächste Aufgabe im Auftrag: '+focus.personAlias+' · '+specific:'Nächster Schritt: '+(definition?definition.label+' — '+definition.instruction:'Ergebnisse und Belege prüfen.');
   document.getElementById('hubOpen').textContent=nextId==='register'?'Ergebnisse öffnen':'Nächste Aufgabe öffnen';
   request.cases.forEach(function(row){var item=document.createElement('li'),name=document.createElement('strong'),badge=document.createElement('span'),detail=document.createElement('small');name.textContent=row.personAlias;badge.className='status-badge '+row.state;badge.textContent=hubStatusLabel(row);detail.textContent=currentTaskLabel(row.currentTask)||row.reason||row.nextAction||'';item.appendChild(name);item.appendChild(badge);item.appendChild(detail);cases.appendChild(item)});
 }
 document.querySelectorAll('.hub-nav button').forEach(function(button){button.addEventListener('click',function(){switchView(button.dataset.view)})});
 document.getElementById('hubRequest').addEventListener('change',function(){selectRequest(this.value)});
 document.getElementById('workflowRequest').addEventListener('change',function(){selectRequest(this.value);setTask(this.value?hubNextTask(hubRequest()):'intake')});
+document.getElementById('newRequest').addEventListener('click',function(){
+  selectRequest('');actionId=null;topic.value='';
+  document.querySelectorAll('#people input').forEach(function(box){box.checked=false});
+  topic.dispatchEvent(new Event('change'));setTask('intake');topic.focus();
+});
 document.getElementById('hubOpen').addEventListener('click',function(){setTask(hubNextTask(hubRequest()))});
 document.getElementById('hubRegister').addEventListener('click',function(){switchView('register')});
+document.getElementById('refreshOverview').addEventListener('click',loadAudit);
+document.getElementById('refreshResources').addEventListener('click',loadResources);
 document.getElementById('prepareTour').addEventListener('click',function(){var request=hubRequest(),button=this;if(!request)return;button.disabled=true;document.getElementById('tourStatus').textContent='Startlink wird vorbereitet …';google.script.run.withSuccessHandler(function(result){button.disabled=false;if(selectedRequestId!==result.requestId)return;var link=document.getElementById('tourLink');link.href=result.url;link.hidden=false;document.getElementById('tourStatus').textContent='Startlink für Auftrag '+requestCode(result.requestId)+' bereit. Vor dem Teilen muss die statische Seite veröffentlicht sein.'}).withFailureHandler(function(e){button.disabled=false;document.getElementById('tourStatus').textContent='Startlink fehlgeschlagen: '+e.message}).prepareDemoTourLink({requestId:request.requestId})});
 function loadDemoFeedback(){var request=hubRequest(),host=document.getElementById('feedbackRows'),status=document.getElementById('feedbackStatus');host.replaceChildren();if(!request){status.textContent='Zuerst einen Auftrag wählen.';return}status.textContent='Feedback wird gelesen …';google.script.run.withSuccessHandler(function(result){if(selectedRequestId!==result.requestId)return;result.rows.forEach(function(row){var entry=document.createElement('article'),heading=document.createElement('strong'),body=document.createElement('p');heading.textContent=row.role+' · '+row.step+' · '+row.submittedAt+' UTC';body.textContent=row.comment;entry.appendChild(heading);entry.appendChild(body);host.appendChild(entry)});status.textContent=result.rows.length+' Rückmeldung(en) für Auftrag '+requestCode(result.requestId)+'.'}).withFailureHandler(function(e){status.textContent='Feedback konnte nicht gelesen werden: '+e.message}).getDemoFeedbackForRequest({requestId:request.requestId})}
 document.getElementById('refreshFeedback').addEventListener('click',loadDemoFeedback);
 setTask('intake');switchView('hub',false);
 function auditLink(parent,url,label){if(!/^https:\/\/[^\s]+$/.test(url||''))return;var a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener';a.textContent=label;parent.appendChild(a);parent.appendChild(document.createTextNode(' · '))}
-function renderAudit(){var host=document.getElementById('auditRows');host.replaceChildren();var query=document.getElementById('auditSearch').value.trim().toLowerCase(),filter=document.getElementById('auditState').value,shown=0;auditRequests.forEach(function(request){var rows=request.cases.filter(function(row){var matches=!query||[request.topicId,request.topicName,request.requestId,row.personAlias,row.personKey,row.caseId].some(function(value){return String(value).toLowerCase().includes(query)});return matches&&(filter==='all'||row.state===filter)});if(!rows.length)return;shown+=rows.length;var heading=document.createElement('h3');heading.textContent='Auftrag '+requestCode(request.requestId)+' · '+request.topicName+' · '+(request.state==='complete'?'Abgeschlossen':request.state==='open'?'Klärung erforderlich':'Ausstehend');host.appendChild(heading);var meta=document.createElement('p');meta.className='muted';meta.textContent='Modus: '+request.mode+' · Abschlussmeldung: '+(request.completionNoticeState||'noch nicht versendet')+' · ';auditLink(meta,request.sheetUrl,'Demo-Sheet');host.appendChild(meta);rows.forEach(function(row){var detail=document.createElement('details');var summary=document.createElement('summary');summary.textContent=row.personAlias+' · '+row.caseId+' · '+(row.state==='complete'?'vollständig geprüft':row.state==='open'?'offen: '+row.reason:'ausstehend: '+row.reason);detail.appendChild(summary);var body=document.createElement('div');var status=document.createElement('p');status.textContent='Skill '+row.previousLevel+' → '+row.targetLevel+' · nächster Schritt: '+(row.nextAction||'keiner');body.appendChild(status);row.phases.forEach(function(phase){var p=document.createElement('p');p.textContent=(phase.phase==='theory'?'Theorie':'Praxis')+' · '+phase.sessionId+' · RSVP '+(phase.rsvp||'unbekannt')+' · Trainer '+(phase.attendance||'offen')+'/'+(phase.result||'offen')+' · Bericht '+(phase.trainerResponseId||'offen')+' '+(phase.trainerSubmittedAt||'')+' · Bestätigung '+(phase.acknowledgementResponseId||'offen')+' '+(phase.acknowledgementSubmittedAt||'')+' · ';auditLink(p,phase.eventUrl,'Kalendereintrag');auditLink(p,phase.trainerResponseUrl,'Trainerantworten');auditLink(p,phase.acknowledgementUrl,'Teilnahmeantworten');body.appendChild(p)});var proof=document.createElement('p');proof.textContent='Nachweis '+(row.proofId||'offen')+' · Archiv '+(row.archiveStatus||'offen')+' · Skill '+(row.skillStatus||'offen')+' '+(row.skillKey||'')+' · ';auditLink(proof,row.docUrl,'Google Doc');auditLink(proof,row.pdfUrl,'Drive PDF');auditLink(proof,row.archiveReceiptUrl,'Archivbeleg');auditLink(proof,row.skillUrl,'Skilländerung');body.appendChild(proof);if(row.localPdfPath){var archive=document.createElement('p');archive.className='id';archive.textContent='Lokales PDF: '+row.localPdfPath+' · DOCX: '+row.localDocxPath+' · Drive SHA-256: '+row.drivePdfSha256+' · lokal SHA-256: '+row.localPdfSha256+' · geprüft: '+row.archiveVerifiedAt;body.appendChild(archive)}detail.appendChild(body);host.appendChild(detail)})});document.getElementById('auditStatus').textContent=shown+' Personenfälle sichtbar · '+auditRequests.length+' Aufträge geladen.'}
-function loadAudit(){document.getElementById('auditStatus').textContent='Belege werden geprüft …';google.script.run.withSuccessHandler(function(rows){auditRequests=rows;renderAudit();renderHub();renderStepper()}).withFailureHandler(function(e){document.getElementById('auditStatus').textContent='Auditansicht konnte nicht geladen werden: '+e.message}).getAuditDashboard()}
+function renderAudit(){var host=document.getElementById('auditRows');host.replaceChildren();var query=document.getElementById('auditSearch').value.trim().toLowerCase(),filter=document.getElementById('auditState').value,shown=0;auditRequests.forEach(function(request){var rows=request.cases.filter(function(row){var matches=!query||[request.topicId,request.topicName,request.requestId,row.personAlias,row.personKey,row.caseId].some(function(value){return String(value).toLowerCase().includes(query)});return matches&&(filter==='all'||row.state===filter)});if(!rows.length)return;shown+=rows.length;var heading=document.createElement('h3');heading.textContent='Auftrag '+requestCode(request.requestId)+' · '+request.topicName+' · '+(request.state==='complete'?'Abgeschlossen':request.state==='open'?'Klärung erforderlich':'Ausstehend');host.appendChild(heading);var meta=document.createElement('p');meta.className='muted';meta.textContent='Modus: '+request.mode+' · Abschlussmeldung: '+(request.completionNoticeState||'noch nicht versendet')+' · ';auditLink(meta,request.sheetUrl,'Demo-Sheet');host.appendChild(meta);rows.forEach(function(row){var detail=document.createElement('details');var summary=document.createElement('summary');summary.textContent=row.personAlias+' · '+row.caseId+' · '+(row.state==='complete'?'vollständig geprüft':row.state==='open'?'offen: '+row.reason:'ausstehend: '+row.reason);detail.appendChild(summary);var body=document.createElement('div');var status=document.createElement('p');status.textContent='Skill '+row.previousLevel+' → '+row.targetLevel+' · nächster Schritt: '+(row.nextAction||'keiner');body.appendChild(status);row.phases.forEach(function(phase){var p=document.createElement('p');p.textContent=(phase.phase==='theory'?'Theorie':'Praxis')+' · '+phase.sessionId+' · RSVP '+(phase.rsvp||'unbekannt')+' · Trainer '+(phase.attendance||'offen')+'/'+(phase.result||'offen')+' · Bericht '+(phase.trainerResponseId||'offen')+' '+(phase.trainerSubmittedAt||'')+' · Bestätigung '+(phase.acknowledgementResponseId||'offen')+' '+(phase.acknowledgementSubmittedAt||'')+' · ';auditLink(p,phase.eventUrl,'Kalendereintrag');auditLink(p,phase.trainerResponseUrl,'Trainerantworten');auditLink(p,phase.acknowledgementUrl,'Teilnahmeantworten');body.appendChild(p)});var proof=document.createElement('p');proof.textContent='Nachweis '+(row.proofId||'offen')+' · Archiv '+(row.archiveStatus||'offen')+' · Skill '+(row.skillStatus||'offen')+' '+(row.skillKey||'')+' · ';auditLink(proof,row.docUrl,'Google Doc');auditLink(proof,row.pdfUrl,'Drive PDF');auditLink(proof,row.archiveReceiptUrl,'Archivbeleg');auditLink(proof,row.skillUrl,'Skilländerung');body.appendChild(proof);if(row.localPdfPath){var archive=document.createElement('p');archive.className='id';archive.textContent='Lokales PDF: '+row.localPdfPath+' · DOCX: '+row.localDocxPath+' · Drive SHA-256: '+row.drivePdfSha256+' · lokal SHA-256: '+row.localPdfSha256+' · geprüft: '+row.archiveVerifiedAt;body.appendChild(archive)}detail.appendChild(body);host.appendChild(detail)})});if(!shown){var empty=document.createElement('div'),emptyTitle=document.createElement('h3'),emptyText=document.createElement('p');empty.className='empty-state';emptyTitle.textContent='Keine passenden Fälle.';emptyText.textContent='Ändern Sie den Suchbegriff oder wählen Sie einen anderen Status.';empty.appendChild(emptyTitle);empty.appendChild(emptyText);host.appendChild(empty)}document.getElementById('auditStatus').textContent=shown+' Personenfälle sichtbar · '+auditRequests.length+' Aufträge geladen.'}
+function loadAudit(){
+  var panel=document.getElementById('overviewPanel'),status=document.getElementById('overviewStatus'),button=document.getElementById('refreshOverview');
+  panel.setAttribute('aria-busy','true');status.className='muted';button.disabled=true;
+  document.getElementById('auditStatus').textContent='Belege werden geprüft …';status.textContent='Register wird gelesen …';
+  google.script.run.withSuccessHandler(function(rows){
+    auditRequests=rows;renderAudit();renderHub();renderStepper();renderBookedCalendar();
+    panel.setAttribute('aria-busy','false');button.disabled=false;status.textContent='';
+  }).withFailureHandler(function(e){
+    panel.setAttribute('aria-busy','false');button.disabled=false;status.className='status-error';
+    document.getElementById('auditStatus').textContent='Auditansicht konnte nicht geladen werden: '+e.message;
+    status.textContent='Register konnte nicht gelesen werden: '+e.message+' Bitte „Register neu lesen“ wählen.';
+    panel.querySelectorAll('.skeleton').forEach(function(node){node.remove()});
+  }).getAuditDashboard();
+}
 document.getElementById('refreshAudit').addEventListener('click',loadAudit);document.getElementById('auditSearch').addEventListener('input',renderAudit);document.getElementById('auditState').addEventListener('change',renderAudit);
 // Keep the same data and actions in compact table cards; labels come from visible column headings.
 document.querySelectorAll('.scroll table').forEach(function(table){
-  var headings=Array.from(table.querySelectorAll('thead th')).map(function(th){return th.textContent.trim()});
   var body=table.tBodies[0];
-  function labelRows(){Array.from(body.rows).forEach(function(row){Array.from(row.cells).forEach(function(cell,index){cell.dataset.label=headings[index]||''})})}
+  function labelRows(){var headings=Array.from(table.querySelectorAll('thead th')).map(function(th){return th.textContent.trim()});Array.from(body.rows).forEach(function(row){Array.from(row.cells).forEach(function(cell,index){cell.dataset.label=headings[index]||''})})}
   new MutationObserver(labelRows).observe(body,{childList:true});
   labelRows();
 });
-google.script.run.withSuccessHandler(function(d){intake=d;d.topics.forEach(function(t){topic.add(new Option(t.id+' · '+t.name,t.id))});d.people.forEach(function(p){var label=document.createElement('label'),box=document.createElement('input');box.type='checkbox';box.value=p.key;label.appendChild(box);label.appendChild(document.createTextNode(p.alias+' ('+p.key+') · '+p.role));document.getElementById('people').appendChild(label)})}).withFailureHandler(function(e){document.getElementById('error').textContent='Demo-Daten konnten nicht geladen werden: '+e.message}).getIntakeData();
+google.script.run.withSuccessHandler(function(d){intake=d;d.topics.forEach(function(t){topic.add(new Option(t.id+' · '+t.name,t.id))});d.people.forEach(function(p){var label=document.createElement('label'),box=document.createElement('input');box.type='checkbox';box.value=p.key;label.appendChild(box);label.appendChild(document.createTextNode(p.alias+' ('+p.key+') · '+p.role));document.getElementById('people').appendChild(label)});if(auditRequests.length)renderHub()}).withFailureHandler(function(e){document.getElementById('error').textContent='Demo-Daten konnten nicht geladen werden: '+e.message}).getIntakeData();
 google.script.run.withSuccessHandler(function(d){d.topics.forEach(function(t){var tr=document.createElement('tr');[t.id,t.name,t.theory?'Ja':'Nein',t.practice?'Ja':'Nein',[t.theory?'Theorie '+t.theoryMinutes+' Min.':'',t.practice?'Praxis '+t.practiceMinutes+' Min.':''].filter(Boolean).join(' · ')].forEach(function(v){var td=document.createElement('td');td.textContent=v;tr.appendChild(td)});document.getElementById('catalogueRows').appendChild(tr)})}).getCatalogue();
 loadAudit();
 </script></body></html>

@@ -17,7 +17,7 @@ assert.equal(labels.requestCode('REQ-NEW'), 'A-0017');
 assert.equal(labels.requestCode('REQ-GROUP'), 'REQ-GROUP');
 assert.match(html, /new Option\(row\.topicName\+' · '\+requestCode\(row\.requestId\)\+' · '\+hubStatusLabel\(row\),row\.requestId\)/, 'picker displays the short label but submits the full request ID');
 assert.match(html, /requestTechnicalValue'\)\.textContent=request\?request\.requestId/, 'the complete ID stays available for support');
-assert.match(html, /id="demoVersion">Version 0\.5/, 'a visible version identifies the phone demo');
+assert.match(html, /id="demoVersion">Oberfläche 0\.6/, 'the UI revision is distinct from the Apps Script deployment version');
 const pure = html.match(/\/\/ UX1_PURE_START[^\n]*\n([\s\S]*?)\/\/ UX1_PURE_END/);
 assert.ok(pure, 'the display model is available to test without Google');
 const model = vm.createContext({});
