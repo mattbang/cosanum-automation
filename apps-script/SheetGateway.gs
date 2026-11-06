@@ -9,6 +9,15 @@ function readDemoTables_() {
     var values = sheet.getDataRange().getValues();
     assertHeaders_(values[0], DEMO_SCHEMA.sheets[name], name);
     tables[name] = rowObjects_(values, DEMO_SCHEMA.sheets[name]);
+    if (name === 'DeadlineChanges') {
+      var timeZone;
+      tables[name].forEach(function (row) {
+        if (row.due_date instanceof Date) {
+          if (!timeZone) timeZone = spreadsheet.getSpreadsheetTimeZone();
+          row.due_date = Utilities.formatDate(row.due_date, timeZone, 'yyyy-MM-dd');
+        }
+      });
+    }
   });
   return tables;
 }
