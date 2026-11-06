@@ -114,6 +114,36 @@ class ArchiveProofTests(unittest.TestCase):
         self.root = Path(self.temp.name) / 'archive'
         self.source = FakeSource()
 
+    def test_blank_sheet_rows_cannot_redirect_archive_writes(self):
+        headers = archive.SHEETS['Proofs']
+        first = [self.source.tables['Proofs'][0][key] for key in headers]
+        second = first.copy()
+        second[0], second[3] = 'PRF-DEMO-002', 'CASE-DEMO-002'
+        for blank in ([], [''], [''] * len(headers)):
+            with self.subTest(blank=blank):
+                api = mock.Mock()
+                api.json.return_value = {'values': [headers, blank, first, second]}
+                source = object.__new__(archive.Source)
+                source.api, source.sheets, source.spreadsheet = api, 'https://sheets.googleapis.com/v4', 'synthetic-sheet'
+                with self.assertRaisesRegex(archive.ArchiveError, 'blank.*row 2'):
+                    archive.archive_case(source, 'CASE-DEMO-002', self.root)
+                self.assertEqual(api.json.call_count, 1)
+                self.assertNotIn('method', api.json.call_args.kwargs)
+                self.assertFalse(self.root.exists())
+
+    def test_source_rows_reject_gaps_without_compacting_writable_tables(self):
+        for tab in ('Proofs', 'ArchiveReceipts'):
+            with self.subTest(tab=tab):
+                headers = archive.SHEETS[tab]
+                api = mock.Mock()
+                source = object.__new__(archive.Source)
+                source.api, source.sheets, source.spreadsheet = api, 'https://sheets.googleapis.com/v4', 'synthetic-sheet'
+                api.json.return_value = {'values': [headers, ['first-record'], [], ['last-record']]}
+                with self.assertRaisesRegex(archive.ArchiveError, 'blank.*row 3'):
+                    source.rows(tab)
+                api.json.return_value = {'values': [headers, ['first-record']]}
+                self.assertEqual(source.rows(tab), [dict(zip(headers, ['first-record'] + [''] * (len(headers) - 1)))])
+
     def test_success_and_idempotent_replay(self):
         first = archive.archive_case(self.source, CASE, self.root)
         self.assertEqual(first['status'], 'archived_verified')

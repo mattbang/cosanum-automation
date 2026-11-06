@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import type { IncomingMessage, ServerResponse } from 'node:http';
+import { createServer, request as httpRequest, type IncomingMessage, type ServerResponse } from 'node:http';
 import { createApiHandler } from '../src/app.ts';
 import type { Identity, Snapshot } from '../src/service.ts';
 
@@ -18,6 +18,36 @@ async function call(handler: ReturnType<typeof createApiHandler>, method: string
   await handler(request, response);
   return { status, body: content ? JSON.parse(content) as Record<string, unknown> : {} };
 }
+
+test('malformed request targets return 400 without rejecting the handler', async () => {
+  const handler = createApiHandler();
+  assert.equal((await call(handler, 'GET', 'http://[')).status, 400);
+  assert.equal((await call(handler, 'GET', '/missing')).status, 404);
+});
+
+test('raw malformed HTTP input cannot terminate the server or block the next request', { timeout: 5000 }, async () => {
+  const handler = createApiHandler();
+  const server = createServer(async (request, response) => { await handler(request, response); });
+  await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
+  const address = server.address();
+  assert(address && typeof address !== 'string');
+  const get = (path: string) => new Promise<number>((resolve, reject) => {
+    const request = httpRequest({ hostname: '127.0.0.1', port: address.port, path }, response => {
+      response.resume();
+      response.once('end', () => resolve(response.statusCode!));
+    });
+    request.once('error', reject);
+    request.setTimeout(2000, () => request.destroy(new Error('HTTP regression timed out')));
+    request.end();
+  });
+  try {
+    assert.equal(await get('http://['), 400);
+    assert.equal(await get('/missing'), 404);
+  } finally {
+    server.closeAllConnections();
+    await new Promise<void>(resolve => server.close(() => resolve()));
+  }
+});
 
 const identity: Identity = { actorKey: 'OWNER', role: 'process_quality', verifiedEmail: 'owner@example.test' };
 const snapshot: Snapshot = {

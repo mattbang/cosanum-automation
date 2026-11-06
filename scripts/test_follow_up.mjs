@@ -23,8 +23,10 @@ function setup() {
   const context = { session: tables.Sessions[0], person, owner, personCase: { case_id: caseId }, request: { request_id: 'REQ-DEMO' }, topic: { display_name: 'Hochregallager' } };
   const form = { form_id: 'FORM-TEST', form_url: 'https://docs.google.com/forms/d/e/test/viewform', verified_at: '2026-10-22T12:05:00Z', verified_by: owner.email };
   const sent = [];
+  const canonicalUrl = form.form_url;
   const ctx = vm.createContext({ Date, Object, Array, Number, String, RegExp, Error, Set });
-  for (const file of ['FormsIdentity.gs', 'NotificationTemplates.gs', 'FollowUp.gs']) vm.runInContext(fs.readFileSync('apps-script/' + file, 'utf8'), ctx);
+  for (const file of ['FormsIdentity.gs', 'NotificationTemplates.gs', 'FormDispatch.gs', 'FollowUp.gs']) vm.runInContext(fs.readFileSync('apps-script/' + file, 'utf8'), ctx);
+  ctx.FormApp = { openById: () => ({ getPublishedUrl: () => canonicalUrl }) };
   ctx.ScriptApp = { getOAuthToken: () => 'test-token' };
   ctx.UrlFetchApp = { fetch: url => ({ getResponseCode: () => 200,
     getContentText: () => JSON.stringify({ formId: decodeURIComponent(url.split('/').at(-1)),
@@ -192,3 +194,11 @@ for (const change of ['absent', 'cancelled']) {
   assert.equal(sent.length, 0);
 }
 console.log('Follow-up reminders: due dates, one send per day, gates, unknown delivery, quota, allowlist and open queue passed');
+
+{
+  const {ctx, form, sent, gateway} = setup();
+  form.form_url = 'https://docs.google.com/forms/d/e/OTHER-CASE/viewform';
+  const result = ctx.processAcknowledgementFollowUpsCore_(new Date('2026-10-24T07:00:00Z'), gateway);
+  assert.equal(result.results.length, 0);
+  assert.equal(sent.length, 0, 'a verified Form ID cannot release a different Form URL');
+}

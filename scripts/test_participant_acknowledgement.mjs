@@ -131,7 +131,7 @@ ctx.Session={getEffectiveUser:()=>({getEmail:()=> 'owner@example.com'})};
 ctx.LockService={getScriptLock:()=>({waitLock:()=>{},releaseLock:()=>{}})};
 ctx.FormApp={openById:()=>({collectsEmail:()=>true})};
 ctx.ScriptApp={...ctx.ScriptApp,getProjectTriggers:()=>[{
-  getHandlerFunction:()=> 'onParticipantFormSubmit',getTriggerSourceId:()=> 'FORM-ONE'
+  getHandlerFunction:()=> 'processVerifiedFormResponses_'
 }]};
 ctx.findDemoSpreadsheet_=()=>({getSheetByName:()=>({getDataRange:()=>({getValues:()=>savedRows}),
   getRange:(row,col,count,width)=>({setValues:values=>{

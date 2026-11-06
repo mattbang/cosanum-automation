@@ -25,6 +25,8 @@ function run(label, command, args) {
   console.log(`PASS ${label}`);
 }
 
+run('offline suite inventory', process.execPath, ['scripts/run_local_tests.mjs', '--list']);
+
 const scripts = readdirSync(resolve(root, 'scripts'));
 for (const file of scripts.filter(name => /^test_.*\.mjs$/.test(name)).sort()) {
   run(file, process.execPath, [`scripts/${file}`]);

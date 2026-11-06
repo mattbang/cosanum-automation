@@ -85,3 +85,63 @@ function formsReadyForLink_(formRow, ownerEmail) {
   try { return formsIdentityGate_(formRow, ownerEmail).allowed; }
   catch (error) { return false; }
 }
+
+/** One response poller covers every retained Form, instead of one trigger per Form. */
+function formsResponseTriggerReady_(formId, handler) {
+  var triggers = ScriptApp.getProjectTriggers();
+  var shared = triggers.filter(function (trigger) { return trigger.getHandlerFunction() === 'processVerifiedFormResponses_'; });
+  var legacy = triggers.filter(function (trigger) {
+    return trigger.getHandlerFunction() === handler && trigger.getTriggerSourceId() === formId;
+  });
+  if (shared.length > 1 || legacy.length > 1) throw new Error('Mehrere Antwort-Trigger vorhanden.');
+  return shared.length === 1 || legacy.length === 1;
+}
+
+/** Caller holds the script lock. Only registered demo Form handlers are retired. */
+function ensureFormResponseProcessor_() {
+  var tables = readDemoTables_();
+  var triggers = ScriptApp.getProjectTriggers();
+  var shared = triggers.filter(function (trigger) { return trigger.getHandlerFunction() === 'processVerifiedFormResponses_'; });
+  if (shared.length > 1) throw new Error('Mehrere Formular-Antwortprozessoren vorhanden.');
+  var legacy = triggers.filter(function (trigger) {
+    var handler = trigger.getHandlerFunction();
+    var rows = handler === 'onTrainerFormSubmit' ? tables.TrainerForms :
+      handler === 'onParticipantFormSubmit' ? tables.ParticipantForms : [];
+    return (rows || []).some(function (row) {
+      return row.demo_marker === '[DEMO]' && row.form_id === trigger.getTriggerSourceId();
+    });
+  });
+  if (!shared.length) {
+    // At the service limit, replace one known handler to make room for the shared poller.
+    if (triggers.length >= 20 && legacy.length) ScriptApp.deleteTrigger(legacy.shift());
+    ScriptApp.newTrigger('processVerifiedFormResponses_').timeBased().everyMinutes(5).create();
+  }
+  legacy.forEach(function (trigger) { ScriptApp.deleteTrigger(trigger); });
+}
+
+function installVerifiedFormResponseProcessor_() {
+  var lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try { ensureFormResponseProcessor_(); return { count: 1 }; }
+  finally { lock.releaseLock(); }
+}
+
+function processVerifiedFormResponses_() {
+  var result = { processed: 0, saved: 0, errors: [] };
+  ['TrainerForms', 'ParticipantForms'].forEach(function (name) {
+    var tables = readDemoTables_();
+    tables[name].filter(function (row) { return row.demo_marker === '[DEMO]'; }).forEach(function (row) {
+      try {
+        FormApp.openById(row.form_id).getResponses().forEach(function (response) {
+          try {
+            var attempt = name === 'TrainerForms' ? processTrainerResponse_(row.form_id, response) :
+              processParticipantResponse_(row.form_id, response);
+            result.processed++;
+            if (attempt.saved) result.saved++;
+          } catch (error) { result.errors.push({ formId: row.form_id, reason: String(error.message || error) }); }
+        });
+      } catch (error) { result.errors.push({ formId: row.form_id, reason: String(error.message || error) }); }
+    });
+  });
+  return result;
+}

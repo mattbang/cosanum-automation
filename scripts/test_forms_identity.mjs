@@ -10,10 +10,9 @@ const ctx = vm.createContext({ Date, Set, Object, Array, Number, String, JSON, e
 for (const file of ['FormsIdentity.gs', 'TrainerAssessment.gs', 'ParticipantAcknowledgement.gs']) {
   vm.runInContext(fs.readFileSync('apps-script/' + file, 'utf8'), ctx);
 }
-ctx.ScriptApp = { getOAuthToken: () => 'private-test-token', getProjectTriggers: () => [
-  { getHandlerFunction: () => 'onTrainerFormSubmit', getTriggerSourceId: () => 'FORM-TRAINER' },
-  { getHandlerFunction: () => 'onParticipantFormSubmit', getTriggerSourceId: () => 'FORM-PARTICIPANT' }
-] };
+const triggers = [{ getHandlerFunction: () => 'processVerifiedFormResponses_' }];
+ctx.ScriptApp = { getOAuthToken: () => 'private-test-token', getProjectTriggers: () => triggers };
+
 ctx.UrlFetchApp = { fetch(url, options) {
   const endpoint = url.split('/').at(-1), isPost = endpoint.endsWith(':batchUpdate');
   const formId = decodeURIComponent(endpoint.replace(':batchUpdate', ''));
@@ -116,3 +115,44 @@ assert.equal(ctx.formsIdentityGate_({ ...trainerForm, verified_by: owner }, owne
 restFailure = true;
 assert.equal(ctx.formsReadyForLink_({ ...trainerForm, verified_by: owner }, owner), false, 'REST outage hides historical manual links too');
 console.log('Pass: Forms REST VERIFIED write/read-back, both response roles, wrong accounts, changed setting, retries, historical rows, and REST failure.');
+
+// Retained Forms do not consume one trigger each; migration also works at the service limit.
+{
+  const scheduler = vm.createContext({Date, Object, Array, Number, String});
+  for (const file of ['FormsIdentity.gs', 'TrainerAssessment.gs', 'ParticipantAcknowledgement.gs'])
+    vm.runInContext(fs.readFileSync('apps-script/' + file, 'utf8'), scheduler);
+  const rows = prefix => Array.from({length:30}, (_,i) => ({form_id:prefix+i,demo_marker:'[DEMO]'}));
+  const tables = {TrainerForms:rows('TF-'), ParticipantForms:rows('PF-')};
+  const trigger = (handler,id) => ({getHandlerFunction:()=>handler,getTriggerSourceId:()=>id});
+  const unrelated = trigger('onTrainerFormSubmit','NOT-IN-DEMO');
+  const triggers = [...Array.from({length:4},(_,i)=>trigger('daily-'+i,'')),unrelated,
+    ...Array.from({length:15},(_,i)=>trigger('onTrainerFormSubmit','TF-'+i))];
+  let created = 0;
+  scheduler.readDemoTables_ = () => tables;
+  scheduler.ScriptApp = {
+    getProjectTriggers:()=>triggers,
+    deleteTrigger:item=>{triggers.splice(triggers.indexOf(item),1);},
+    newTrigger:handler=>({timeBased:()=>({everyMinutes:minutes=>({create:()=>{
+      assert.equal(minutes,5); assert(triggers.length<20); created++; triggers.push(trigger(handler,''));
+    }})})})
+  };
+  scheduler.ensureTrainerFormTrigger_('TF-0');
+  for (let i=0;i<30;i++) {scheduler.ensureTrainerFormTrigger_('TF-'+i); scheduler.ensureParticipantFormTrigger_('PF-'+i);}
+  assert.equal(created,1); assert.equal(triggers.length,6); assert(triggers.includes(unrelated));
+  const before = JSON.stringify(triggers.map(item=>[item.getHandlerFunction(),item.getTriggerSourceId()]));
+  assert.equal(scheduler.formsResponseTriggerReady_('TF-25','onTrainerFormSubmit'),true);
+  assert.equal(JSON.stringify(triggers.map(item=>[item.getHandlerFunction(),item.getTriggerSourceId()])),before);
+  const processed=[];
+  scheduler.FormApp={openById:id=>{if(id==='TF-0')throw Error('temporarily unavailable');return {getResponses:()=>[id]};}};
+  scheduler.processTrainerResponse_=(id)=>{if(id==='TF-1')throw Error('bad response');processed.push(id);return {saved:true};};
+  scheduler.processParticipantResponse_=(id)=>{processed.push(id);return {saved:true};};
+  const run=scheduler.processVerifiedFormResponses_();
+  assert.equal(run.errors.length,2);assert.equal(run.saved,58);assert.equal(processed.length,58);
+  assert(processed.includes('PF-29'),'an unreadable trainer Form must not starve participant responses');
+}
+restFailure=false;
+state.set('FORM-TRAINER','VERIFIED');state.set('FORM-PARTICIPANT','VERIFIED');
+const beforeReplay=JSON.stringify([trainerSheet.rows,participantSheet.rows]);
+assert.equal(ctx.prepareTrainerForm_({sessionId:'SESSION',caseId:'CASE-T',requireExistingFormId:'FORM-TRAINER'}).reused,true);
+assert.equal(ctx.prepareParticipantForm_({sessionId:'SESSION',caseId:'CASE-P',requireExistingFormId:'FORM-PARTICIPANT'}).reused,true);
+assert.equal(JSON.stringify([trainerSheet.rows,participantSheet.rows]),beforeReplay,'shared-trigger replay must not write');
