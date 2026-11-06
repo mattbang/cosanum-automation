@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
-import { GoogleSheetMemberSource, GoogleTrainingReader, type FormMetadata, type MemberCell, type MemberTables } from '../src/members/source.ts';
-import { memberSchema, memberTableNames } from '../src/members/tasks.ts';
+import { GoogleSheetMemberSource, GoogleTrainingReader, type FormMetadata, type MemberCell, type MemberRow, type MemberTables } from '../src/members/source.ts';
+import { memberSchema, memberTableNames, validateMemberTables } from '../src/members/tasks.ts';
 import { MemberError, type MemberTaskRef } from '../src/members/types.ts';
 import { claims, eventId, fixture, NOW, ref, row } from './member-source-fixture.ts';
 
@@ -81,6 +81,104 @@ test('completed role work remains visible and cannot be opened again', async () 
   assert.equal(trainer.state, 'complete'); assert.equal(participant.state, 'complete');
   assert.equal(trainer.action, undefined); assert.equal(participant.action, undefined);
   await assert.rejects(f.source.open(claims('P1'), taskRef()), status(403));
+});
+
+test('explicit exact response copies normalize by disposition with the original first or last, without changing source rows or member scope', async () => {
+  for (const position of ['first', 'last']) {
+    for (const disposition of ['accepted', 'rejected']) {
+      const f = fixture(); f.trainerPass(); f.acknowledge();
+      f.trainerPass('CASE-P2'); f.acknowledge('CASE-P2');
+      for (const name of ['TrainerAssessments', 'ParticipantAcknowledgements'] as const) {
+        const original = f.tables[name][0];
+        f.tables[name][1].response_id = original.response_id;
+        original.disposition = disposition;
+        if (disposition === 'rejected') original.reason = 'Original rejected response';
+        const copies = [
+          { ...original, disposition: 'duplicate', reason: 'Explicitly retained duplicate copy' },
+          { ...original, disposition: 'duplicate', reason: 'Second explicitly retained duplicate copy' },
+        ];
+        if (position === 'first') f.tables[name].push(...copies);
+        else f.tables[name].unshift(...copies);
+      }
+      const raw = structuredClone(f.tables);
+      const normalized = validateMemberTables(f.tables);
+      for (const name of ['TrainerAssessments', 'ParticipantAcknowledgements'] as const) {
+        assert.equal(normalized[name].length, 2, 'the same response ID under another Form remains a distinct response');
+        const original = normalized[name].find(row => row.case_id === 'CASE-P1')!;
+        assert.deepEqual(original, raw[name].find(row => row.case_id === 'CASE-P1' && row.disposition === disposition));
+        assert.ok(original !== f.tables[name].find(row => row.case_id === 'CASE-P1' && row.disposition === disposition));
+      }
+      const trainer = (await f.source.tasks(claims('MATT'))).tasks.find(task => task.caseId === 'CASE-P1')!;
+      assert.equal(trainer.state, disposition === 'accepted' ? 'complete' : 'ready');
+      const participant = await f.source.tasks(claims('P1'));
+      assert.equal(participant.tasks.find(task => task.sessionId === 'SES-1')!.state, disposition === 'accepted' ? 'complete' : 'blocked');
+      assert.deepEqual(participant.tasks.map(task => task.caseId).sort(), ['CASE-P1', 'CASE-P1-PLAN']);
+      assert.equal(JSON.stringify(participant).includes('CASE-P2'), false);
+      await assert.rejects(f.source.open(claims('P1'), taskRef({ caseId: 'CASE-P2' })), status(403));
+      const reader = new GoogleTrainingReader({ get: async <T>() => batch(f.tables) as T }, 'synthetic-workbook');
+      assert.deepEqual(await reader.readTables(), normalized);
+      assert.deepEqual(f.tables, raw, 'normalization and role operations never classify, delete or rewrite source rows');
+    }
+  }
+});
+
+test('response copy payload, identity, scope, marker and cell types must match the original exactly', async () => {
+  for (const name of ['TrainerAssessments', 'ParticipantAcknowledgements'] as const) {
+    for (const field of memberSchema()[name].filter(field => field !== 'disposition' && field !== 'reason')) {
+      const f = fixture(); f.trainerPass(); f.acknowledge();
+      const original = f.tables[name][0];
+      const copy: MemberRow = { ...original, disposition: 'duplicate', reason: 'Explicitly retained copy' };
+      copy[field] = field === 'submitted_at' ? '2026-11-05T09:03:00.000Z' : `${copy[field]}-changed`;
+      f.tables[name].push(copy);
+      await assert.rejects(f.source.tasks(claims('P1')), status(503), `${name}.${field}`);
+      assert.equal(f.reads.length, 0, 'invalid copies fail before any scoped metadata read');
+    }
+    const f = fixture(); f.trainerPass(); f.acknowledge();
+    const payload = name === 'TrainerAssessments' ? 'note' : 'typed_name';
+    const original = f.tables[name][0];
+    original[payload] = '1';
+    f.tables[name].push({ ...original, [payload]: 1, disposition: 'duplicate', reason: 'Typed mismatch' });
+    await assert.rejects(f.source.tasks(claims('P1')), status(503));
+  }
+});
+
+test('unexplained, ambiguous and malformed response copies remain unavailable', async () => {
+  const mutations: ((rows: MemberRow[]) => void)[] = [
+    rows => { rows[1].disposition = 'accepted'; },
+    rows => { rows[1].disposition = 'rejected'; },
+    rows => { rows[0].disposition = 'duplicate'; rows[0].reason = 'No original remains'; },
+    rows => { rows[0].disposition = 'pending'; },
+    rows => { rows[1].disposition = ''; },
+    rows => { rows[1].reason = ''; },
+    rows => { rows[1].reason = ' \t '; },
+    rows => { rows[1].reason = 1; },
+    rows => { rows.splice(0, 1); },
+    rows => { delete rows[1].submitted_at; },
+    rows => { rows[1].unexpected_field = 'not in source schema'; },
+    rows => { rows[1].submitted_at = 'invalid timestamp'; },
+    rows => { rows[1].note = { private: 'not a cell' } as never; },
+  ];
+  for (const name of ['TrainerAssessments', 'ParticipantAcknowledgements'] as const) {
+    for (const mutate of mutations) {
+      const f = fixture(); f.trainerPass(); f.acknowledge();
+      f.tables[name].push({ ...f.tables[name][0], disposition: 'duplicate', reason: 'Explicitly retained copy' });
+      mutate(f.tables[name]);
+      await assert.rejects(f.source.tasks(claims('P1')), status(503));
+      assert.equal(f.reads.length, 0);
+    }
+  }
+});
+
+test('matching duplicate classifications do not weaken accepted response chronology or assignment checks', async () => {
+  for (const name of ['TrainerAssessments', 'ParticipantAcknowledgements'] as const) {
+    for (const field of ['submitted_at', name === 'TrainerAssessments' ? 'reporter_email' : 'respondent_email', 'case_id']) {
+      const f = fixture(); f.trainerPass(); f.acknowledge();
+      const original = f.tables[name][0];
+      original[field] = field === 'submitted_at' ? '2026-11-05T08:30:00.000Z' : field === 'case_id' ? 'CASE-P2' : claims('P2').email;
+      f.tables[name].push({ ...original, disposition: 'duplicate', reason: 'Same corrupt payload remains invalid' });
+      await assert.rejects(f.source.tasks(claims('P1')), status(503));
+    }
+  }
 });
 
 test('unknown account, unverified claims, non-authoritative email, subject mismatch and revoked grants fail closed', async () => {

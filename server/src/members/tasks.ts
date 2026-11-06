@@ -121,6 +121,33 @@ function isoTimestamp(value: MemberCell): boolean {
   return new Date(time).toISOString() === normalized;
 }
 
+function normalizedResponseLedger(rows: MemberRow[], headers: string[]): MemberRow[] {
+  const groups = new Map<string, MemberRow[]>();
+  for (const row of rows) {
+    const key = JSON.stringify([row.form_id, row.response_id]);
+    const group = groups.get(key) ?? [];
+    group.push(row);
+    groups.set(key, group);
+  }
+  const retained = new Set<MemberRow>();
+  const payloadFields = headers.filter(field => field !== 'disposition' && field !== 'reason');
+  for (const group of groups.values()) {
+    if (group.length === 1) {
+      if (group[0].disposition === 'duplicate') unavailable();
+      retained.add(group[0]);
+      continue;
+    }
+    const originals = group.filter(row => row.disposition === 'accepted' || row.disposition === 'rejected');
+    if (originals.length !== 1) unavailable();
+    const original = originals[0];
+    if (group.some(copy => copy !== original &&
+        (copy.disposition !== 'duplicate' || typeof copy.reason !== 'string' || !copy.reason.trim() ||
+          payloadFields.some(field => copy[field] !== original[field])))) unavailable();
+    retained.add(original);
+  }
+  return rows.filter(row => retained.has(row));
+}
+
 /** Validate joins before a scope can be projected; never silently choose the first duplicate. */
 export function validateMemberTables(value: unknown): MemberTables {
   if (!value || typeof value !== 'object') unavailable();
@@ -136,6 +163,9 @@ export function validateMemberTables(value: unknown): MemberTables {
         if (Object.hasOwn(row, field) && row[field] !== '' && !isoTimestamp(row[field])) unavailable();
       }
     }
+  }
+  for (const name of ['TrainerAssessments', 'ParticipantAcknowledgements'] as const) {
+    tables[name] = normalizedResponseLedger(tables[name], schema[name]);
   }
   for (const [name, fields] of [
     ['Topics', ['topic_id']], ['People', ['person_key']], ['Skills', ['person_key', 'topic_id']],

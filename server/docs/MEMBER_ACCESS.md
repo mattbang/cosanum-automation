@@ -16,6 +16,8 @@ The read projection evaluates the canonical `Schema.gs`, `Booking.gs`, `FormsIde
 
 Its read allowlist contains only the required training tables. Schema 13's separate `DeadlineChanges` register is omitted; the extra owner register does not disable login or add deadline-history access. Required tables and every required header remain strict.
 
+The read projection can honor an explicitly classified response copy in either response ledger. Every raw row must pass validation first. For one Form/response ID pair, exactly one row must be accepted or rejected; all remaining rows must be marked `duplicate`, include a text reason and match every other schema field exactly. The reader reduces only its cloned snapshot and applies the usual assignment and chronology checks to the retained original. Ambiguous or altered copies return 503. It does not change the workbook, classify records or verify that a source correction was approved.
+
 ## Login and logout
 
 Google Identity Services loads only after the user selects sign-in. The official Google library verifies the token signature, issuer, audience, expiry, verified email and a one-use server challenge nonce. Gmail or authoritative Workspace email can bind by its exact configured People address. Other third-party Google account emails require an explicit Google `subject` pin in the grant. A role name, case ID or email supplied by the browser is never an authorization claim. See Google's [ID-token verification guidance](https://developers.google.com/identity/gsi/web/guides/verify-google-id-token).
