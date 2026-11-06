@@ -73,6 +73,14 @@ try {
   await evaluate("document.querySelector('#deadlineReason').value='Synthetic blocked write check';document.querySelector('#deadlinePolicyApproved').checked=true;document.querySelector('#deadlineSave').click()");
   await until("document.querySelector('#deadlineStatus').textContent.includes('blocked saveRequestDeadline')");
   assert.equal(await evaluate("document.querySelectorAll('#deadlineQueue article').length"), 1);
+  await evaluate("document.querySelector('#hubRequest').value='SAMPLE-GROUP';document.querySelector('#hubRequest').dispatchEvent(new Event('change'))");
+  assert.equal(await evaluate("document.querySelector('#deadlineSave').disabled"), true, 'completed work cannot be edited');
+  assert.equal(await evaluate("document.querySelector('#deadlineScope').disabled"), false, 'scope navigation remains available for completed histories');
+  await evaluate("document.querySelector('#deadlineScope').value='SAMPLE-GROUP-P01';document.querySelector('#deadlineScope').dispatchEvent(new Event('change'))");
+  assert.equal(await evaluate("document.querySelector('#deadlineScope').disabled"), false);
+  assert.match(await evaluate("document.querySelector('#deadlineHistory').textContent"), /Synthetische Bedarfsanfrage/);
+  await evaluate("document.querySelector('#deadlineScope').value='';document.querySelector('#deadlineScope').dispatchEvent(new Event('change'))");
+  assert.equal(await evaluate("document.querySelector('#deadlineScope').value"), '');
   const screenshot = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false });
   const path = join(tmpdir(), 'training-deadline-desktop.png');
   await writeFile(path, Buffer.from(screenshot.data, 'base64'));

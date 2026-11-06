@@ -852,7 +852,7 @@ function renderDeadlineEditor(){
   var key=(request?request.requestId:'')+'|'+scope.value+'|'+(source?source.revision:0);
   if(key!==deadlineEditorKey){if(key.split('|').slice(0,2).join('|')!==deadlineEditorKey.split('|').slice(0,2).join('|'))document.getElementById('deadlineStatus').textContent='';deadlineEditorKey=key;document.getElementById('deadlineDate').value=source?source.date:'';document.getElementById('deadlineReference').value=source?source.reference:person?'':'Bedarfsanfrage';document.getElementById('deadlineReason').value='';document.getElementById('deadlinePolicyApproved').checked=false}
   var editable=!!request&&(person?person.deadline&&person.deadline.editable:request.cases.some(function(row){return row.deadline&&row.deadline.editable}));
-  Array.from(document.getElementById('deadlineForm').elements).forEach(function(control){control.disabled=!editable});
+  Array.from(document.getElementById('deadlineForm').elements).forEach(function(control){control.disabled=control.id==='deadlineScope'?!request:!editable});
   document.getElementById('deadlineApprovalRow').hidden=!scope.value;document.getElementById('deadlinePolicyApproved').required=!!scope.value;
   document.getElementById('deadlineSummary').textContent=!request?'Zuerst einen Auftrag wählen.':person?deadlineLabel(person.deadline):'Anfragefrist: '+(source?deadlineDateLabel(source.date):'nicht erfasst')+' · Fristverantwortung: Process & Quality · Änderungen gelten für offene Fälle';
   var history=document.getElementById('deadlineHistory');history.replaceChildren();
