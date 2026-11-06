@@ -6,6 +6,8 @@ The existing `verified_at` and `verified_by` columns remain in place. Automated 
 
 Historical manual rows have no machine-readable history of earlier setting changes. Their current setting is reread before further use. The adapter cannot prove what the setting was at an earlier submission time if someone changes it away and back between reads.
 
+The shared response poller holds one script lock from its first Sheet read through its final response write. An overlapping run yields without reading the Sheet. It calls the already-locked response handlers and skips previously recorded `(form_id, response_id)` pairs, including rejected attempts; a failed processing call remains retryable. This keeps scheduled runs from priming Sheet reads before another run commits and avoids repeatedly validating historical responses. Skipping an old response does not release any proof or completion gate: those gates still check the current Form settings independently.
+
 ## Connected acceptance still required
 
 1. Grant the new `script.external_request` scope on the dedicated demo account after reviewing Google's consent screen. Confirm the Forms API is enabled for that script's Cloud project.

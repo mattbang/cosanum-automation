@@ -143,12 +143,45 @@ console.log('Pass: Forms REST VERIFIED write/read-back, both response roles, wro
   assert.equal(scheduler.formsResponseTriggerReady_('TF-25','onTrainerFormSubmit'),true);
   assert.equal(JSON.stringify(triggers.map(item=>[item.getHandlerFunction(),item.getTriggerSourceId()])),before);
   const processed=[];
-  scheduler.FormApp={openById:id=>{if(id==='TF-0')throw Error('temporarily unavailable');return {getResponses:()=>[id]};}};
-  scheduler.processTrainerResponse_=(id)=>{if(id==='TF-1')throw Error('bad response');processed.push(id);return {saved:true};};
-  scheduler.processParticipantResponse_=(id)=>{processed.push(id);return {saved:true};};
+  tables.TrainerAssessments=[]; tables.ParticipantAcknowledgements=[];
+  let locked=false, released=0, reads=0, overlapped=false;
+  scheduler.LockService={getScriptLock:()=>({
+    tryLock:()=>{if(locked)return false;locked=true;return true;},
+    releaseLock:()=>{assert(locked);locked=false;released++;}
+  })};
+  scheduler.readDemoTables_=()=>{assert(locked,'poller must lock before its first Sheet read');reads++;return tables;};
+  scheduler.FormApp={openById:id=>{
+    assert(locked);
+    if(!overlapped){
+      overlapped=true;
+      const beforeReads=reads;
+      assert.equal(scheduler.processVerifiedFormResponses_().busy,true,'overlapping run must yield');
+      assert.equal(reads,beforeReads,'overlap must not prime a stale Sheet read cache');
+      assert(locked,'overlapping run must not release the active run lock');
+    }
+    if(id==='TF-0')throw Error('temporarily unavailable');
+    return {getResponses:()=>Array.from({length:id==='PF-29'?2:1},()=>({getId:()=> 'RESPONSE'}))};
+  }};
+  scheduler.processTrainerResponse_=scheduler.processParticipantResponse_=()=>{throw Error('must not reacquire/release the outer lock');};
+  function accept(id, ledger){
+    assert(locked);
+    if(id==='TF-1')throw Error('bad response');
+    processed.push(id);ledger.push({form_id:id,response_id:'RESPONSE'});return {saved:true};
+  }
+  scheduler.processTrainerResponseLocked_=id=>accept(id,tables.TrainerAssessments);
+  scheduler.processParticipantResponseLocked_=id=>accept(id,tables.ParticipantAcknowledgements);
   const run=scheduler.processVerifiedFormResponses_();
   assert.equal(run.errors.length,2);assert.equal(run.saved,58);assert.equal(processed.length,58);
+  assert.equal(run.skipped,1,'repeated raw response within a run must also be skipped');
   assert(processed.includes('PF-29'),'an unreadable trainer Form must not starve participant responses');
+  assert.equal(locked,false);assert.equal(released,1);
+  const replay=scheduler.processVerifiedFormResponses_();
+  assert.equal(replay.saved,0);assert.equal(processed.length,58,'recorded response IDs must bypass repeated processing');
+  assert.equal(replay.skipped,59,'the response key must include its Form ID');
+  assert.equal(released,2);
+  scheduler.readDemoTables_=()=>{throw Error('Sheet unavailable');};
+  assert.throws(()=>scheduler.processVerifiedFormResponses_(),/Sheet unavailable/);
+  assert.equal(locked,false,'failed initial read must release the lock');assert.equal(released,3);
 }
 restFailure=false;
 state.set('FORM-TRAINER','VERIFIED');state.set('FORM-PARTICIPANT','VERIFIED');

@@ -127,21 +127,30 @@ function installVerifiedFormResponseProcessor_() {
 }
 
 function processVerifiedFormResponses_() {
-  var result = { processed: 0, saved: 0, errors: [] };
-  ['TrainerForms', 'ParticipantForms'].forEach(function (name) {
+  var result = { processed: 0, saved: 0, skipped: 0, errors: [] };
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(1)) { result.busy = true; return result; }
+  try {
     var tables = readDemoTables_();
-    tables[name].filter(function (row) { return row.demo_marker === '[DEMO]'; }).forEach(function (row) {
-      try {
-        FormApp.openById(row.form_id).getResponses().forEach(function (response) {
-          try {
-            var attempt = name === 'TrainerForms' ? processTrainerResponse_(row.form_id, response) :
-              processParticipantResponse_(row.form_id, response);
-            result.processed++;
-            if (attempt.saved) result.saved++;
-          } catch (error) { result.errors.push({ formId: row.form_id, reason: String(error.message || error) }); }
-        });
-      } catch (error) { result.errors.push({ formId: row.form_id, reason: String(error.message || error) }); }
+    ['TrainerForms', 'ParticipantForms'].forEach(function (name) {
+      var ledger = name === 'TrainerForms' ? 'TrainerAssessments' : 'ParticipantAcknowledgements';
+      var recorded = new Set(tables[ledger].map(function (row) { return JSON.stringify([row.form_id, row.response_id]); }));
+      tables[name].filter(function (row) { return row.demo_marker === '[DEMO]'; }).forEach(function (row) {
+        try {
+          FormApp.openById(row.form_id).getResponses().forEach(function (response) {
+            try {
+              var key = JSON.stringify([row.form_id, String(response.getId() || '')]);
+              if (recorded.has(key)) { result.skipped++; return; }
+              var attempt = name === 'TrainerForms' ? processTrainerResponseLocked_(row.form_id, response) :
+                processParticipantResponseLocked_(row.form_id, response);
+              recorded.add(key);
+              result.processed++;
+              if (attempt.saved) result.saved++;
+            } catch (error) { result.errors.push({ formId: row.form_id, reason: String(error.message || error) }); }
+          });
+        } catch (error) { result.errors.push({ formId: row.form_id, reason: String(error.message || error) }); }
+      });
     });
-  });
-  return result;
+    return result;
+  } finally { lock.releaseLock(); }
 }
