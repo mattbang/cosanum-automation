@@ -174,7 +174,7 @@ function processAcknowledgementFollowUpsCore_(clock, gateway) {
   } finally { lock.releaseLock(); }
 }
 
-function processAcknowledgementFollowUps() { return processAcknowledgementFollowUpsCore_(); }
+function processAcknowledgementFollowUps_() { return processAcknowledgementFollowUpsCore_(); }
 
 function acknowledgementFollowUpQueue_(tables, clock) {
   var now = followUpNow_(clock), rows = [];
@@ -203,9 +203,9 @@ function acknowledgementFollowUpQueue_(tables, clock) {
   return rows;
 }
 
-function getAcknowledgementFollowUpQueue() { return acknowledgementFollowUpQueue_(readDemoTables_()); }
+function getAcknowledgementFollowUpQueue_() { return acknowledgementFollowUpQueue_(readDemoTables_()); }
 
-function recordAcknowledgementFollowUp(input) {
+function recordAcknowledgementFollowUp_(input) {
   if (!input || !FOLLOW_UP_ACTIONS[input.action] || typeof input.caseId !== 'string' ||
       typeof input.sessionId !== 'string' || typeof input.note !== 'string' || !input.note.trim() || input.note.length > 500 ||
       /[\x00-\x08\x0b\x0c\x0e-\x1f]/.test(input.note)) throw new Error('Aktion und kurze Notiz sind erforderlich.');
@@ -224,16 +224,16 @@ function recordAcknowledgementFollowUp(input) {
       actionId, input.caseId, input.sessionId, context.request.request_id, input.action,
       input.note.trim(), String(context.owner.email).trim().toLowerCase(), stamp, '[DEMO]']);
     SpreadsheetApp.flush();
-    return { actionId: actionId, recordedAt: stamp, rows: getAcknowledgementFollowUpQueue() };
+    return { actionId: actionId, recordedAt: stamp, rows: getAcknowledgementFollowUpQueue_() };
   } finally { lock.releaseLock(); }
 }
 
-function installAcknowledgementFollowUpProcessor() {
+function installAcknowledgementFollowUpProcessor_() {
   var matches = ScriptApp.getProjectTriggers().filter(function (trigger) {
-    return trigger.getHandlerFunction() === 'processAcknowledgementFollowUps';
+    return trigger.getHandlerFunction() === 'processAcknowledgementFollowUps_';
   });
   if (matches.length > 1) throw new Error('Mehrere Erinnerungstrigger vorhanden.');
   if (matches.length) return { installed: false, count: 1 };
-  ScriptApp.newTrigger('processAcknowledgementFollowUps').timeBased().atHour(9).everyDays(1).inTimezone(SLOT_TIME_ZONE).create();
+  ScriptApp.newTrigger('processAcknowledgementFollowUps_').timeBased().atHour(9).everyDays(1).inTimezone(SLOT_TIME_ZONE).create();
   return { installed: true, count: 1 };
 }

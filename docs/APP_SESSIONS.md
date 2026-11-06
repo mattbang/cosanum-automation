@@ -1,0 +1,21 @@
+# Private training app accounts
+
+The owner-only Apps Script deployment provides the Google identity boundary. The application adds an explicit login session, an account menu and supported display preferences. This does not enable trainer, participant or other member access; issues #9, #64 and #67 retain their broader account-acceptance work.
+
+The account menu shows the Google Drive account profile after its email matches the validated fixture owner and the execution identity. A nonempty active Google identity must match as well. Display name, email and role are read-only. Preferences cover comfortable/compact spacing and system/reduced motion and are stored in the owner's user properties.
+
+An explicit login creates an opaque server-generated token with an absolute eight-hour expiry. Only its SHA-256 hash is stored on the server; the browser keeps the token in tab session storage. A random browser-family identifier is not a credential and is the only persistent browser identifier. Restoring a page validates the token before mounting the workflow. Authentication errors return to the landing page without automatically logging in again.
+
+All workflow calls use `dispatchAppRequest` and its explicit method allowlist. Business functions, setup helpers and clock processors end with `_`, so `google.script.run` cannot call them directly. The two Form submission entry points remain public only because they require native Google Form event methods that client JSON cannot supply. The five public session methods and `doGet` are the remaining browser entry points.
+
+Session validation and the complete dispatched operation share a user lock. Logout takes that lock before revoking every token in the same browser family. A successful logout response therefore follows previously authorized operations and blocks subsequent stale requests. A family generation also rejects an earlier login that finishes after logout. Each logout intent has a stable identifier, so a retried old sign-out cannot revoke a later explicit login. Other browsers and the Google account session remain signed in. Client generations discard late replies; logout and expiry dispose the workflow, remove its DOM and clear the tab token. Cross-tab notification is best-effort; server revocation remains authoritative. Failed server revocation stays pending in tab storage with a retry control and resumes after reload before any session restore.
+
+## Background-task compatibility
+
+Existing clock triggers must select their private handler names before publishing the authenticated release. Use a temporary editor-HEAD-only forwarding alias while changing each installed handler in the Triggers UI. Preserve the displayed deployment, event, timing, timezone and failure-notification choices. Keep Form triggers and the form-dispatch activation cutoff unchanged. Do not install a processor merely because its installer exists.
+
+`getProjectTriggers()` does not expose clock timing, so API inventory alone cannot prove preservation. Retain the before/after trigger UI evidence. Remove transitional public aliases before creating an immutable authentication version. Triggers using Head are independent of the numbered web deployment: a rollback must retain compatible private handlers in Head or deliberately restore their selections, rather than blindly replacing editor source with an older release.
+
+## Verification boundary
+
+`test_app_sessions.mjs` checks owner binding, token hashing, expiry, invalid/revoked requests, family revocation, locked dispatch, method exposure and preferences. `test_session_client.mjs` checks the authenticated transport and stale callbacks. Synthetic browser checks cover the landing page, menu, settings, expiry, revocation failure and responsive layouts. Live owner login, refresh, logout and read-only workflow navigation are recorded separately in the private release evidence. These checks do not represent a new training workflow replay or acceptance for additional accounts.

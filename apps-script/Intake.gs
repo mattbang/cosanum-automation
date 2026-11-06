@@ -18,7 +18,7 @@ function eligibility_(topic, rawLevel, target) {
   return { allowed: true, reason: 'Explizit konfigurierte Zielstufe zulässig.' };
 }
 
-function getIntakeData() {
+function getIntakeData_() {
   var tables = readDemoTables_();
   catalogueView_(tables.Topics, tables.People);
   return {
@@ -60,12 +60,12 @@ function intakeSelection_(input, tables) {
     rows: rows, allAllowed: rows.every(function (row) { return row.allowed; }) };
 }
 
-function getIntakePreview(input) {
+function getIntakePreview_(input) {
   return intakeSelection_(input, readDemoTables_());
 }
 
 /** Retry key comes from the browser and is persisted before returning. */
-function saveDraftRequest(input) {
+function saveDraftRequest_(input) {
   if (!input || typeof input.actionId !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(input.actionId)) {
     throw new Error('Ungültige Aktions-ID. Bitte die Seite neu laden.');
   }

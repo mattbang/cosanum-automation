@@ -131,11 +131,11 @@ ctx.findDemoSpreadsheet_=()=>({getSheetByName:()=>({
     formRows[1][9]=values[0][0];formRows[1][10]=values[0][1];
   }})
 })});
-assert.throws(()=>ctx.confirmTrainerVerifiedEmail({sessionId:session.session_id,caseId:cases[0].case_id}),/prüfen und bestätigen/);
-const confirmed=ctx.confirmTrainerVerifiedEmail({sessionId:session.session_id,caseId:cases[0].case_id,confirmation:true});
+assert.throws(()=>ctx.confirmTrainerVerifiedEmail_({sessionId:session.session_id,caseId:cases[0].case_id}),/prüfen und bestätigen/);
+const confirmed=ctx.confirmTrainerVerifiedEmail_({sessionId:session.session_id,caseId:cases[0].case_id,confirmation:true});
 assert.equal(confirmed.verifiedBy,'forms-api:trainer@example.com');
 assert.equal(formRows[1][10],'forms-api:trainer@example.com');
 assert.equal(ctx.trainerAssessmentDecision_(context,{...formRow,verified_at:'',verified_by:''},response('R-20'),[],()=>event).disposition,'rejected');
 ctx.Session={getEffectiveUser:()=>({getEmail:()=> 'wrong@example.com'})};
-assert.throws(()=>ctx.confirmTrainerVerifiedEmail({sessionId:session.session_id,caseId:cases[0].case_id,confirmation:true}),/Nur Process & Quality/);
+assert.throws(()=>ctx.confirmTrainerVerifiedEmail_({sessionId:session.session_id,caseId:cases[0].case_id,confirmation:true}),/Nur Process & Quality/);
 console.log('Pass: assigned-trainer identity, one-person group level-4 exception, post-session gate, per-person attendance/result, open cases, wrong-account and duplicate rejection, and RSVP separation.');

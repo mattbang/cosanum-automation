@@ -93,9 +93,9 @@ const before = new Date('2026-10-24T11:59:59Z'), after = new Date('2026-10-24T12
   const { ctx, sent, ledger, gateway } = setup();
   ctx.PropertiesService = { getScriptProperties: () => ({ getProperty: () => null }) };
   ctx.readDemoTables_ = () => ({ Sessions: [], SessionCases: [], MessageLedger: [] });
-  assert.deepEqual(Array.from(ctx.previewFormRequestBacklog()), []);
+  assert.deepEqual(Array.from(ctx.previewFormRequestBacklog_()), []);
   assert.equal(sent.length, 0); assert.equal(ledger.rows.length, 1);
-  assert.throws(() => ctx.processFormRequests(), /nicht aktiviert/);
+  assert.throws(() => ctx.processFormRequests_(), /nicht aktiviert/);
 }
 {
   const { ctx } = setup();
@@ -106,7 +106,7 @@ const before = new Date('2026-10-24T11:59:59Z'), after = new Date('2026-10-24T12
   }) };
   let created = 0;
   ctx.ScriptApp = { getProjectTriggers: () => [], newTrigger: () => ({ timeBased: () => ({ atHour: () => ({ everyDays: () => ({ inTimezone: () => ({ create: () => { created++; } }) }) }) }) }) };
-  ctx.installFormRequestProcessor();
+  ctx.installFormRequestProcessor_();
   assert.equal(created, 1);
   assert.equal(writes.length, 1, 'reinstallation replaces any old activation cutoff');
   assert.match(writes[0][1], /^20\d\d-/);
@@ -161,8 +161,8 @@ const before = new Date('2026-10-24T11:59:59Z'), after = new Date('2026-10-24T12
   const { ctx, tables, sent, gateway, prepare } = setup();
   ctx.formDispatchPrepareOne_ = prepare;
   const calls = [];
-  ctx.prepareTrainerForm = () => { calls.push('trainer'); };
-  ctx.prepareParticipantForm = () => { calls.push('participant'); };
+  ctx.prepareTrainerForm_ = () => { calls.push('trainer'); };
+  ctx.prepareParticipantForm_ = () => { calls.push('participant'); };
   ctx.FormApp = { openById: id => ({ getResponses: () => id === 'TF-1' ? [{ id: 'raw trainer' }] : [{ id: 'raw participant' }] }) };
   ctx.processTrainerResponse_ = () => { tables.TrainerAssessments.push({ session_id: 'SES-1', case_id: 'CASE-1', disposition: 'accepted', attendance: 'attended', assessment: 'passed', demo_marker: '[DEMO]' }); };
   ctx.processParticipantResponse_ = () => { tables.ParticipantAcknowledgements.push({ session_id: 'SES-1', case_id: 'CASE-1', disposition: 'accepted', demo_marker: '[DEMO]' }); };

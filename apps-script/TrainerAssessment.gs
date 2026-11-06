@@ -116,7 +116,7 @@ function trainerFormRow_(tables, sessionId, caseId) {
 }
 
 /** Preparing a link does not report attendance. Process & Quality can share it after training. */
-function prepareTrainerForm(input) {
+function prepareTrainerForm_(input) {
   if (!input || typeof input.sessionId !== 'string' || typeof input.caseId !== 'string') throw new Error('Session und Personenfall fehlen.');
   var lock = LockService.getScriptLock();
   lock.waitLock(30000);
@@ -170,7 +170,7 @@ function prepareTrainerForm(input) {
 }
 
 /** Explicit owner attestation after inspecting Google Form Settings > Responses. */
-function confirmTrainerVerifiedEmail(input) {
+function confirmTrainerVerifiedEmail_(input) {
   if (!input || input.confirmation !== true || typeof input.sessionId !== 'string' || typeof input.caseId !== 'string') {
     throw new Error('Bitte die Einstellung „Verifiziert“ im Google-Formular prüfen und bestätigen.');
   }
@@ -293,12 +293,14 @@ function processTrainerResponse_(formId, response) {
 }
 
 function onTrainerFormSubmit(event) {
-  if (!event || !event.source || !event.response) throw new Error('Formularereignis fehlt.');
+  if (!event || !event.source || typeof event.source.getId !== 'function' || !event.response ||
+      typeof event.response.getId !== 'function' || typeof event.response.getTimestamp !== 'function' ||
+      typeof event.response.getRespondentEmail !== 'function') throw new Error('Gültiges Google-Formularereignis fehlt.');
   return processTrainerResponse_(event.source.getId(), event.response);
 }
 
 /** Replay retained raw Form responses if a submission trigger was interrupted. */
-function refreshTrainerAssessments() {
+function refreshTrainerAssessments_() {
   var tables = readDemoTables_();
   var results = [];
   tables.TrainerForms.filter(function (row) { return row.demo_marker === '[DEMO]'; }).forEach(function (row) {
@@ -336,4 +338,4 @@ function trainerAssessmentQueue_() {
   }, []);
 }
 
-function getTrainerAssessmentQueue() { return trainerAssessmentQueue_(); }
+function getTrainerAssessmentQueue_() { return trainerAssessmentQueue_(); }

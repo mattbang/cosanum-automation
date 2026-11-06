@@ -137,12 +137,12 @@ function slotProposalModel_(sessionId, tables, now, gateway) {
     windowStartUtc: window.start, windowEndUtc: window.end, calendars: calendars, proposals: proposals, reason: reason };
 }
 
-function getSlotProposals(sessionId) {
+function getSlotProposals_(sessionId) {
   return slotProposalModel_(sessionId, readDemoTables_(), new Date(), queryCalendarFreeBusy_);
 }
 
 /** Administrator diagnostic: each of the four test calendars gets an explicit result. */
-function checkDemoCalendarAccess() {
+function checkDemoCalendarAccess_() {
   var tables = readDemoTables_();
   var people = tables.People.filter(function (p) { return p.demo_marker === '[DEMO]'; });
   if (people.length !== 4) throw new Error('Vier Demo-Kalender werden erwartet.');
