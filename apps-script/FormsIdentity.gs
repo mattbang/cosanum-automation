@@ -112,8 +112,9 @@ function ensureFormResponseProcessor_() {
     });
   });
   if (!shared.length) {
-    // At the service limit, replace one known handler to make room for the shared poller.
-    if (triggers.length >= 20 && legacy.length) ScriptApp.deleteTrigger(legacy.shift());
+    if (triggers.length >= 20) {
+      throw new Error('Trigger-Kapazität erreicht. Bitte im Apps-Script-Editor einen freien Triggerplatz bereitstellen und erneut versuchen. Bestehende Trigger bleiben unverändert.');
+    }
     ScriptApp.newTrigger('processVerifiedFormResponses_').timeBased().everyMinutes(5).create();
   }
   legacy.forEach(function (trigger) { ScriptApp.deleteTrigger(trigger); });
@@ -129,8 +130,11 @@ function installVerifiedFormResponseProcessor_() {
 function processVerifiedFormResponses_() {
   var result = { processed: 0, saved: 0, errors: [] };
   ['TrainerForms', 'ParticipantForms'].forEach(function (name) {
-    var tables = readDemoTables_();
-    tables[name].filter(function (row) { return row.demo_marker === '[DEMO]'; }).forEach(function (row) {
+    var forms;
+    try {
+      forms = readDemoTables_()[name].filter(function (row) { return row.demo_marker === '[DEMO]'; });
+    } catch (_) { result.errors.push({}); return; }
+    forms.forEach(function (row) {
       try {
         FormApp.openById(row.form_id).getResponses().forEach(function (response) {
           try {
@@ -138,10 +142,13 @@ function processVerifiedFormResponses_() {
               processParticipantResponse_(row.form_id, response);
             result.processed++;
             if (attempt.saved) result.saved++;
-          } catch (error) { result.errors.push({ formId: row.form_id, reason: String(error.message || error) }); }
+          } catch (_) { result.errors.push({}); }
         });
-      } catch (error) { result.errors.push({ formId: row.form_id, reason: String(error.message || error) }); }
+      } catch (_) { result.errors.push({}); }
     });
   });
+  if (result.errors.length) {
+    throw new Error('Formular-Antwortabgleich fehlgeschlagen: ' + result.errors.length + ' Fehler; ' + result.saved + ' Antworten gespeichert.');
+  }
   return result;
 }

@@ -116,39 +116,92 @@ restFailure = true;
 assert.equal(ctx.formsReadyForLink_({ ...trainerForm, verified_by: owner }, owner), false, 'REST outage hides historical manual links too');
 console.log('Pass: Forms REST VERIFIED write/read-back, both response roles, wrong accounts, changed setting, retries, historical rows, and REST failure.');
 
-// Retained Forms do not consume one trigger each; migration also works at the service limit.
+// Trigger migration preserves existing bindings unless the shared poller is created successfully.
 {
-  const scheduler = vm.createContext({Date, Object, Array, Number, String});
-  for (const file of ['FormsIdentity.gs', 'TrainerAssessment.gs', 'ParticipantAcknowledgement.gs'])
-    vm.runInContext(fs.readFileSync('apps-script/' + file, 'utf8'), scheduler);
   const rows = prefix => Array.from({length:30}, (_,i) => ({form_id:prefix+i,demo_marker:'[DEMO]'}));
   const tables = {TrainerForms:rows('TF-'), ParticipantForms:rows('PF-')};
   const trigger = (handler,id) => ({getHandlerFunction:()=>handler,getTriggerSourceId:()=>id});
-  const unrelated = trigger('onTrainerFormSubmit','NOT-IN-DEMO');
-  const triggers = [...Array.from({length:4},(_,i)=>trigger('daily-'+i,'')),unrelated,
-    ...Array.from({length:15},(_,i)=>trigger('onTrainerFormSubmit','TF-'+i))];
-  let created = 0;
-  scheduler.readDemoTables_ = () => tables;
-  scheduler.ScriptApp = {
-    getProjectTriggers:()=>triggers,
-    deleteTrigger:item=>{triggers.splice(triggers.indexOf(item),1);},
-    newTrigger:handler=>({timeBased:()=>({everyMinutes:minutes=>({create:()=>{
-      assert.equal(minutes,5); assert(triggers.length<20); created++; triggers.push(trigger(handler,''));
-    }})})})
-  };
+  function schedulerFixture(count, failCreate = false) {
+    const scheduler = vm.createContext({Date, Object, Array, Number, String});
+    for (const file of ['FormsIdentity.gs', 'TrainerAssessment.gs', 'ParticipantAcknowledgement.gs'])
+      vm.runInContext(fs.readFileSync('apps-script/' + file, 'utf8'), scheduler);
+    const unrelated = trigger('onTrainerFormSubmit','NOT-IN-DEMO');
+    const triggers = [...Array.from({length:count-16},(_,i)=>trigger('daily-'+i,'')),unrelated,
+      ...Array.from({length:15},(_,i)=>trigger('onTrainerFormSubmit','TF-'+i))];
+    const effects = [];
+    scheduler.readDemoTables_ = () => tables;
+    scheduler.ScriptApp = {
+      getProjectTriggers:()=>triggers,
+      deleteTrigger:item=>{effects.push('delete');triggers.splice(triggers.indexOf(item),1);},
+      newTrigger:handler=>({timeBased:()=>({everyMinutes:minutes=>({create:()=>{
+        effects.push('create');assert.equal(minutes,5);assert(triggers.length<20);
+        if(failCreate)throw Error('synthetic creation failure');
+        const created=trigger(handler,'');triggers.push(created);return created;
+      }})})})
+    };
+    return {scheduler,triggers,effects,unrelated};
+  }
+  const full = schedulerFixture(20);
+  const fullBefore = [...full.triggers];
+  assert.throws(()=>full.scheduler.ensureTrainerFormTrigger_('TF-0'), /Trigger.*[Kk]apazität|[Kk]apazität.*Trigger/);
+  assert.deepEqual(full.triggers,fullBefore,'full capacity preserves every existing binding');
+  assert.deepEqual(full.effects,[],'full capacity neither creates nor deletes triggers');
+  const failed = schedulerFixture(19,true);
+  const failedBefore = [...failed.triggers];
+  assert.throws(()=>failed.scheduler.ensureParticipantFormTrigger_('PF-0'), /synthetic creation failure/);
+  assert.deepEqual(failed.triggers,failedBefore,'creation failure preserves every existing binding');
+  assert.deepEqual(failed.effects,['create'],'legacy bindings are not deleted before successful creation');
+  const {scheduler,triggers,effects,unrelated} = schedulerFixture(19);
   scheduler.ensureTrainerFormTrigger_('TF-0');
   for (let i=0;i<30;i++) {scheduler.ensureTrainerFormTrigger_('TF-'+i); scheduler.ensureParticipantFormTrigger_('PF-'+i);}
-  assert.equal(created,1); assert.equal(triggers.length,6); assert(triggers.includes(unrelated));
+  assert.equal(effects.filter(effect=>effect==='create').length,1);
+  assert.equal(effects[0],'create','replacement is created before any legacy binding is retired');
+  assert.equal(effects.filter(effect=>effect==='delete').length,15);
+  assert.equal(triggers.length,5);assert(triggers.includes(unrelated));
   const before = JSON.stringify(triggers.map(item=>[item.getHandlerFunction(),item.getTriggerSourceId()]));
   assert.equal(scheduler.formsResponseTriggerReady_('TF-25','onTrainerFormSubmit'),true);
   assert.equal(JSON.stringify(triggers.map(item=>[item.getHandlerFunction(),item.getTriggerSourceId()])),before);
-  const processed=[];
-  scheduler.FormApp={openById:id=>{if(id==='TF-0')throw Error('temporarily unavailable');return {getResponses:()=>[id]};}};
-  scheduler.processTrainerResponse_=(id)=>{if(id==='TF-1')throw Error('bad response');processed.push(id);return {saved:true};};
-  scheduler.processParticipantResponse_=(id)=>{processed.push(id);return {saved:true};};
-  const run=scheduler.processVerifiedFormResponses_();
-  assert.equal(run.errors.length,2);assert.equal(run.saved,58);assert.equal(processed.length,58);
-  assert(processed.includes('PF-29'),'an unreadable trainer Form must not starve participant responses');
+  const processed=[],opened=[],attempted=[];
+  scheduler.FormApp={openById:id=>{
+    opened.push(id);
+    if(id==='TF-0')throw Error('private Form failure for TF-0');
+    return {getResponses:()=>id==='TF-1'?['private rejected response',id]:[id]};
+  }};
+  scheduler.processTrainerResponse_=(id,response)=>{
+    attempted.push(response);
+    if(response==='private rejected response')throw Error('private response source text');
+    processed.push(id);return {saved:true};
+  };
+  scheduler.processParticipantResponse_=(id,response)=>{attempted.push(response);processed.push(id);return {saved:true};};
+  assert.throws(()=>scheduler.processVerifiedFormResponses_(),error=>{
+    assert.equal(error.message,'Formular-Antwortabgleich fehlgeschlagen: 2 Fehler; 59 Antworten gespeichert.');
+    return true;
+  });
+  assert.equal(opened.length,60);assert.equal(attempted.length,60);assert.equal(processed.length,59);
+  assert(processed.includes('TF-1'),'one rejected response must not starve later responses in the same Form');
+  assert(processed.includes('PF-29'),'an unreadable trainer Form must not starve later participant Forms');
+
+  opened.length=0;
+  scheduler.FormApp={openById:id=>{opened.push(id);throw Error('private unavailable Form '+id);}};
+  assert.throws(()=>scheduler.processVerifiedFormResponses_(),error=>{
+    assert.equal(error.message,'Formular-Antwortabgleich fehlgeschlagen: 60 Fehler; 0 Antworten gespeichert.');
+    return true;
+  });
+  assert.equal(opened.length,60,'an all-Forms outage attempts every registered Form before reporting failure');
+
+  scheduler.FormApp={openById:id=>({getResponses:()=>[id]})};
+  scheduler.processTrainerResponse_=id=>({saved:id!=='TF-0'});
+  scheduler.processParticipantResponse_=()=>({saved:true});
+  assert.deepEqual(JSON.parse(JSON.stringify(scheduler.processVerifiedFormResponses_())),{processed:60,saved:59,errors:[]},
+    'successful runs retain the public result shape and saved/duplicate counts');
+
+  let tableReads=0;
+  scheduler.readDemoTables_=()=>{if(++tableReads===1)throw Error('private workbook source text');return tables;};
+  assert.throws(()=>scheduler.processVerifiedFormResponses_(),error=>{
+    assert.equal(error.message,'Formular-Antwortabgleich fehlgeschlagen: 1 Fehler; 30 Antworten gespeichert.');
+    return true;
+  });
+  assert.equal(tableReads,2,'a failed registry read does not prevent attempting the later registry');
 }
 restFailure=false;
 state.set('FORM-TRAINER','VERIFIED');state.set('FORM-PARTICIPANT','VERIFIED');
@@ -156,3 +209,4 @@ const beforeReplay=JSON.stringify([trainerSheet.rows,participantSheet.rows]);
 assert.equal(ctx.prepareTrainerForm_({sessionId:'SESSION',caseId:'CASE-T',requireExistingFormId:'FORM-TRAINER'}).reused,true);
 assert.equal(ctx.prepareParticipantForm_({sessionId:'SESSION',caseId:'CASE-P',requireExistingFormId:'FORM-PARTICIPANT'}).reused,true);
 assert.equal(JSON.stringify([trainerSheet.rows,participantSheet.rows]),beforeReplay,'shared-trigger replay must not write');
+console.log('Pass: preserved triggers on capacity/create failures, shared-poller migration, complete response attempts, sanitized failures and successful replay.');
