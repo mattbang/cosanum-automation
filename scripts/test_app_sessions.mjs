@@ -8,7 +8,8 @@ fixture.People.forEach((row, index) => { row[4] = 'PER-0' + (index + 1); });
 const owner = fixture.People.find(row => row[0] === 'MATT')[1];
 const properties = new Map();
 let effective = owner, active = owner, now = Date.parse('2026-11-06T12:00:00Z');
-let locked = false, calls = 0;
+let locked = false, calls = 0, authorizationRequired = false, profileReads = 0;
+let authorizationUrl = 'https://script.google.com/macros/d/synthetic/usercallback?state=synthetic-only';
 const events = [];
 const store = {
   getProperty: key => properties.get(key) ?? null,
@@ -25,7 +26,9 @@ const context = vm.createContext({
   PropertiesService: { getUserProperties: () => store },
   LockService: { getUserLock: () => ({ waitLock() { assert(!locked); locked = true; events.push('lock'); },
     releaseLock() { assert(locked); events.push('release'); locked = false; } }) },
-  Drive: { About: { get: () => ({ user: { displayName: 'Demo Owner', emailAddress: owner } }) } }
+  ScriptApp: { AuthMode: { FULL: 'FULL' }, AuthorizationStatus: { NOT_REQUIRED: 'NOT_REQUIRED' },
+    getAuthorizationInfo: () => ({getAuthorizationStatus: () => authorizationRequired ? 'REQUIRED' : 'NOT_REQUIRED', getAuthorizationUrl: () => authorizationUrl}) },
+  Drive: { About: { get: () => { profileReads++;return { user: { displayName: 'Demo Owner', emailAddress: owner } }; } } }
 });
 const files = fs.readdirSync('apps-script').filter(name => name.endsWith('.gs'));
 const publicNames = [];
@@ -44,6 +47,16 @@ const logoutId = crypto.randomUUID();
 const end = (token, browserId = browserA, intent = crypto.randomUUID()) => context.endAppSession({ token, browserId, logoutId: intent });
 const begin = browserId => context.beginAppSession({ browserId });
 const dispatch = (token, method = 'getCatalogue', args = []) => context.dispatchAppRequest({ token, method, args });
+authorizationRequired = true;
+const needsConsent = begin(browserA);
+assert.equal(needsConsent.authorizationRequired, true);
+assert.equal(needsConsent.authorizationUrl, authorizationUrl);
+assert.equal(profileReads, 0, 'partial Google consent never loads the profile or creates a session');
+assert.equal(properties.size, 0);
+authorizationUrl = 'https://script.google.com.evil.example/authorize';
+assert.throws(() => begin(browserA), /APP_AUTHORIZATION_REQUIRED/);
+authorizationUrl = 'https://script.google.com/macros/d/synthetic/usercallback?state=synthetic-only';
+authorizationRequired = false;
 const first = begin(browserA);
 assert.equal(first.profile.email, owner);
 assert.equal(first.profile.initials, 'DO');
@@ -56,6 +69,12 @@ assert.throws(() => dispatch('0'.repeat(64)), /APP_SESSION_REQUIRED/);
 assert.equal(calls, 0);
 assert.equal(context.restoreAppSession({ token: first.token }).profile.email, owner);
 assert.equal(dispatch(first.token).marker, 'synthetic');
+authorizationRequired = true;
+assert.equal(context.restoreAppSession({token:first.token}).authorizationRequired, true);
+assert.throws(() => dispatch(first.token), /APP_AUTHORIZATION_REQUIRED/);
+assert.throws(() => context.saveAppPreferences({token:first.token,preferences:{density:'compact',motion:'reduce'}}), /APP_AUTHORIZATION_REQUIRED/);
+authorizationRequired = false;
+
 assert.deepEqual(events.slice(-3), ['lock', 'business', 'release']);
 for (const method of ['constructor', '__proto__', 'setupDemo', 'resetDemoFixture_', 'beginAppSession']) {
   assert.throws(() => dispatch(first.token, method), /nicht verfügbar/);

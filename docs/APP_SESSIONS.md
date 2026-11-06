@@ -4,6 +4,8 @@ The owner-only Apps Script deployment provides the Google identity boundary. The
 
 The account menu shows the Google Drive account profile after its email matches the validated fixture owner and the execution identity. A nonempty active Google identity must match as well. Display name, email and role are read-only. Preferences cover comfortable/compact spacing and system/reduced motion and are stored in the owner's user properties.
 
+Before login or restore, the server checks the existing manifest permissions. Missing Google grants keep the workflow unmounted and provide an official Google confirmation link; confirming access requires an explicit login afterward. The app does not broaden its manifest or request mail access. Scope errors during workflow calls return to the landing page instead of exposing raw service exceptions.
+
 An explicit login creates an opaque server-generated token with an absolute eight-hour expiry. Only its SHA-256 hash is stored on the server; the browser keeps the token in tab session storage. A random browser-family identifier is not a credential and is the only persistent browser identifier. Restoring a page validates the token before mounting the workflow. Authentication errors return to the landing page without automatically logging in again.
 
 All workflow calls use `dispatchAppRequest` and its explicit method allowlist. Business functions, setup helpers and clock processors end with `_`, so `google.script.run` cannot call them directly. The two Form submission entry points remain public only because they require native Google Form event methods that client JSON cannot supply. The five public session methods and `doGet` are the remaining browser entry points.

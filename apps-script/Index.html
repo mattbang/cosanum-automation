@@ -240,6 +240,8 @@ details > summary { padding: var(--space-3) 0; min-height: 48px; color: var(--pl
 .login-card > .muted { max-width: 42ch; }
 .login-action { display: block; width: 100%; margin-top: var(--space-8); }
 .login-status { min-height: 48px; margin: var(--space-4) 0; font: var(--body-6); }
+.authorization-link { display: block; min-height: 48px; margin: 0 0 var(--space-4); padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--lilac); color: var(--plum); font: var(--button-md); text-align: center; text-decoration: none; }
+.authorization-link:hover { text-decoration: underline; }
 .login-scope { padding-top: var(--space-6); margin-top: var(--space-6); border-top: 1px solid var(--line); color: var(--muted); font: var(--body-6); }
 .profile-dialog { width: min(36rem, calc(100vw - 32px)); max-height: calc(100dvh - 32px); margin: auto; padding: var(--space-8); border: 1px solid var(--line); border-radius: var(--radius-xl); color: var(--ink); background: var(--surface); overflow: auto; }
 .profile-dialog::backdrop { background: #352b3859; }
@@ -278,6 +280,7 @@ html[data-motion="reduce"] button:active:not(:disabled) { transform: none; }
     <p class="muted">Bedarf planen, Aufgaben koordinieren und Nachweise je Person prüfen.</p>
     <button type="button" id="loginButton" class="login-action">Mit Google fortfahren</button>
     <p id="loginStatus" class="login-status muted" role="status" aria-live="polite">Anmeldung wird vorbereitet …</p>
+    <a id="authorizationLink" class="authorization-link" target="_blank" rel="noopener noreferrer" hidden>Google-Zugriff bestätigen</a>
     <button type="button" id="restoreRetry" class="secondary" hidden>Sitzung erneut prüfen</button>
     <button type="button" id="logoutRetry" class="secondary" hidden>Abmeldung erneut versuchen</button>
     <p class="login-scope">Zugriff für das Demo-Eigentümerkonto.<br>Die Demo verwendet synthetische Testdaten.</p>
@@ -345,13 +348,23 @@ function createAppRpcClient(transport, snapshot, sessionFailed) {
           if (active() && typeof success === 'function') success(result, userObject);
         }).withFailureHandler(function(error) {
           if (!active()) return;
-          if (/APP_SESSION_REQUIRED|APP_ACCESS_DENIED/.test(String(error && error.message || error))) sessionFailed(error);
+          if (/APP_SESSION_REQUIRED|APP_ACCESS_DENIED|APP_AUTHORIZATION_REQUIRED/.test(String(error && error.message || error))) sessionFailed(error);
           else if (typeof failure === 'function') failure(error, userObject);
         }).dispatchAppRequest({token:token, method:method, args:args});
       };
     }});
   }
   return runner(null, null, undefined);
+}
+
+function validatedGoogleAuthorizationUrl(value) {
+  if (typeof value !== 'string' || value !== value.trim() || value.length > 8192) return '';
+  try {
+    var url = new URL(value);
+    if (url.protocol !== 'https:' || url.username || url.password || url.port ||
+        ['script.google.com','accounts.google.com'].indexOf(url.hostname) < 0) return '';
+    return value;
+  } catch (_) { return ''; }
 }
 
 (function initializeAccountShell() {
@@ -364,6 +377,7 @@ function createAppRpcClient(transport, snapshot, sessionFailed) {
   var login = document.getElementById('loginView'), host = document.getElementById('trainingHost');
   var loginButton = document.getElementById('loginButton'), loginStatus = document.getElementById('loginStatus');
   var restoreRetry = document.getElementById('restoreRetry'), logoutRetry = document.getElementById('logoutRetry');
+  var authorizationLink = document.getElementById('authorizationLink');
   var template = document.getElementById('trainingTemplate'), dialog = document.getElementById('profileDialog');
   var token = '', browserId = '', epoch = 0, dispose = null, expiresTimer = null;
   var restoring = false, signingIn = false, pendingLogout = null, logoutInFlight = false, loginStartedAt = 0, profile = null, menu = null, badge = null;
@@ -398,7 +412,12 @@ function createAppRpcClient(transport, snapshot, sessionFailed) {
     document.getElementById('saveProfile').disabled = false;
     applyPreferences(defaults);
   }
+  function clearAuthorizationLink() {
+    authorizationLink.hidden = true; authorizationLink.removeAttribute('href');
+    loginButton.textContent = 'Mit Google fortfahren';
+  }
   function showLanding(message) {
+    clearAuthorizationLink();
     login.hidden = false; loginStatus.textContent = message || '';
     loginButton.disabled = restoring || signingIn || !!pendingLogout;
     restoreRetry.hidden = true; logoutRetry.hidden = !pendingLogout;
@@ -410,9 +429,23 @@ function createAppRpcClient(transport, snapshot, sessionFailed) {
     clearWorkspace(); showLanding(message);
   }
   function authFailure(error) {
-    var denied = /APP_ACCESS_DENIED/.test(String(error && error.message || error));
-    forgetSession(denied ? 'Dieses Google-Konto ist für die private Schulungsverwaltung nicht freigegeben.' : 'Deine Sitzung ist abgelaufen. Bitte erneut anmelden.');
+    var message = String(error && error.message || error);
+    if (/APP_AUTHORIZATION_REQUIRED/.test(message)) {
+      forgetSession('Der bestehende Google-Zugriff muss bestätigt werden. Wähle „Mit Google fortfahren“, um die Bestätigung zu öffnen.');
+    } else {
+      forgetSession(/APP_ACCESS_DENIED/.test(message) ? 'Dieses Google-Konto ist für die private Schulungsverwaltung nicht freigegeben.' : 'Deine Sitzung ist abgelaufen. Bitte erneut anmelden.');
+    }
     loginButton.focus();
+  }
+  function authorizationRequired(result) {
+    if (!result || result.authorizationRequired !== true) return false;
+    var url = validatedGoogleAuthorizationUrl(result.authorizationUrl);
+    forgetSession(url ? 'Bitte bestätige den bestehenden Google-Zugriff. Melde dich danach hier erneut an.' : 'Der bestehende Google-Zugriff muss bestätigt werden. Der Bestätigungslink konnte nicht geprüft werden. Bitte erneut anmelden.');
+    if (url) {
+      authorizationLink.setAttribute('href',url); authorizationLink.hidden = false;
+      loginButton.textContent = 'Nach Bestätigung anmelden'; authorizationLink.focus();
+    }
+    return true;
   }
   function checkSession(result) {
     if (!result || typeof result.token !== 'string' || !result.token || !result.profile ||
@@ -456,6 +489,7 @@ function createAppRpcClient(transport, snapshot, sessionFailed) {
     document.getElementById('logoutButton').addEventListener('click',function() { logout(true); });
   }
   function acceptSession(result, mount) {
+    clearAuthorizationLink();
     checkSession(result);
     token = result.token; profile = result.profile;
     sessionStorage.setItem(SESSION_KEY, token);
@@ -488,11 +522,12 @@ function createAppRpcClient(transport, snapshot, sessionFailed) {
     showLanding('Sitzung wird geprüft …');
     call('restoreAppSession',{token:expectedToken}).then(function(result) {
       if (requestEpoch !== epoch || token !== expectedToken) return;
+      if (authorizationRequired(result)) return;
       acceptSession(result,false);
     }).catch(function(error) {
       if (requestEpoch !== epoch || token !== expectedToken) return;
       restoring = false;
-      if (/APP_SESSION_REQUIRED|APP_ACCESS_DENIED/.test(String(error && error.message || error))) { authFailure(error); return; }
+      if (/APP_SESSION_REQUIRED|APP_ACCESS_DENIED|APP_AUTHORIZATION_REQUIRED/.test(String(error && error.message || error))) { authFailure(error); return; }
       showLanding('Die Sitzung konnte gerade nicht geprüft werden. Bitte erneut versuchen.');
       loginButton.disabled = true; restoreRetry.hidden = false; restoreRetry.focus();
     });
@@ -544,11 +579,13 @@ function createAppRpcClient(transport, snapshot, sessionFailed) {
     showLanding('Anmeldung wird geprüft …');
     call('beginAppSession',{browserId:browserId}).then(function(result) {
       if (requestEpoch !== epoch) return;
+      if (authorizationRequired(result)) return;
       acceptSession(result,true); document.getElementById('workspace').focus();
     }).catch(function(error) {
       if (requestEpoch !== epoch) return;
       signingIn = false;
-      if (/APP_ACCESS_DENIED/.test(String(error && error.message || error))) showLanding('Dieses Google-Konto ist für die private Schulungsverwaltung nicht freigegeben.');
+      if (/APP_AUTHORIZATION_REQUIRED/.test(String(error && error.message || error))) authFailure(error);
+      else if (/APP_ACCESS_DENIED/.test(String(error && error.message || error))) showLanding('Dieses Google-Konto ist für die private Schulungsverwaltung nicht freigegeben.');
       else showLanding('Die Anmeldung konnte nicht abgeschlossen werden. Bitte erneut versuchen.');
       loginButton.focus();
     });
@@ -569,7 +606,7 @@ function createAppRpcClient(transport, snapshot, sessionFailed) {
     }).catch(function(error) {
       if (requestEpoch !== epoch || token !== expectedToken) return;
       button.disabled = false;
-      if (/APP_SESSION_REQUIRED|APP_ACCESS_DENIED/.test(String(error && error.message || error))) authFailure(error);
+      if (/APP_SESSION_REQUIRED|APP_ACCESS_DENIED|APP_AUTHORIZATION_REQUIRED/.test(String(error && error.message || error))) authFailure(error);
       else status.textContent = 'Einstellungen konnten nicht gespeichert werden. Bitte erneut versuchen.';
     });
   });

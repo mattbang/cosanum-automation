@@ -24,6 +24,20 @@ function appOwner_() {
   return email;
 }
 
+function appAuthorization_() {
+  var info = ScriptApp.getAuthorizationInfo(ScriptApp.AuthMode.FULL);
+  if (info.getAuthorizationStatus() === ScriptApp.AuthorizationStatus.NOT_REQUIRED) return null;
+  var url = info.getAuthorizationUrl();
+  if (typeof url !== 'string' || !/^https:\/\/(accounts\.google\.com|script\.google\.com)\//.test(url)) {
+    throw new Error('APP_AUTHORIZATION_REQUIRED: Bitte den Google-Zugriff der Schulungsverwaltung bestätigen.');
+  }
+  return { authorizationRequired: true, authorizationUrl: url };
+}
+
+function appRequireAuthorization_() {
+  if (appAuthorization_()) throw new Error('APP_AUTHORIZATION_REQUIRED: Bitte den Google-Zugriff der Schulungsverwaltung bestätigen.');
+}
+
 function appHash_(value) {
   return Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, value, Utilities.Charset.UTF_8)
     .map(function (byte) { return ('0' + ((byte + 256) % 256).toString(16)).slice(-2); }).join('');
@@ -110,6 +124,8 @@ function beginAppSession(input) {
   if (!input || !appUuid_(input.browserId)) {
     throw new Error('Der Browser konnte keine sichere App-Sitzung vorbereiten. Bitte erneut versuchen.');
   }
+  var authorization = appAuthorization_();
+  if (authorization) return authorization;
   var familyHash = appHash_(input.browserId);
   var generation = appLocked_(function () { return appFamily_(familyHash).generation; });
   var profile = appProfile_(email);
@@ -137,6 +153,8 @@ function beginAppSession(input) {
 
 function restoreAppSession(input) {
   var email = appOwner_();
+  var authorization = appAuthorization_();
+  if (authorization) return authorization;
   return appLocked_(function () {
     return appSessionResult_(input && input.token, appReadSession_(input && input.token, email));
   });
@@ -165,6 +183,7 @@ function endAppSession(input) {
 
 function saveAppPreferences(input) {
   var email = appOwner_();
+  appRequireAuthorization_();
   return appLocked_(function () {
     appReadSession_(input && input.token, email);
     var preferences = appValidatedPreferences_(input && input.preferences);
@@ -175,6 +194,7 @@ function saveAppPreferences(input) {
 
 function dispatchAppRequest(input) {
   var email = appOwner_();
+  appRequireAuthorization_();
   return appLocked_(function () {
     appReadSession_(input && input.token, email);
     var methods = appMethods_();

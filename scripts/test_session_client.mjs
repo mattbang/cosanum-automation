@@ -6,7 +6,7 @@ const source = readFileSync('apps-script/Index.html', 'utf8');
 const start = source.indexOf('function createAppRpcClient(');
 const end = source.indexOf('\n(function initializeAccountShell()', start);
 assert(start >= 0 && end > start, 'session RPC adapter is available to verify independently');
-const context = vm.createContext({ Proxy, Array, String });
+const context = vm.createContext({ Proxy, Array, String, URL });
 vm.runInContext(source.slice(start, end), context);
 
 const requests = [], delivered = [], failures = [], sessionFailures = [];
@@ -92,7 +92,7 @@ const service = {
 };
 function shell(tabStore, browserStore) {
   const requests = [], events = {}, storageWrites = [], nodes = new Map();
-  let mounted = 0, disposed = 0;
+  let mounted = 0, disposed = 0, mountedRpc = null;
   const document = { documentElement: { dataset: {} }, visibilityState: 'visible', activeElement: null,
     addEventListener() {}, getElementById: id => node(id) };
   function node(id) {
@@ -102,6 +102,7 @@ function shell(tabStore, browserStore) {
       addEventListener(name, callback) { (this.listeners[name] ||= []).push(callback); },
       emit(name, event = {}) { for (const callback of this.listeners[name] || []) callback({ target: this, preventDefault() {}, ...event }); },
       setAttribute(name, content) { this.attributes[name] = content; },
+      removeAttribute(name) { delete this.attributes[name]; },
       querySelectorAll() { return [node('openProfile'), node('logoutButton')]; },
       contains(target) { return target === this; }, focus() { document.activeElement = this; },
       replaceChildren(...values) { this.children = values; },
@@ -129,11 +130,12 @@ function shell(tabStore, browserStore) {
   const shellContext = vm.createContext({ window, document, sessionStorage: storage(tabStore, 'tab'), localStorage: storage(browserStore, 'browser'),
     crypto: { randomUUID: uuid }, Date, Promise, Proxy, Array, String, Object, Number, JSON, RegExp,
     setTimeout() { return 1; }, clearTimeout() {}, createAppRpcClient: context.createAppRpcClient,
-    mountTrainingApp() { mounted += 1; return () => { disposed += 1; }; } });
+    URL, validatedGoogleAuthorizationUrl: context.validatedGoogleAuthorizationUrl,
+    mountTrainingApp(rpc) { mountedRpc = rpc; mounted += 1; return () => { disposed += 1; }; } });
   vm.runInContext(source.slice(shellStart, shellEnd), shellContext);
   return { requests, node, storageWrites, tabStore, browserStore,
     storageEvent(value) { for (const handler of events.storage || []) handler({ key: LOGOUT_KEY, newValue: value }); },
-    get mounted() { return mounted; }, get disposed() { return disposed; } };
+    get mounted() { return mounted; }, get disposed() { return disposed; }, get rpc() { return mountedRpc; } };
 }
 function completeLogin(runtime) {
   const request = runtime.requests.at(-1); assert.equal(request.method, 'beginAppSession');
@@ -200,3 +202,65 @@ assert.equal(siblingStore.has(PENDING_KEY), false);
 assert.equal(browserStore.get(LOGOUT_KEY).includes('synthetic-account-token-'), false, 'logout broadcasts never contain a credential');
 assert.equal([...browserStore.values()].some(value => value.includes('synthetic-account-token-')), false);
 console.log('Pass: pending logout persists across reload, retry IDs remain stable, sibling cancellation suppresses late login, and old intent replay preserves a fresh login.');
+
+const googleConsentUrl = 'https://script.google.com/macros/d/synthetic-test/authorize?state=synthetic-test-state';
+const googleAccountsUrl = 'https://accounts.google.com/o/oauth2/auth?state=synthetic-test-state';
+assert.equal(context.validatedGoogleAuthorizationUrl(googleConsentUrl), googleConsentUrl);
+assert.equal(context.validatedGoogleAuthorizationUrl(googleAccountsUrl), googleAccountsUrl);
+for (const value of [
+  'http://accounts.google.com/o/oauth2/auth', 'https://example.test/authorize',
+  'https://accounts.google.com.example.test/authorize', 'https://accounts.google.com@evil.test/authorize',
+  'https://evil@accounts.google.com/authorize', 'https://script.google.com:8443/authorize',
+  '//script.google.com/authorize', 'javascript:alert(1)', ' https://accounts.google.com/authorize', null
+]) assert.equal(context.validatedGoogleAuthorizationUrl(value), '', 'only official HTTPS Google origins without userinfo are accepted');
+
+const grantStore = new Map(), grantBrowserStore = new Map([[BROWSER_KEY, uuid()]]);
+const missingGrant = shell(grantStore, grantBrowserStore);
+missingGrant.node('loginButton').emit('click');
+missingGrant.requests.at(-1).succeed({ authorizationRequired: true, authorizationUrl: googleConsentUrl }); await flush();
+assert.equal(missingGrant.mounted, 0, 'missing Google permission never mounts workflow data');
+assert.equal(grantStore.has(SESSION_KEY), false);
+assert.equal(missingGrant.node('authorizationLink').hidden, false);
+assert.equal(missingGrant.node('authorizationLink').attributes.href, googleConsentUrl);
+assert.equal(missingGrant.node('loginStatus').textContent.includes(googleConsentUrl), false, 'OAuth state is not displayed as status text');
+assert.equal(missingGrant.requests.length, 1, 'authorization recovery does not start an automatic login');
+missingGrant.node('loginButton').emit('click');
+assert.equal(missingGrant.node('authorizationLink').hidden, true);
+assert.equal('href' in missingGrant.node('authorizationLink').attributes, false, 'starting a new login removes the old state-bearing link');
+completeLogin(missingGrant); await flush();
+assert.equal(missingGrant.mounted, 1);
+assert.equal(missingGrant.node('authorizationLink').hidden, true);
+
+const restoreGrantStore = new Map([[SESSION_KEY, 'synthetic-previous-token']]);
+const restoreGrant = shell(restoreGrantStore, new Map([[BROWSER_KEY, uuid()]]));
+assert.equal(restoreGrant.requests.at(-1).method, 'restoreAppSession');
+restoreGrant.requests.at(-1).succeed({ authorizationRequired: true, authorizationUrl: googleAccountsUrl }); await flush();
+assert.equal(restoreGrant.mounted, 0);
+assert.equal(restoreGrantStore.has(SESSION_KEY), false, 'missing grants discard the old tab token instead of retrying it');
+assert.equal(restoreGrant.node('authorizationLink').attributes.href, googleAccountsUrl);
+assert.equal(restoreGrant.requests.length, 1);
+
+const rejectedGrant = shell(new Map(), new Map([[BROWSER_KEY, uuid()]]));
+rejectedGrant.node('loginButton').emit('click');
+rejectedGrant.requests.at(-1).succeed({ authorizationRequired: true, authorizationUrl: 'https://example.test/not-google' }); await flush();
+assert.equal(rejectedGrant.mounted, 0);
+assert.equal(rejectedGrant.node('authorizationLink').hidden, true);
+assert.equal('href' in rejectedGrant.node('authorizationLink').attributes, false);
+assert.match(rejectedGrant.node('loginStatus').textContent, /nicht geprüft/);
+assert.equal(rejectedGrant.node('loginButton').disabled, false);
+
+missingGrant.rpc.withFailureHandler(() => { throw new Error('Authorization errors must not become workflow errors'); }).getCatalogue();
+missingGrant.requests.at(-1).fail({ message: 'APP_AUTHORIZATION_REQUIRED: existing access needs consent' }); await flush();
+assert.equal(grantStore.has(SESSION_KEY), false);
+assert.equal(missingGrant.node('trainingHost').children.length, 0);
+assert.match(missingGrant.node('loginStatus').textContent, /Google-Zugriff/);
+assert.equal(missingGrant.node('authorizationLink').hidden, true, 'dispatcher errors require an explicit login to fetch a new confirmation URL');
+const preferenceGrant = shell(new Map(), new Map([[BROWSER_KEY, uuid()]]));
+preferenceGrant.node('loginButton').emit('click'); completeLogin(preferenceGrant); await flush();
+preferenceGrant.node('profileForm').emit('submit');
+assert.equal(preferenceGrant.requests.at(-1).method, 'saveAppPreferences');
+preferenceGrant.requests.at(-1).fail({ message: 'APP_AUTHORIZATION_REQUIRED' }); await flush();
+assert.equal(preferenceGrant.node('trainingHost').children.length, 0);
+assert.match(preferenceGrant.node('loginStatus').textContent, /Google-Zugriff/);
+assert.equal(preferenceGrant.tabStore.has(SESSION_KEY), false);
+console.log('Pass: missing Google grants stay signed out, consent URLs are validated and cleared, and authorization failures return to explicit recovery.');
