@@ -24,6 +24,7 @@ const suites = [
   'test_intake.mjs',
   'test_local_preview.mjs',
   'test_mail_tour.mjs',
+  'test_owner_overview.mjs',
   'test_participant_acknowledgement.mjs',
   'test_phase_plan.mjs',
   'test_proof_metadata.mjs',
