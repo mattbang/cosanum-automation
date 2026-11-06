@@ -15,6 +15,7 @@ const suites = [
   'test_availability.mjs',
   'test_booking.mjs',
   'test_current_tasks.mjs',
+  'test_deadlines.mjs',
   'test_demo_hub.mjs',
   'test_demo_replay.mjs',
   'test_demo_tour.mjs',
