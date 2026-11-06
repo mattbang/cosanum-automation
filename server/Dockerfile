@@ -9,6 +9,8 @@ COPY server ./server
 COPY mobile ./mobile
 COPY contracts ./contracts
 COPY fixtures ./fixtures
+COPY apps-script ./apps-script
+COPY participant-web/member ./participant-web/member
 WORKDIR /app/server
 EXPOSE 8080
 CMD ["node", "--import", "tsx", "src/http.ts"]

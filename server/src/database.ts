@@ -30,8 +30,8 @@ export async function inTransaction<T>(pool: SqlPool, operation: (connection: Sq
   }
 }
 
-export async function runMigrations(pool: SqlPool): Promise<void> {
-  const { directory, files } = await migrationFiles();
+export async function runMigrations(pool: SqlPool, selected?: readonly string[]): Promise<void> {
+  const { directory, files } = await migrationFiles(selected);
   await pool.query(`CREATE TABLE IF NOT EXISTS schema_migrations (
     migration_id text PRIMARY KEY,
     checksum_sha256 text NOT NULL,
@@ -53,8 +53,8 @@ export async function runMigrations(pool: SqlPool): Promise<void> {
 }
 
 /** Runtime check for a least-privilege API role. Migration DDL runs separately as an admin. */
-export async function verifyMigrations(pool: SqlPool): Promise<void> {
-  const { directory, files } = await migrationFiles();
+export async function verifyMigrations(pool: SqlPool, selected?: readonly string[]): Promise<void> {
+  const { directory, files } = await migrationFiles(selected);
   for (const file of files) {
     const sql = await readFile(join(directory, file), 'utf8');
     const checksum = createHash('sha256').update(sql).digest('hex');
@@ -65,8 +65,10 @@ export async function verifyMigrations(pool: SqlPool): Promise<void> {
   }
 }
 
-async function migrationFiles(): Promise<{ directory: string; files: string[] }> {
+async function migrationFiles(selected?: readonly string[]): Promise<{ directory: string; files: string[] }> {
   const directory = join(dirname(fileURLToPath(import.meta.url)), '../migrations');
   const files = (await readdir(directory)).filter(file => /^\d+_[a-z0-9_-]+\.sql$/.test(file)).sort();
-  return { directory, files };
+  if (selected !== undefined && (!selected.length || new Set(selected).size !== selected.length || selected.some(name => !files.includes(name))))
+    throw new Error('Selected migrations must name distinct existing migration files');
+  return { directory, files: selected ? files.filter(name => selected.includes(name)) : files };
 }

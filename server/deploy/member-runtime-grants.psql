@@ -1,0 +1,19 @@
+\if :{?app_role}
+\else
+\echo 'Pass -v app_role=ROLE and -v app_schema=SCHEMA for the dedicated member database.'
+\quit 1
+\endif
+\if :{?app_schema}
+\else
+\echo 'Pass -v app_schema=SCHEMA for the dedicated member database.'
+\quit 1
+\endif
+
+-- Run as the database administrator after migrate:members, using a new runtime role.
+-- This role must not own the database/schema or inherit a broader application role.
+GRANT USAGE ON SCHEMA :"app_schema" TO :"app_role";
+GRANT SELECT ON TABLE :"app_schema".schema_migrations TO :"app_role";
+GRANT SELECT, INSERT, UPDATE ON TABLE :"app_schema".member_browser_families TO :"app_role";
+GRANT SELECT, INSERT, DELETE ON TABLE
+  :"app_schema".member_auth_challenges, :"app_schema".member_sessions
+TO :"app_role";
