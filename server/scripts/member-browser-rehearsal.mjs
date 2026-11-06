@@ -414,6 +414,15 @@ try {
   await trainer.p.layout('trainer');
   await trainer.p.capture('trainer');
   checks.push('trainer-assigned-roster');
+  const p2 = await make('P2');
+  await signin(p2.p);
+  text = await p2.p.eval('document.body.innerText');
+  assert(text.includes('Person Zwei'));
+  assert(!text.includes('Person Eins'));
+  await p2.p.eval("document.getElementById('complete-tab').click()");
+  await p2.p.layout('completed');
+  await p2.p.capture('participant-completed');
+  checks.push('same-session-participants-isolated');
   const dual = await make('T2');
   await signin(dual.p);
   assert.equal(
@@ -425,18 +434,19 @@ try {
   );
   await dual.p.layout('dual-role');
   await dual.p.capture('dual-role');
+  await dual.p.eval(
+    "document.getElementById('role-assigned_trainer').click()",
+  );
+  assert.equal(
+    await dual.p.eval("document.getElementById('role-assigned_trainer').getAttribute('aria-selected')"),
+    'true',
+  );
+  assert(
+    (await dual.p.eval("document.querySelectorAll('[data-task-action]:not(:disabled)').length")) >= 1,
+    'the outage scenario starts with at least one permitted trainer action',
+  );
+  assert.equal(await dual.p.eval("document.getElementById('refresh-tasks').disabled"), false);
   checks.push('verified-dual-role-switch');
-  const p2 = await make('P2');
-  await signin(p2.p);
-  text = await p2.p.eval('document.body.innerText');
-  assert(text.includes('Person Zwei'));
-  assert(!text.includes('Person Eins'));
-  await p2.p.eval("document.getElementById('complete-tab').click()");
-  await p2.p.layout('completed');
-  await p2.p.capture('participant-completed');
-  checks.push('same-session-participants-isolated');
-  await dual.p.command('Page.bringToFront');
-  await dual.p.wait("document.visibilityState === 'visible' && !document.getElementById('refresh-tasks').disabled", 'visible dual-role session');
   failTasks = true;
   await dual.p.eval("document.getElementById('refresh-tasks').click()");
   await dual.p.wait(
