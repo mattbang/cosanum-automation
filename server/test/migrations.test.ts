@@ -25,9 +25,12 @@ test('migration runner applies each checksum-tracked migration once', async () =
     async connect() { return connection; }, async end() {},
   } as unknown as SqlPool;
   await runMigrations(pool);
-  const appliedSqlCount = sqlCalls.filter(sql => sql.includes('CREATE TABLE workflow_requests') || sql.includes('CREATE TABLE participant_responses') || sql.includes('CREATE TABLE notification_intents')).length;
-  assert.equal(applied.size, 3);
-  assert.equal(appliedSqlCount, 3);
+  const migrationDdl = (sql: string) => ['workflow_requests', 'participant_responses', 'notification_intents', 'member_browser_families'].some(table => sql.includes(`CREATE TABLE ${table}`));
+  const appliedSqlCount = sqlCalls.filter(migrationDdl).length;
+  assert.equal(applied.size, 4);
+  assert.equal(appliedSqlCount, 4);
   await runMigrations(pool);
-  assert.equal(sqlCalls.filter(sql => sql.includes('CREATE TABLE workflow_requests') || sql.includes('CREATE TABLE participant_responses') || sql.includes('CREATE TABLE notification_intents')).length, 3);
+  assert.equal(sqlCalls.filter(migrationDdl).length, 4);
+  await assert.rejects(runMigrations(pool, []), /distinct existing/);
+  await assert.rejects(runMigrations(pool, ['../private-config.json']), /distinct existing/);
 });

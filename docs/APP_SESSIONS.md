@@ -2,6 +2,8 @@
 
 The owner-only Apps Script deployment provides the Google identity boundary. The application adds an explicit login session, an account menu and supported display preferences. This does not enable trainer, participant or other member access; issues #9, #64 and #67 retain their broader account-acceptance work.
 
+Trainer and participant access is implemented separately in the [private member source candidate](../server/docs/MEMBER_ACCESS.md). It reads the same Google training records through a new member entrance; it does not broaden this owner-only deployment. Its hosting, identity configuration and connected member acceptance remain outstanding.
+
 The account menu shows the Google Drive account profile after its email matches the validated fixture owner and the execution identity. A nonempty active Google identity must match as well. Display name, email and role are read-only. Preferences cover comfortable/compact spacing and system/reduced motion and are stored in the owner's user properties.
 
 Before login or restore, the server checks the existing manifest permissions. Missing Google grants keep the workflow unmounted and provide an official Google confirmation link; confirming access requires an explicit login afterward. The app does not broaden its manifest or request mail access. Scope errors during workflow calls return to the landing page instead of exposing raw service exceptions.

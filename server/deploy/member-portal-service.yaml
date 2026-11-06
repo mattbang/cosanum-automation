@@ -1,0 +1,62 @@
+# Review template only. No invocation IAM binding or cloud resource is created here.
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: cosanum-training-members
+  annotations:
+    run.googleapis.com/ingress: all
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/maxScale: "2"
+        run.googleapis.com/execution-environment: gen2
+        run.googleapis.com/cloudsql-instances: PROJECT_ID:REGION:MEMBER_SESSION_INSTANCE
+    spec:
+      serviceAccountName: cosanum-member-runtime@PROJECT_ID.iam.gserviceaccount.com
+      containerConcurrency: 10
+      timeoutSeconds: 60
+      containers:
+        - image: REGION-docker.pkg.dev/PROJECT_ID/REPOSITORY/cosanum-training-members:REVIEWED_TAG
+          ports:
+            - name: http1
+              containerPort: 8080
+          env:
+            - name: DB_POOL_MAX
+              value: "3"
+            - name: COSANUM_MEMBER_CONFIG
+              value: /var/run/secrets/cosanum/member-config.json
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: cosanum-member-database-url
+                  key: APPROVED_VERSION
+          volumeMounts:
+            - name: member-config
+              mountPath: /var/run/secrets/cosanum
+          resources:
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            failureThreshold: 12
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            periodSeconds: 30
+      volumes:
+        - name: member-config
+          secret:
+            secretName: cosanum-member-config
+            items:
+              - key: APPROVED_VERSION
+                path: member-config.json
+                mode: 256 # 0400, owned by root in the second-generation secret mount.
+  traffic:
+    - percent: 100
+      latestRevision: true
