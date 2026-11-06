@@ -225,4 +225,36 @@ ctx.findDemoSpreadsheet_ = () => ({ getSheetByName(name) {
   return { getDataRange: () => ({ getValues: () => [name === 'DeadlineChanges' ? ctx.DEMO_SCHEMA.sheets[name].slice(0, 13) : ctx.DEMO_SCHEMA.sheets[name]] }) };
 } });
 assert.throws(() => ctx.readDemoTables_(), /Schemafehler in DeadlineChanges/, 'an ambiguous old header must not be silently migrated');
+
+// appendRow can store an ISO day as a native Sheet date even in a plain-text column.
+// Its instant represents midnight in the spreadsheet timezone, not the script timezone.
+for (const [zone, instant, expected] of [
+  ['Europe/Zurich', '2026-11-09T23:00:00Z', '2026-11-10'],
+  ['Europe/Zurich', '2026-03-28T23:00:00Z', '2026-03-29'],
+  ['Europe/Zurich', '2026-03-29T22:00:00Z', '2026-03-30'],
+  ['Pacific/Auckland', '2026-11-09T11:00:00Z', '2026-11-10']
+]) {
+  const storedDate = new Date(instant);
+  const row = { ...tables.DeadlineChanges[0], due_date: storedDate };
+  const values = [ctx.DEMO_SCHEMA.sheets.DeadlineChanges,
+    ctx.DEMO_SCHEMA.sheets.DeadlineChanges.map(key => row[key])];
+  ctx.findDemoSpreadsheet_ = () => ({ getSpreadsheetTimeZone: () => zone, getSheetByName(name) {
+    return { getDataRange: () => ({ getValues: () => name === 'DeadlineChanges' ? values : [ctx.DEMO_SCHEMA.sheets[name]] }) };
+  } });
+  const read = ctx.readDemoTables_().DeadlineChanges;
+  assert.equal(read[0].due_date, expected, 'typed date must retain the spreadsheet calendar day');
+  assert.equal(ctx.deadlineStream_(read, 'REQ-1', '', 'request')[0].due_date, expected);
+  assert.equal(values[1][4], storedDate, 'normalization must not mutate or rewrite the stored row');
+  assert.equal(read[0].recorded_at, row.recorded_at, 'UTC evidence timestamps must remain untouched');
+  assert.equal(read[0].case_scope_json, row.case_scope_json);
+}
+const textRow = { ...tables.DeadlineChanges[0], due_date: '2026-11-10' };
+ctx.findDemoSpreadsheet_ = () => ({ getSpreadsheetTimeZone() { throw Error('text day needs no timezone conversion'); }, getSheetByName(name) {
+  return { getDataRange: () => ({ getValues: () => name === 'DeadlineChanges'
+    ? [ctx.DEMO_SCHEMA.sheets[name], ctx.DEMO_SCHEMA.sheets[name].map(key => textRow[key])]
+    : [ctx.DEMO_SCHEMA.sheets[name]] }) };
+} });
+assert.equal(ctx.readDemoTables_().DeadlineChanges[0].due_date, '2026-11-10');
+assert.throws(() => ctx.deadlineDay_(new Date('2026-11-10T00:00:00Z')), /Frist/, 'browser input remains ISO text only');
+assert.throws(() => ctx.deadlineDay_(46336), /Frist/, 'numeric input is not a browser calendar date');
 console.log('Pass: Zurich calendar days/DST, original sources, group deadlines, completion/dispositions, immutable history, optimistic revisions, owner gate, readback and retry.');
