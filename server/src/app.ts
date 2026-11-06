@@ -46,8 +46,10 @@ export function createApiHandler(dependencies: ApiDependencies = {}) {
   const workflow = dependencies.identities && dependencies.gateway
     ? new WorkflowService(dependencies.identities, dependencies.gateway) : undefined;
   return async (request: IncomingMessage, response: ServerResponse): Promise<void> => {
-    const path = new URL(request.url || '/', 'http://localhost').pathname;
     try {
+      let path: string;
+      try { path = new URL(request.url || '/', 'http://localhost').pathname; }
+      catch { throw new ActionError(400, 'Invalid request target'); }
       if (request.method === 'POST' && path === '/actions') {
         if (!workflow) { send(response, 503, { error: 'Verified identity and workflow executor are not configured' }); return; }
         const input = await bodyOf(request);

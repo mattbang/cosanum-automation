@@ -306,10 +306,22 @@ function createIndividualProof(input) {
   var lock = LockService.getScriptLock();
   lock.waitLock(30000);
   try {
-    var tables = readDemoTables_(), model = proofSourceModel_(tables, input.caseId);
+    var tables = readDemoTables_();
     var actor = proofEmail_(Session.getEffectiveUser().getEmail());
     var owner = proofUnique_(tables.People, function (row) { return row.person_key === 'MATT' && row.demo_marker === '[DEMO]'; }, 'Demo-Administration');
     if (!actor || actor !== proofEmail_(owner.email)) throw new Error('Nur Process & Quality darf Nachweise erstellen.');
+    var applied = tables.SkillUpdates.filter(function (row) { return row.case_id === input.caseId && row.status === 'applied'; });
+    if (applied.length) {
+      var personCase = proofUnique_(tables.ParticipantCases, function (row) {
+        return row.case_id === input.caseId && row.demo_marker === '[DEMO]';
+      }, 'Demo-Personenfall');
+      var complete = auditCompletionGate_(tables, personCase), proof = complete.gate.proof;
+      return { proofId: proof.proof_id, proofVersion: Number(proof.proof_version), caseId: input.caseId,
+        docUrl: 'https://docs.google.com/document/d/' + encodeURIComponent(proof.doc_id) + '/edit',
+        pdfUrl: 'https://drive.google.com/file/d/' + encodeURIComponent(proof.pdf_id) + '/view',
+        status: proof.status, reused: true };
+    }
+    var model = proofSourceModel_(tables, input.caseId);
     var sourceHash = proofHash_(model);
     var sheet = findDemoSpreadsheet_().getSheetByName('Proofs');
     if (!sheet) throw new Error('Nachweisregister fehlt. setupDemo() ausführen.');

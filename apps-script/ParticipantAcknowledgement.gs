@@ -70,11 +70,7 @@ function assertParticipantFormAssignment_(formRow, context) {
 }
 
 function ensureParticipantFormTrigger_(formId) {
-  var matches = ScriptApp.getProjectTriggers().filter(function (trigger) {
-    return trigger.getHandlerFunction() === 'onParticipantFormSubmit' && trigger.getTriggerSourceId() === formId;
-  });
-  if (matches.length > 1) throw new Error('Mehrere Abgabe-Trigger für dasselbe Teilnahmeformular.');
-  if (!matches.length) ScriptApp.newTrigger('onParticipantFormSubmit').forForm(formId).onFormSubmit().create();
+  ensureFormResponseProcessor_();
 }
 
 function buildParticipantForm_(context, createForm, folder) {
@@ -114,11 +110,7 @@ function prepareParticipantForm(input) {
       if (typeof input.requireExistingFormId !== 'string' || !saved || saved.form_id !== input.requireExistingFormId) {
         throw new Error('Erwartetes bestehendes Teilnahmeformular fehlt; keine Neuanlage.');
       }
-      var expectedTriggers = ScriptApp.getProjectTriggers().filter(function (trigger) {
-        return trigger.getHandlerFunction() === 'onParticipantFormSubmit' &&
-          trigger.getTriggerSourceId() === saved.form_id;
-      });
-      if (expectedTriggers.length !== 1 || !saved.verified_at || !saved.verified_by) {
+      if (!formsResponseTriggerReady_(saved.form_id, 'onParticipantFormSubmit') || !saved.verified_at || !saved.verified_by) {
         throw new Error('Bestehendes Teilnahmeformular ist für eine schreibfreie Wiederholung nicht bereit.');
       }
     }

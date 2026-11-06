@@ -93,3 +93,39 @@ assert.throws(()=>ctx.proofLedgerRow_(sheet,first,'changed'),/Korrekturversion/)
 ctx.proofSaveAssets_(sheet,ledger,'folder-id','doc-id','pdf-id','pending_local_archive');
 assert.equal(rows[1][11],'pending_local_archive');
 console.log('Pass: two-person group proofs, source gates, identity labels, content, and idempotent ledger.');
+
+// Completed proof replay checks the real archive/update/source gate, without rewriting assets.
+for(const file of ['SkillUpdate.gs','Audit.gs']) vm.runInContext(fs.readFileSync('apps-script/'+file,'utf8'),ctx);
+const completed=clone();
+const proof=Object.fromEntries(headers.map((key,i)=>[key,ledger.row[i]]));
+proof.status='archived_verified';
+completed.Proofs=[proof];
+const archivedAt=new Date(Date.parse(proof.created_at)+60000).toISOString();
+completed.ArchiveReceipts=[{
+  proof_id:proof.proof_id,proof_version:1,case_id:proof.case_id,request_id:proof.request_id,
+  person_key:proof.person_key,topic_id:proof.topic_id,source_hash:proof.source_hash,doc_id:proof.doc_id,pdf_id:proof.pdf_id,
+  status:'verified',demo_marker:'[DEMO]',drive_pdf_sha256:'b'.repeat(64),local_pdf_sha256:'b'.repeat(64),local_docx_sha256:'c'.repeat(64),
+  local_pdf_path:'/archive/proof.pdf',local_docx_path:'/archive/proof.docx',manifest_path:'/archive/proof.json',verified_at:archivedAt
+}];
+completed.SkillUpdates=[{
+  idempotency_key:'SKILL-'+proof.proof_id+'-v1',case_id:proof.case_id,request_id:proof.request_id,person_key:proof.person_key,
+  topic_id:proof.topic_id,previous_level:0,target_level:1,proof_id:proof.proof_id,proof_version:1,source_hash:proof.source_hash,
+  archive_verified_at:archivedAt,status:'applied',demo_marker:'[DEMO]',applied_at:archivedAt
+}];
+completed.Skills.find(row=>row.person_key==='SUMNER').skill_level=1;
+ctx.readDemoTables_=()=>completed;
+ctx.LockService={getScriptLock:()=>({waitLock(){},releaseLock(){}})};
+let actor='owner@example.com',lookups=0;
+ctx.Session={getEffectiveUser:()=>({getEmail:()=>actor})};
+ctx.findDemoSpreadsheet_=()=>{throw Error('completed proof must not open a writable ledger');};
+ctx.proofMetadataLookup_=(row,hash)=>{assert.equal(row[0],proof.proof_id);assert.equal(hash,'b'.repeat(64));lookups++;};
+const completedBefore=JSON.stringify(completed);
+const retry=ctx.createIndividualProof({caseId:proof.case_id});
+assert.equal(retry.reused,true);assert.equal(retry.proofId,proof.proof_id);assert.equal(retry.status,'archived_verified');
+assert.equal(lookups,1);assert.equal(JSON.stringify(completed),completedBefore);
+actor='wrong@example.com';assert.throws(()=>ctx.createIndividualProof({caseId:proof.case_id}),/Process & Quality/);
+actor='owner@example.com';completed.ParticipantAcknowledgements[0].typed_name='changed';
+assert.throws(()=>ctx.createIndividualProof({caseId:proof.case_id}),/Originalantwort/);
+completed.ParticipantAcknowledgements[0].typed_name='Test Asserted Name';
+proof.source_hash='f'.repeat(64);completed.ArchiveReceipts[0].source_hash=proof.source_hash;completed.SkillUpdates[0].source_hash=proof.source_hash;
+assert.throws(()=>ctx.createIndividualProof({caseId:proof.case_id}),/Originalbelege/);

@@ -9,11 +9,7 @@ var TRAINER_QUESTIONS = Object.freeze({
 /** FormApp cannot select VERIFIED; FormsIdentity uses REST with manual fallback. */
 
 function ensureTrainerFormTrigger_(formId) {
-  var matches = ScriptApp.getProjectTriggers().filter(function (trigger) {
-    return trigger.getHandlerFunction() === 'onTrainerFormSubmit' && trigger.getTriggerSourceId() === formId;
-  });
-  if (matches.length > 1) throw new Error('Mehrere Abgabe-Trigger für dasselbe Trainerformular.');
-  if (!matches.length) ScriptApp.newTrigger('onTrainerFormSubmit').forForm(formId).onFormSubmit().create();
+  ensureFormResponseProcessor_();
 }
 
 function uniqueTrainerRow_(rows, predicate, label) {
@@ -130,11 +126,7 @@ function prepareTrainerForm(input) {
       if (typeof input.requireExistingFormId !== 'string' || !saved || saved.form_id !== input.requireExistingFormId) {
         throw new Error('Erwartetes bestehendes Trainerformular fehlt; keine Neuanlage.');
       }
-      var expectedTriggers = ScriptApp.getProjectTriggers().filter(function (trigger) {
-        return trigger.getHandlerFunction() === 'onTrainerFormSubmit' &&
-          trigger.getTriggerSourceId() === saved.form_id;
-      });
-      if (expectedTriggers.length !== 1 || !saved.verified_at || !saved.verified_by) {
+      if (!formsResponseTriggerReady_(saved.form_id, 'onTrainerFormSubmit') || !saved.verified_at || !saved.verified_by) {
         throw new Error('Bestehendes Trainerformular ist für eine schreibfreie Wiederholung nicht bereit.');
       }
     }

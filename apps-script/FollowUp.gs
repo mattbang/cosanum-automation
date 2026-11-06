@@ -36,10 +36,12 @@ function followUpContext_(tables, session, link, requireVerifiedForm) {
       followUpAccepted_(tables, session.session_id, link.case_id)) return null;
   var form = participantFormRow_(tables, session.session_id, link.case_id);
   if (form) assertParticipantFormAssignment_(form, context);
-  var formReady = gate.allowed && !!form && formsReadyForLink_(form, context.owner.email) &&
-    /^https:\/\/docs\.google\.com\/forms\//.test(String(form.form_url));
+  var formReady = false, identityBlocked = !!gate.identityBlocked;
+  try {
+    formReady = gate.allowed && !!form && formsReadyForLink_(form, context.owner.email) && !!formDispatchVerifiedUrl_(form);
+  } catch (error) { identityBlocked = true; }
   if (requireVerifiedForm && !formReady) return null;
-  return { context: context, form: form, formReady: formReady, identityBlocked: !!gate.identityBlocked };
+  return { context: context, form: form, formReady: formReady, identityBlocked: identityBlocked };
 }
 
 function followUpAllowlisted_(context) {
