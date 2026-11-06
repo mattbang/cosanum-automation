@@ -72,12 +72,12 @@ ctx.trainerCaseContext_ = (_tables, _sessionId, caseId) => caseId === 'CASE-T' ?
 ctx.participantAcknowledgementGate_ = () => ({ allowed: true });
 ctx.readDemoTables_ = () => tables;
 ctx.findDemoSpreadsheet_ = () => ({ getSheetByName: name => name === 'TrainerForms' ? trainerSheet : participantSheet });
-assert.equal(ctx.prepareTrainerForm({ sessionId: 'SESSION', caseId: 'CASE-T' }).formUrl, savedTrainer.form_url);
-assert.equal(ctx.prepareParticipantForm({ sessionId: 'SESSION', caseId: 'CASE-P' }).formUrl, savedParticipant.form_url);
+assert.equal(ctx.prepareTrainerForm_({ sessionId: 'SESSION', caseId: 'CASE-T' }).formUrl, savedTrainer.form_url);
+assert.equal(ctx.prepareParticipantForm_({ sessionId: 'SESSION', caseId: 'CASE-P' }).formUrl, savedParticipant.form_url);
 assert.equal(trainerSheet.rows.length, 2, 'trainer retry keeps one Form row');
 assert.equal(participantSheet.rows.length, 2, 'participant retry keeps one Form row');
-assert.equal(ctx.prepareTrainerForm({ sessionId: 'SESSION', caseId: 'CASE-T' }).reused, true);
-assert.equal(ctx.prepareParticipantForm({ sessionId: 'SESSION', caseId: 'CASE-P' }).reused, true);
+assert.equal(ctx.prepareTrainerForm_({ sessionId: 'SESSION', caseId: 'CASE-T' }).reused, true);
+assert.equal(ctx.prepareParticipantForm_({ sessionId: 'SESSION', caseId: 'CASE-P' }).reused, true);
 function response(email, isTrainer) {
   const items = isTrainer ? [
     [ctx.TRAINER_QUESTIONS.attendance, 'Ja, anwesend'], [ctx.TRAINER_QUESTIONS.assessment, 'Bestanden'],

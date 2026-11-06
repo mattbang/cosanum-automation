@@ -53,7 +53,7 @@ const server = vm.createContext({
 });
 vm.runInContext(catalogue + '\n' + code, server);
 const tablesBefore = JSON.stringify(tables);
-const resources = server.getOwnerResourceOverview();
+const resources = server.getOwnerResourceOverview_();
 assert.equal(ownerChecks, 1, 'resource data requires the owner gate');
 assert.equal(resources.topics.length, 5);
 assert.equal(resources.matrix.length, 4);
@@ -61,10 +61,10 @@ assert.equal(resources.matrix[0].levels[0].level, '–', 'not applicable is pres
 assert.equal(resources.topics[0].sourceMaterial, 'Source 0');
 assert.equal(JSON.stringify(tables), tablesBefore, 'resource read does not change the Sheet model');
 const removed = tables.Skills.pop();
-assert.throws(() => server.getOwnerResourceOverview(), /fehlt oder ist doppelt/);
+assert.throws(() => server.getOwnerResourceOverview_(), /fehlt oder ist doppelt/);
 tables.Skills.push(removed);
 tables.Skills.push({ ...tables.Skills[0] });
-assert.throws(() => server.getOwnerResourceOverview(), /fehlt oder ist doppelt/);
+assert.throws(() => server.getOwnerResourceOverview_(), /fehlt oder ist doppelt/);
 server.auditOwner_ = () => { throw new Error('Owner required'); };
-assert.throws(() => server.getOwnerResourceOverview(), /Owner required/);
+assert.throws(() => server.getOwnerResourceOverview_(), /Owner required/);
 console.log('Owner overview and resource projection checks passed');

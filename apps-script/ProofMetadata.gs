@@ -91,7 +91,7 @@ function proofMetadataEnsurePair_(row) {
 }
 
 /** Backfill an existing proof without recreating either asset or changing its version. */
-function backfillProofMetadata(input) {
+function backfillProofMetadata_(input) {
   if (!input || !/^CASE-[A-Z0-9-]+$/.test(String(input.caseId || ''))) throw new Error('Demo-Fall-ID fehlt.');
   var lock = LockService.getScriptLock();
   lock.waitLock(30000);

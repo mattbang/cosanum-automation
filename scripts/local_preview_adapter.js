@@ -96,6 +96,44 @@
     getIntakePreview: input => ({ topicId: input.topicId, topicName: (topics.find(t => t.id === input.topicId) || {}).name || '', targetLevel: input.targetLevel,
       rows: input.personKeys.map(key => ({ personKey: key, personAlias: (people.find(p => p.key === key) || {}).alias || key, currentLevel: '1', targetLevel: input.targetLevel, allowed: false, reason: 'Offline sample only; eligibility must be checked against the real demo matrix.', sheetUrl: '' })), allAllowed: false })
   });
+  let offlinePreferences = { density: 'comfortable', motion: 'system' };
+  let offlineSequence = 0;
+  const offlineSessions = new Map();
+  function offlineSession(token) {
+    const session = offlineSessions.get(token);
+    if (!session || Date.parse(session.expiresAt) <= Date.now()) throw new Error('APP_SESSION_REQUIRED: Bitte erneut anmelden.');
+    return session;
+  }
+  function sessionResult(token) {
+    const session = offlineSession(token);
+    return { token, expiresAt: session.expiresAt,
+      profile: { displayName: 'Alex Offline', email: 'offline@example.test', initials: 'AO', role: 'Process & Quality · Offline' },
+      preferences: offlinePreferences };
+  }
+  const account = {
+    beginAppSession: input => {
+      const token = 'synthetic-offline-session-' + (++offlineSequence);
+      offlineSessions.set(token, { browserId: input.browserId, expiresAt: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString() });
+      return sessionResult(token);
+    },
+    restoreAppSession: input => sessionResult(input.token),
+    endAppSession: input => {
+      const session = offlineSessions.get(input.token);
+      if (session) for (const [token, item] of offlineSessions) if (item.browserId === session.browserId) offlineSessions.delete(token);
+      return { signedOut: true };
+    },
+    saveAppPreferences: input => {
+      offlineSession(input.token);
+      if (!input.preferences || !['comfortable', 'compact'].includes(input.preferences.density) || !['system', 'reduce'].includes(input.preferences.motion)) throw new Error('Ungültige Offline-Einstellungen.');
+      offlinePreferences = { density: input.preferences.density, motion: input.preferences.motion };
+      return { preferences: offlinePreferences };
+    },
+    dispatchAppRequest: input => {
+      offlineSession(input.token);
+      if (!Object.hasOwn(reads, input.method)) throw new Error(`Offline read-only preview blocked ${String(input.method)}. No changes were made.`);
+      return reads[input.method](...input.args);
+    }
+  };
   const run = new Proxy({}, {
     get(_target, name) {
       if (name === 'withSuccessHandler') return callback => chain(callback, null);
@@ -109,11 +147,12 @@
       if (name === 'withFailureHandler') return callback => chain(success, callback);
       return (...args) => queueMicrotask(() => {
         try {
-          if (!Object.hasOwn(reads, name)) throw new Error(`Offline read-only preview blocked ${String(name)}. No changes were made.`);
-          const result = clone(reads[name](...args));
+          const methods = Object.hasOwn(account, name) ? account : reads;
+          if (!Object.hasOwn(methods, name)) throw new Error(`Offline read-only preview blocked ${String(name)}. No changes were made.`);
+          const result = clone(methods[name](...args));
           if (success) success(result);
         } catch (error) {
-          notice(error.message);
+          if (!/^APP_SESSION_REQUIRED|^APP_ACCESS_DENIED/.test(error.message)) notice(error.message);
           if (failure) failure(error);
         }
       });

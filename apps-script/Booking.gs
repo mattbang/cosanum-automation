@@ -188,7 +188,7 @@ function saveBookingReceipt_(session, receipt) {
   SpreadsheetApp.flush();
 }
 
-function bookSelectedSlot(input) {
+function bookSelectedSlot_(input) {
   var lock = LockService.getScriptLock();
   lock.waitLock(30000);
   try {

@@ -95,7 +95,7 @@ function buildParticipantForm_(context, createForm, folder) {
   return { formId: form.getId(), formUrl: form.getPublishedUrl() };
 }
 
-function prepareParticipantForm(input) {
+function prepareParticipantForm_(input) {
   if (!input || typeof input.sessionId !== 'string' || typeof input.caseId !== 'string') throw new Error('Session und Personenfall fehlen.');
   var lock = LockService.getScriptLock();
   lock.waitLock(30000);
@@ -144,7 +144,7 @@ function prepareParticipantForm(input) {
 }
 
 /** Manual fallback when Forms REST could not verify the setting. */
-function confirmParticipantVerifiedEmail(input) {
+function confirmParticipantVerifiedEmail_(input) {
   if (!input || input.confirmation !== true || typeof input.sessionId !== 'string' || typeof input.caseId !== 'string') {
     throw new Error('Bitte die Einstellung „Verifiziert“ im Google-Formular prüfen und bestätigen.');
   }
@@ -279,11 +279,13 @@ function reconcileParticipantResponsesLocked_(tables, formRow) {
 }
 
 function onParticipantFormSubmit(event) {
-  if (!event || !event.source || !event.response) throw new Error('Formularereignis fehlt.');
+  if (!event || !event.source || typeof event.source.getId !== 'function' || !event.response ||
+      typeof event.response.getId !== 'function' || typeof event.response.getTimestamp !== 'function' ||
+      typeof event.response.getRespondentEmail !== 'function') throw new Error('Gültiges Google-Formularereignis fehlt.');
   return processParticipantResponse_(event.source.getId(), event.response);
 }
 
-function refreshParticipantAcknowledgements() {
+function refreshParticipantAcknowledgements_() {
   var tables = readDemoTables_();
   var results = [];
   tables.ParticipantForms.filter(function (row) { return row.demo_marker === '[DEMO]'; }).forEach(function (row) {
@@ -335,4 +337,4 @@ function participantAcknowledgementQueue_() {
   }, []);
 }
 
-function getParticipantAcknowledgementQueue() { return participantAcknowledgementQueue_(); }
+function getParticipantAcknowledgementQueue_() { return participantAcknowledgementQueue_(); }

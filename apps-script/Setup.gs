@@ -1,5 +1,5 @@
 /** Idempotent initial setup. PrivateFixture.gs is local and ignored by Git. */
-function setupDemo() {
+function setupDemo_() {
   var fixture = getPrivateFixture_();
   validateFixture_(fixture);
   var folder = findDemoFolder_() || DriveApp.createFolder(DEMO_SCHEMA.folderName);
@@ -110,7 +110,7 @@ function migrateDemoSchemaV6ToV7_(spreadsheet) {
   });
 }
 
-/** An empty RSVP tab is created by setupDemo; existing case and booking rows stay intact. */
+/** An empty RSVP tab is created by setupDemo_; existing case and booking rows stay intact. */
 function migrateDemoSchemaV5ToV6_(spreadsheet) {
   var rsvps = spreadsheet.getSheetByName('SessionRsvps');
   if (!rsvps || rsvps.getLastRow() === 0) return;
@@ -135,7 +135,7 @@ function migrateDemoSchemaV4ToV5_(spreadsheet) {
   sessions.autoResizeColumns(12, 4);
 }
 
-/** Add the request mode in H; setupDemo creates the two empty phase tabs. */
+/** Add the request mode in H; setupDemo_ creates the two empty phase tabs. */
 function migrateDemoSchemaV3ToV4_(spreadsheet) {
   var requests = spreadsheet.getSheetByName('Requests');
   if (!requests || requests.getLastRow() === 0) return;
@@ -215,8 +215,8 @@ function writeFixtureSheet_(sheet, headers, rows) {
   sheet.autoResizeColumns(1, headers.length);
 }
 
-/** Explicit reset for disposable synthetic data; never called by setupDemo. */
-function resetDemoFixture() {
+/** Explicit reset for disposable synthetic data; never called by setupDemo_. */
+function resetDemoFixture_() {
   var fixture = getPrivateFixture_();
   validateFixture_(fixture);
   var spreadsheet = findDemoSpreadsheet_();

@@ -301,7 +301,7 @@ function proofEnsureDoc_(folder, name, text, ledgerId) {
   return file;
 }
 
-function createIndividualProof(input) {
+function createIndividualProof_(input) {
   if (!input || typeof input.caseId !== 'string') throw new Error('Personenfall fehlt.');
   var lock = LockService.getScriptLock();
   lock.waitLock(30000);
@@ -324,7 +324,7 @@ function createIndividualProof(input) {
     var model = proofSourceModel_(tables, input.caseId);
     var sourceHash = proofHash_(model);
     var sheet = findDemoSpreadsheet_().getSheetByName('Proofs');
-    if (!sheet) throw new Error('Nachweisregister fehlt. setupDemo() ausführen.');
+    if (!sheet) throw new Error('Nachweisregister fehlt. setupDemo_() ausführen.');
     var ledger = proofLedgerRow_(sheet, model, sourceHash);
     var folder = proofFolderPath_(model);
     if (ledger.row[8] && ledger.row[8] !== folder.getId()) throw new Error('Nachweisordner weicht vom Register ab.');
@@ -347,7 +347,7 @@ function createIndividualProof(input) {
   } finally { lock.releaseLock(); }
 }
 
-function getIndividualProofQueue() {
+function getIndividualProofQueue_() {
   var tables = readDemoTables_();
   return tables.ParticipantCases.filter(function (row) { return row.demo_marker === '[DEMO]'; }).map(function (row) {
     var person = proofUnique_(tables.People, function (item) { return item.person_key === row.person_key && item.demo_marker === '[DEMO]'; }, 'Testperson');

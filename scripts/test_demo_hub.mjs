@@ -72,10 +72,10 @@ let writes = 0;
 const server = vm.createContext({ readDemoTables_: () => tables, auditOwner_: () => {}, Set,
   SpreadsheetApp: { flush: () => { writes++; } }, findDemoSpreadsheet_: () => { writes++; throw Error('write path'); } });
 vm.runInContext(source, server);
-const recovered = server.getSavedPhasePlan('REQ-GROUP');
+const recovered = server.getSavedPhasePlan_('REQ-GROUP');
 assert.equal(recovered.phases.length, 1);
 assert.equal(recovered.phases[0].eventId, 'EVENT-1');
 assert.equal(recovered.phases[0].personKeys.length, 2);
 assert.equal(writes, 0);
-assert.throws(() => server.getSavedPhasePlan('OTHER'), /nicht eindeutig/);
+assert.throws(() => server.getSavedPhasePlan_('OTHER'), /nicht eindeutig/);
 console.log('Demo Hub model and read-only resume checks passed');

@@ -55,12 +55,12 @@ function planSession_(phase, order, mode, cases, requestId, minutes, theorySessi
     trainerChoices: choices, trainerKey: mode === 'group' ? 'MATT' : '' };
 }
 
-function getPhasePlanPreview(requestId, mode) {
+function getPhasePlanPreview_(requestId, mode) {
   return phasePlanModel_(requestId, mode, readDemoTables_());
 }
 
 /** Read-only resume data for the owner-only guided page. */
-function getSavedPhasePlan(requestId) {
+function getSavedPhasePlan_(requestId) {
   var tables = readDemoTables_();
   auditOwner_(tables);
   var request = tables.Requests.filter(function (row) { return row.request_id === requestId && row.demo_marker === '[DEMO]'; });
@@ -91,7 +91,7 @@ function canCompleteTargetLevel_(plan, passedSessionIds, caseId) {
   return linked.every(function (p) { return !p.theorySessionId || passedSessionIds.indexOf(p.theorySessionId) >= 0; });
 }
 
-function savePhasePlan(input) {
+function savePhasePlan_(input) {
   var lock = LockService.getScriptLock();
   lock.waitLock(30000);
   try {

@@ -33,7 +33,7 @@ function findDemoFolder_() {
 
 function findDemoSpreadsheet_() {
   var folder = findDemoFolder_();
-  if (!folder) throw new Error('Demo-Ordner fehlt. setupDemo() ausführen.');
+  if (!folder) throw new Error('Demo-Ordner fehlt. setupDemo_() ausführen.');
   var files = folder.getFilesByName(DEMO_SCHEMA.spreadsheetName);
   var matches = [];
   while (files.hasNext()) {

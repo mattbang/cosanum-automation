@@ -85,7 +85,7 @@ function skillUpdateResult_(gate, row, reused, currentLevel) {
     appliedAt: String(row.applied_at), status: String(row.status), reused: reused };
 }
 
-function applyVerifiedSkillUpdate(input) {
+function applyVerifiedSkillUpdate_(input) {
   if (!input || typeof input.caseId !== 'string' || !/^CASE-[A-Z0-9-]+$/.test(input.caseId)) {
     throw new Error('Ungültige Demo-Fall-ID.');
   }
@@ -135,7 +135,7 @@ function applyVerifiedSkillUpdate(input) {
       throw new Error('Skillkonflikt: Matrixstand wurde seit der Fallanlage geändert. Bitte im Demo-Sheet prüfen.');
     }
     var ledger = spreadsheet.getSheetByName('SkillUpdates');
-    if (!ledger) throw new Error('Skillübernahme-Register fehlt. setupDemo() ausführen.');
+    if (!ledger) throw new Error('Skillübernahme-Register fehlt. setupDemo_() ausführen.');
     var key = skillUpdateKey_(gate.proof);
     if (!existing) {
       ledger.appendRow([key, input.caseId, gate.request.request_id, gate.personCase.person_key,
@@ -163,7 +163,7 @@ function applyVerifiedSkillUpdate(input) {
   } finally { lock.releaseLock(); }
 }
 
-function getSkillUpdateQueue() {
+function getSkillUpdateQueue_() {
   var tables = readDemoTables_();
   return tables.ParticipantCases.filter(function (row) { return row.demo_marker === '[DEMO]'; }).map(function (personCase) {
     var item = { caseId: personCase.case_id, personKey: personCase.person_key,
@@ -196,24 +196,24 @@ function getSkillUpdateQueue() {
 }
 
 /** Reconcile archived cases on admin refresh or a daily trigger. Errors stay visible per case. */
-function processVerifiedSkillUpdates() {
-  var candidates = getSkillUpdateQueue().filter(function (row) {
+function processVerifiedSkillUpdates_() {
+  var candidates = getSkillUpdateQueue_().filter(function (row) {
     return row.state === 'ready' || row.state === 'pending';
   });
   var applied = [], errors = [];
   candidates.forEach(function (row) {
-    try { applied.push(applyVerifiedSkillUpdate({ caseId: row.caseId })); }
+    try { applied.push(applyVerifiedSkillUpdate_({ caseId: row.caseId })); }
     catch (error) { errors.push({ caseId: row.caseId, reason: String(error.message || error) }); }
   });
-  return { applied: applied, errors: errors, rows: getSkillUpdateQueue() };
+  return { applied: applied, errors: errors, rows: getSkillUpdateQueue_() };
 }
 
-function installSkillDailyProcessor() {
+function installSkillDailyProcessor_() {
   var matches = ScriptApp.getProjectTriggers().filter(function (trigger) {
-    return trigger.getHandlerFunction() === 'processVerifiedSkillUpdates';
+    return trigger.getHandlerFunction() === 'processVerifiedSkillUpdates_';
   });
   if (matches.length > 1) throw new Error('Mehrere tägliche Skill-Trigger gefunden.');
   if (matches.length === 1) return { installed: true, reused: true };
-  ScriptApp.newTrigger('processVerifiedSkillUpdates').timeBased().atHour(9).everyDays(1).inTimezone(SLOT_TIME_ZONE).create();
+  ScriptApp.newTrigger('processVerifiedSkillUpdates_').timeBased().atHour(9).everyDays(1).inTimezone(SLOT_TIME_ZONE).create();
   return { installed: true, reused: false };
 }
