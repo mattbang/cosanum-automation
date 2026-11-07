@@ -31,3 +31,5 @@ Use synthetic data only. Keep OAuth credentials, account-specific configuration,
 ## Start developing
 
 From a clean checkout with Node 24 and Python 3.11 or newer, run `npm run check` for credential-free local checks, then `npm run dev` and open `http://127.0.0.1:4173/` for the synthetic read-only Demo Hub. No package install or Google login is needed. The [contributor guide](docs/CONTRIBUTING.md) covers the expected result, common setup failures, the optional container, and the separate connected-verification handoff.
+
+Run `npm run prototype` for the separate [writable local prototype foundation](docs/LOCAL_PROTOTYPE.md) at `http://127.0.0.1:4174/`. It saves synthetic intake requests and initial deadlines, supports scoped role views, and preserves data across restarts. Booking, forms and proof completion remain the next delivery cards in the [December prototype roadmap](https://github.com/mattbang/cosanum-automation/issues/77).

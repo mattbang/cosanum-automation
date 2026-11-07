@@ -4,6 +4,7 @@ roster.json
 roster-backups/
 .agents/
 .codex/
+.thinkrail/context/
 
 # Private planning material and screenshots kept on this machine
 docs/TRAINING_PROTOTYPE_SPECIFICATION.md

@@ -1,5 +1,11 @@
 # Development plan
 
+## Current local prototype delivery
+
+The approved [December prototype roadmap (#77)](https://github.com/mattbang/cosanum-automation/issues/77) schedules the local synthetic build: **core-flow review on 3 December 2026, feature freeze on 8 December, acceptance/fixes on 9–13 December, and regression/implementation handoff on 14–16 December**. The project Roadmap view contains dated child cards, dependencies and P0/P1/P2 priorities. [#78](https://github.com/mattbang/cosanum-automation/issues/78) starts with the [writable local runtime](LOCAL_PROTOTYPE.md); connected parent acceptance remains separate. Existing material-register and member-activation owners keep their workstreams.
+
+Use P0 for required local delivery and acceptance, P1 for next connected/product work and conditional additions, and P2 for deferred options. Review the board weekly and after each merge, acceptance run or blocker change. Keep at most two implementation cards In progress. The workflow increments below retain their existing behavioral and connected acceptance boundaries; they are not a replacement for the dated delivery queue.
+
 Der aktuelle Produktstand mit festen Feature-IDs und dem jeweils nächsten offenen Check steht im [Feature-Register](FEATURE_REGISTER.md). Aufgaben und Tagesfortschritt bleiben im [Kanban](https://github.com/users/mattbang/projects/1).
 
 Request deadlines and per-person overdue state passed connected acceptance on 6 November 2026 in owner-only version 15 ([#66](https://github.com/mattbang/cosanum-automation/issues/66), [PR #74](https://github.com/mattbang/cosanum-automation/pull/74)). The existing draft recovered without duplicates; source history, earlier-policy precedence, due/overdue states and fresh-page readback passed with prior records preserved. The [deadline contract](REQUEST_DEADLINES.md) records the bounded result. Reminder delivery remains [#68](https://github.com/mattbang/cosanum-automation/issues/68), and the ongoing training replay keeps its separate acceptance gates.
