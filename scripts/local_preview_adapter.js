@@ -81,7 +81,7 @@
   const reads = Object.freeze({
     getIntakeData: () => ({ marker: '[SYNTHETIC OFFLINE]', topics, people }),
     getCatalogue: () => ({ marker: '[SYNTHETIC OFFLINE]', topics, people }),
-    getOwnerResourceOverview: () => ({ marker: '[SYNTHETIC OFFLINE]', topics, matrix: people.map((person, index) => ({
+    getOwnerResourceOverview: () => ({ marker: '[SYNTHETIC OFFLINE]', topics, materials: offlineMaterialCatalogue, matrix: people.map((person, index) => ({
       personKey: person.key, personAlias: person.alias, role: person.role,
       levels: topics.map((topic, topicIndex) => ({ topicId: topic.id, level: index === 2 ? '4' : topicIndex === 4 ? '–' : String((index + topicIndex) % 3) }))
     })), sheetUrl: '' }),

@@ -45,7 +45,7 @@ if (!jsOnly) {
       { cwd: root, encoding: 'utf8', stdio: 'pipe' });
     if (!probe.error && probe.status === 0) { python = candidate; break; }
   }
-  if (!python) throw new Error('Python 3.11 or newer is required for the archive tests.');
-  run('archive helper tests', python[0], [...python[1], '-m', 'unittest', 'scripts.test_archive_proof']);
+  if (!python) throw new Error('Python 3.11 or newer is required for the Python helper tests.');
+  run('Python helper tests', python[0], [...python[1], '-m', 'unittest', 'scripts.test_archive_proof', 'scripts.test_material_register_xlsx']);
 }
 console.log(`All ${jsOnly ? 'JavaScript ' : ''}local checks passed.`);

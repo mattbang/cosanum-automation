@@ -1,0 +1,4 @@
+{
+  "topicIds": ["TC_R030", "TC_R027", "TC_R033", "TC_R052", "TC_R077"],
+  "files": ["demo:GUIDE-A-01", "demo:GUIDE-A-02", "demo:CHECKLIST-B-01", "demo:GUIDE-D-01", "demo:SLIDES-E-01"]
+}

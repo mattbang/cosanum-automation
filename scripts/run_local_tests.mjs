@@ -28,6 +28,7 @@ const suites = [
   'test_local_prototype_http.mjs',
   'test_local_prototype_runtime.mjs',
   'test_mail_tour.mjs',
+  'test_material_register.mjs',
   'test_owner_overview.mjs',
   'test_participant_acknowledgement.mjs',
   'test_phase_plan.mjs',
@@ -42,6 +43,7 @@ const suites = [
   'test_workflow_contract.mjs',
   'test_archive_proof.py',
   'test_connected_checker.py',
+  'test_material_register_xlsx.py',
 ];
 const timeoutMs = 60_000;
 const maxBuffer = 1024 * 1024;
@@ -81,7 +83,7 @@ function verifyInventory() {
 
 function fingerprint() {
   const files = [
-    ...['apps-script', 'contracts', 'scripts', 'docs'].flatMap(dir =>
+    ...['apps-script', 'contracts', 'scripts', 'docs', 'material-register'].flatMap(dir =>
       fs.readdirSync(path.join(root, dir), { recursive: true, withFileTypes: true })
         .filter(item => item.isFile()).map(item => path.relative(root, path.join(item.parentPath, item.name)))
         .filter(name => !name.includes('__pycache__') && !name.endsWith('.pyc'))),

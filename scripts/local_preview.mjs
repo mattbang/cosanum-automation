@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { randomBytes } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
+import { readDemoCatalogue } from '../material-register/demo.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const source = resolve(root, 'apps-script/Index.html');
@@ -22,7 +23,7 @@ export function renderPreview(html, adapterCode, nonce) {
   html = html.replace(rsvpCall, '.getOfflineRsvpPreview()');
   const banner = `<style>#offlinePreviewBanner{position:sticky;top:0;z-index:10000;background:#57204f;color:white;padding:12px 18px;font:700 15px/1.4 system-ui,sans-serif;box-shadow:0 2px 8px #0005}#offlinePreviewBanner small{display:block;font-weight:400}#offlinePreviewNotice{position:fixed;bottom:12px;left:12px;right:12px;z-index:10001;max-width:780px;margin:auto;background:#fff3cd;color:#422000;border:2px solid #a65a00;border-radius:8px;padding:12px;font:600 14px/1.4 system-ui,sans-serif;box-shadow:0 4px 16px #0004}#offlinePreviewNotice[hidden]{display:none}</style><div id="offlinePreviewBanner" role="status">OFFLINE PREVIEW · SYNTHETIC DATA · READ ONLY<small>No Google connection. Buttons that save, send, book, or change data are blocked.</small></div><div id="offlinePreviewNotice" role="alert" hidden></div>`;
   return html.replace('<body>', `<body>${banner}`)
-    .replace('<script>', `<script nonce="${nonce}">${adapterCode}</script><script nonce="${nonce}">`);
+    .replace('<script>', () => `<script nonce="${nonce}">${adapterCode}</script><script nonce="${nonce}">`);
 }
 
 export function createPreviewServer() {
@@ -36,7 +37,8 @@ export function createPreviewServer() {
     try {
       const [html, adapterCode] = await Promise.all([readFile(source, 'utf8'), readFile(adapter, 'utf8')]);
       const nonce = randomBytes(16).toString('base64');
-      const body = renderPreview(html, adapterCode, nonce);
+      const materials = JSON.stringify(readDemoCatalogue()).replaceAll('<', '\\u003c');
+      const body = renderPreview(html, `const offlineMaterialCatalogue = ${materials};\n${adapterCode}`, nonce);
       response.writeHead(200, {
         'Content-Type': 'text/html; charset=utf-8',
         'Cache-Control': 'no-store',
