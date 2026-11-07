@@ -5,6 +5,7 @@ import { readFile } from 'node:fs/promises';
 import { runInNewContext } from 'node:vm';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
+import { readDemoCatalogue } from '../material-register/demo.mjs';
 
 test('adapter supplies synthetic read views and rejects writes and unknown calls', async () => {
   const code = await readFile(resolve(dirname(fileURLToPath(import.meta.url)), 'local_preview_adapter.js'), 'utf8');
@@ -13,6 +14,7 @@ test('adapter supplies synthetic read views and rejects writes and unknown calls
   const context = {
     window: {},
     document: { getElementById: () => alert, addEventListener: (type, handler) => { if (type === 'click') handleClick = handler; } },
+    offlineMaterialCatalogue: readDemoCatalogue(),
     queueMicrotask
   };
   runInNewContext(code, context);
@@ -24,6 +26,13 @@ test('adapter supplies synthetic read views and rejects writes and unknown calls
   assert.equal(dashboard.value.length, 3);
   assert.deepEqual(Array.from(dashboard.value.map(row => row.state)), ['complete', 'waiting', 'open']);
   const catalogue = (await call('getCatalogue')).value;
+  const resources = (await call('getOwnerResourceOverview')).value;
+  assert.deepEqual(Array.from(resources.materials, item => [item.topicId, item.materialId, item.revision, item.state]), [
+    ['TC_R030', 'MAT-A', '02', 'approved'],
+    ['TC_R027', 'MAT-B', '01', 'withdrawn'],
+    ['TC_R033', 'MAT-C', '01', 'unavailable'],
+  ]);
+  assert.ok(resources.materials.every(item => !item.url && resources.topics.some(topic => topic.id === item.topicId)));
   assert.equal((await call('getIntakeData')).value.people.length, 4);
   assert.ok(catalogue.topics.every(topic => topic.theory && topic.theoryMinutes === 60 && (!topic.practice || topic.practiceMinutes === 180)));
   for (const request of dashboard.value) {
@@ -100,13 +109,14 @@ test('serves the real client with an offline adapter and no repository file rout
     assert.match(html, /OFFLINE PREVIEW · SYNTHETIC DATA · READ ONLY/);
     assert.match(html, /Cosanum · Schulungsdemo/);
     assert.match(html, /getAuditDashboard/);
+    assert.match(html, /"materialId":"MAT-A","revision":"02"/);
     assert.match(html, /\.getOfflineRsvpPreview\(\)/);
     assert.doesNotMatch(html, /\.refreshRsvpStatus\(\)/);
     assert.match(html, /Offline read-only preview blocked/);
     assert.match(page.headers.get('content-security-policy'), /connect-src 'none'/);
     assert.match(page.headers.get('content-security-policy'), /script-src 'nonce-/);
     assert.equal((html.match(/<script nonce=/g) || []).length, 2);
-    for (const path of ['/apps-script/Index.html', '/scripts/local_preview_adapter.js', '/docs/private/INCREMENT_01_HANDOFF.md', '/%2e%2e/.clasp.json']) {
+    for (const path of ['/apps-script/Index.html', '/scripts/local_preview_adapter.js', '/material-register/demo/published-sheet.json', '/docs/private/INCREMENT_01_HANDOFF.md', '/%2e%2e/.clasp.json']) {
       const response = await fetch(`${origin}${path}`);
       assert.equal(response.status, 404, path);
       assert.equal(await response.text(), 'Not found');

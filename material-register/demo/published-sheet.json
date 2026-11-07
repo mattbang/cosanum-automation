@@ -1,0 +1,11 @@
+{
+  "sheet": "MaterialRegister_v1",
+  "values": [
+    ["material_id","topic_id","title","revision","material_type","language","owner","status","effective_date","file_ref","batch_id","published_by","published_at"],
+    ["MAT-A","TC_R030","Leitfaden für Beispielprozess A","01","guide","de","Demo Qualität","approved","2026-10-01","demo:GUIDE-A-01","eba8ab4dd5d73b1dffed3a425ac28fec11cc9c4446ca9116cc29b37486c54bc3","Demo Redaktion","2026-10-01T08:00:00.000Z"],
+    ["MAT-B","TC_R027","Checkliste für Beispielprozess B","01","checklist","de","Demo Qualität","approved","2026-10-01","demo:CHECKLIST-B-01","eba8ab4dd5d73b1dffed3a425ac28fec11cc9c4446ca9116cc29b37486c54bc3","Demo Redaktion","2026-10-01T08:00:00.000Z"],
+    ["MAT-C","TC_R033","Anleitung für Beispielprozess C","01","guide","de","Demo Qualität","approved","2026-10-01","demo:GUIDE-C-01","eba8ab4dd5d73b1dffed3a425ac28fec11cc9c4446ca9116cc29b37486c54bc3","Demo Redaktion","2026-10-01T08:00:00.000Z"],
+    ["MAT-A","TC_R030","Leitfaden für Beispielprozess A","02","guide","de","Demo Qualität","approved","2026-10-02","demo:GUIDE-A-02","9f3a1d44e558dd7b51a8020fbcce8097920d3f715f210571e6fa119be08989f2","Demo Redaktion","2026-10-02T08:00:00.000Z"],
+    ["MAT-B","TC_R027","Checkliste für Beispielprozess B","01","checklist","de","Demo Qualität","withdrawn","2026-10-03","demo:CHECKLIST-B-01","95101f8b11ef42874b68ebc491cc13449b1ebaf3e01c02e75f6c404ac41f77f6","Demo Redaktion","2026-10-03T08:00:00.000Z"]
+  ]
+}
