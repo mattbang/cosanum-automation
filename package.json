@@ -10,6 +10,7 @@
     "check": "node scripts/check_local.mjs",
     "check:js": "node scripts/check_local.mjs --js-only",
     "check:container": "node scripts/check_local.mjs && node scripts/smoke_container_preview.mjs",
-    "dev": "node scripts/local_preview.mjs"
+    "dev": "node scripts/local_preview.mjs",
+    "prototype": "node scripts/local_prototype.mjs"
   }
 }
